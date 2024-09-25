@@ -44,7 +44,7 @@ svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024
 
 ```{r, message = FALSE, results='asis'}
 
-dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc' AND response_domain = 'demographic'")
+dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc' AND response_domain = 'Demographic'")
 
 unique_indicators <- unique(dd_filter$variable)
 
@@ -80,11 +80,11 @@ for (var_string in unique_indicators) {
 
 ```
 
-# Strong minds
+# Strong Minds
 
 ```{r, message = FALSE, results='asis'}
 
-dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc' AND response_domain = 'Strong minds'")
+dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc' AND response_domain = 'Strong Minds'")
 
 unique_indicators <- unique(dd_filter$variable)
 
@@ -120,11 +120,11 @@ for (var_string in unique_indicators) {
 
 ```
 
-# Positive identity and self-worth
+# Positive Identity And Self-Worth
 
 ```{r, message = FALSE, results='asis'}
 
-dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc' AND response_domain = 'Positive identity and self-worth'")
+dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc' AND response_domain = 'Positive Identity and Self-Worth'")
 
 unique_indicators <- unique(dd_filter$variable)
 
@@ -161,11 +161,11 @@ for (var_string in unique_indicators) {
 
 ```
 
-# Caring Families and Relationships
+# Caring Families And Relationships
 
 ```{r, message = FALSE, results='asis'}
 
-dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc' AND response_domain = 'Caring Families and Relationships'")
+dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc' AND response_domain = 'Caring Families And Relationships'")
 
 unique_indicators <- unique(dd_filter$variable)
 
@@ -202,11 +202,11 @@ for (var_string in unique_indicators) {
 
 ```
 
-# Positive identity and self-worth
+# Positive Identity And Self-Worth
 
 ```{r, message = FALSE, results='asis'}
 
-dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc' AND response_domain = 'Positive identity and self-worth'")
+dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc' AND response_domain = 'Positive Identity And Self-Worth'")
 
 unique_indicators <- unique(dd_filter$variable)
 
@@ -282,11 +282,50 @@ for (var_string in unique_indicators) {
 
 ```
 
-# Interrelated domain
+# Cultural Identity
 
 ```{r, message = FALSE, results='asis'}
 
-dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc' AND response_domain = 'Interrelated domain'")
+dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc' AND response_domain = 'Cultural Identity'")
+
+unique_indicators <- unique(dd_filter$variable)
+
+knitr::opts_chunk$set(echo = FALSE)
+#### Step 3: Run Loop Funcion to produce tables ####
+for (var_string in unique_indicators) {
+
+  dict <- dd_filter %>% filter(variable == var_string) %>%
+    pivot_longer(cols = response_1: response_12,
+                 names_to = "responses",
+                 values_to = paste0(var_string, "_labels"),
+                 values_drop_na = TRUE)
+
+  dict_var <- dict %>%
+    mutate(variable_merge_col = 1:nrow(dict))
+
+
+  df_var <- as_survey(svy_data, weights = weights_final) %>%
+    group_by(!!rlang::ensym(var_string)) %>%
+    summarise(frequency = n()) %>%
+    mutate(percent = round(frequency/sum(frequency)*100, 1))
+
+  df_final <-  merge(x = df_var, y = dict_var, by.x = c(var_string), by.y = c("variable_merge_col")) %>%
+    relocate(paste0(var_string, "_labels")) %>% select(1, 3:8)
+
+  visual <- print(kable(as.data.frame(df_final), "html") %>%
+  kable_styling("striped", full_width = F) %>%
+  row_spec(0, background = "#5E17EB", color = "white"))
+
+  print(visual) 
+
+}
+
+```
+# Interrelated Domain
+
+```{r, message = FALSE, results='asis'}
+
+dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc' AND response_domain = 'Interrelated Domain'")
 
 unique_indicators <- unique(dd_filter$variable)
 
@@ -322,11 +361,11 @@ for (var_string in unique_indicators) {
 
 ```
 
-# Racial justice, equity, and inclusion
+# Racial Justice, Equity, And Inclusion
 
 ```{r, message = FALSE, results='asis'}
 
-dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc' AND response_domain = 'Racial justice, equity, and inclusion'")
+dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc' AND response_domain = 'Racial Justice, Equity, And Inclusion'")
 
 unique_indicators <- unique(dd_filter$variable)
 
