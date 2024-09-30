@@ -1,0 +1,414 @@
+---
+title: "Recoding Race"
+author: "Alicia Vo"
+date: "2024-09-20"
+output: html_document
+---
+Pull data from database.
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(data.table)
+library(dplyr)
+library(RPostgreSQL)
+library(purrr)
+library(stringr)
+
+# Connect to postgres
+source("W:\\RDA Team\\R\\credentials_source.R")
+con <- connect_to_db("bold_vision")
+
+# Pull in the response_id and race/ethnicity columns from the survey data
+raw_svy_data <- dbGetQuery(con, "SELECT response_id, ar, \"as\", at, au, av, aw, ax, 
+                       ay, az, ba, bb, bc, bd, be, bf, bg, bh, bi, bj, bk, bl, 
+                       bm, bn, bo, bp, bq, br, bs FROM 
+                       youth_thriving.raw_survey_data")
+
+# isSouthAsian is a column in the data for South Asians
+# isSoutheastAsian is a column in the data for Southeast Asians
+# isCambodian is a column for Cambodians
+svy_data <- raw_svy_data %>%
+  mutate(isSouthAsian = 0,
+         isSoutheastAsian = 0,
+         isCambodian = 0)
+
+# raceColumnList contains the race/ethnicity column names 
+raceColumnList <- c("ar", "as", "at", "au", "av", "aw", "ax", "ay", "az", 
+                    "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", 
+                    "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", 
+                    "bs","isSouthAsian","isSoutheastAsian","isCambodian")
+
+svy_dd <- dbGetQuery(con, "SELECT variable, response_1 
+                     FROM youth_thriving.bvys_datadictionary_2024")
+
+# Filter svy_dd to contain the race/ethnicity column names, alongside with 
+# the string description of race/ethnicity. It's helpful to view svy_dd to
+# quickly decipher the meaning of each column during QA.
+svy_dd <- svy_dd  %>%
+  filter(variable %in% raceColumnList) 
+
+```
+
+Recode respondents who selected "Other Race" accordingly.
+```{r}
+# Define a function get_revised_response to recode the respondent's write-in 
+# race(s) to racial categories already listed in the survey.
+get_revised_response <- function(response) {
+  #If the respondent didn't mark "Other race", leave the function now.
+  if (is.na(response)) return('') 
+  
+  # Initialize an empty vector. This represents the respondent's racial composition. 
+  races <- c()  
+  if (grepl("Native American", response, ignore.case = TRUE)) 
+    {races <- c(races, "ar")}
+  if (grepl("black|african american|afro", response, ignore.case = TRUE)) 
+    {races <- c(races, "as")}
+  if (grepl("latina|latino|hispanic|Chicano|Mexican|Cuban|Puerto Rican|Bolivia|Nicaragua", response, ignore.case = TRUE)) 
+    {races <- c(races, "au")}
+  if (grepl("filipino|asain|Indian|Japanese|South Asian|Sri Lankan", response, ignore.case = TRUE)) 
+  {
+    races <- c(races, "av")
+    if(grepl("filipino", response, ignore.case=TRUE)) {races <- c(races, "bd")}
+    if(grepl("Indian", response, ignore.case=TRUE)) {races <- c(races, "bc")}
+    if(grepl("South Asian|Sri Lankan", response, ignore.case=TRUE)) {races <- c(races, "isSouthAsian")}
+    if(grepl("Japanese", response, ignore.case=TRUE)) {races <- c(races, "bg")}
+  }
+  if (grepl("armenian", response, ignore.case = TRUE)) 
+    {races <- c(races, "ax")}
+  if (grepl("Cockasain|white|Russian", response, ignore.case = TRUE)) 
+    {races <- c(races, "ay")}
+  if (grepl("null|mixed|multi", response, ignore.case = TRUE)) 
+    {races <- c(races, "ba")}
+  return(paste(races, collapse = "; "))
+}
+
+# Extract the race of respondents who marked "Other race", 
+# stored in the column revised_response.
+svy_data <- svy_data %>%
+  mutate(
+    # Extract the revised response and correct ba if needed
+    revised_response = map_chr(ba, get_revised_response),
+    # If revised_response doesn't contain ba, the respondent actually marked 
+    # "Other race" incorrectly. Therefore, unmark "Other race" in the survey data.      
+    ba = ifelse(grepl("ba", revised_response, ignore.case = TRUE), ba, NA),
+    
+    # Mark the respondent's correct race(s) based on revised_response
+    across(all_of(setdiff(raceColumnList, "ba")),  
+           ~ ifelse(str_detect(revised_response, cur_column()), 1, .))
+  )
+
+```
+
+Get unique responses of respondents who picked "Other Asian".
+```{r}
+# unique_other_asian_responses <- svy_data %>%
+#   select(response_id, bh) %>%
+#   filter(!is.na(bh)) %>%  # Optional: Filter out NA values if needed
+#   mutate(bh_lower = tolower(bh)) %>%  # Convert bh to lowercase
+#   distinct(bh_lower, .keep_all = TRUE) %>%  # Get unique bh values, keeping the first corresponding response_id
+#   select(bh, response_id)  # Select original columns to keep
+#   write.csv(unique_other_asian_responses, file = "unique_other_asian_responses.csv", row.names = FALSE)
+```
+
+Recode respondents who selected "Other Asian" accordingly.
+```{r}
+# Define a function get_revised_asian_response to recode the respondent's write-in 
+# race(s) to racial categories already listed in the survey.
+get_revised_asian_response <- function(response) {
+  #If the respondent didn't mark "Other Asian", leave the function now.
+  if (is.na(response)) return('') 
+  
+  # Initialize an empty vector. This represents the respondent's write-in response.
+  ethnicities <- c()  
+  if (grepl("Chinese", response, ignore.case = TRUE))
+    {ethnicities <- c(ethnicities, "bb")}
+  if (grepl("Filipino", response, ignore.case = TRUE))
+    {ethnicities <- c(ethnicities, "bd")}
+  if (grepl("Pakistani|Southwest|Uzbek|Kazakh", response, ignore.case = TRUE))
+    {ethnicities <- c(ethnicities, "ax")}
+  if (grepl("Thai|Burmese|Indonesian|Laos", response, ignore.case = TRUE))
+    {ethnicities <- c(ethnicities, "isSoutheastAsian")}
+  if (grepl("Bangladesh|Bengali|Sri Lankan", response, ignore.case = TRUE))
+    {ethnicities <- c(ethnicities, "isSouthAsian")}
+  if (grepl("Cambodian|Khmer", response, ignore.case = TRUE)) 
+  {ethnicities <- c(ethnicities, "isCambodian")}
+  if (grepl("Hawaiian", response, ignore.case = TRUE)) 
+    {ethnicities <- c(ethnicities, "aw")}
+  if (grepl("N/A|None|Doesn't apply|Non|Mexican|African|Hispanic|Pakistani|Southwest|Uzbek|Kazakh|Hawaiian|Filipino|German", response, ignore.case = TRUE)) 
+    {ethnicities <- c(ethnicities, "not_bh")}
+  if (grepl("German", response, ignore.case = TRUE)) 
+    {ethnicities <- c(ethnicities, "ay")}
+  return(paste(ethnicities, collapse = "; "))
+}
+
+# Extract the race of respondents who marked "Other Asian", 
+# stored in the column revised_asian_response.
+svy_data <- svy_data %>%
+  mutate(
+    revised_asian_response = map_chr(bh, get_revised_asian_response),
+    # If revised_asian_response contains "not_bh", the respondent actually marked 
+    # "Other Asian" incorrectly. Therefore, unmark "Other race" in the survey data.  
+    bh = ifelse(grepl("not_bh|isCambodian", revised_asian_response, ignore.case = TRUE), NA, bh),
+    # Mark the respondent's correct race(s) based on revised_asian_response
+    across(all_of(setdiff(raceColumnList, c("bh"))),  
+           ~ ifelse(str_detect(revised_asian_response, cur_column()), 1, .))
+  )
+
+# Respondents who identify as Vietnamese, Filipino, or Cambodian will also be labelled as Southeast Asian
+svy_data$isSoutheastAsian[svy_data$bf == 1 | svy_data$bd == 1 | svy_data$isCambodian == 1] <- 1
+# Respondents who identify as Asian Indian will also be labelled as South Asian
+svy_data$isSouthAsian[svy_data$bc == 1] <- 1
+```
+
+Get unique responses of respondents who picked "Other NHPI".
+```{r}
+# unique_other_nhpi_responses <- svy_data %>%
+#   select(response_id, br) %>%
+#   filter(!is.na(br)) %>%  # Optional: Filter out NA values if needed
+#   mutate(br_lower = tolower(br)) %>%  # Convert bh to lowercase
+#   distinct(br_lower, .keep_all = TRUE) %>%  # Get unique bh values, keeping the first corresponding response_id
+#   select(br, response_id)  # Select original columns to keep
+#   write.csv(unique_other_nhpi_responses, file = "unique_other_nhpi_responses.csv", row.names = FALSE)
+```
+
+Recode respondents who selected "Other NHPI" accordingly.
+```{r}
+# Define a function get_revised_nhpi_response to recode the respondent's write-in 
+# race(s) to racial categories already listed in the survey.
+get_revised_nhpi_response <- function(response) {
+  #If the respondent didn't mark "Other NHPI", leave the function now.
+  if (is.na(response)) return('') 
+  
+  # Initialize an empty vector. This represents the respondent's write-in response.
+  ethnicities <- c() 
+  if (grepl("Filipino", response, ignore.case = TRUE)) 
+    {ethnicities <- c(ethnicities, "bd")}
+  if (grepl("Korean", response, ignore.case = TRUE))
+    {ethnicities <- c(ethnicities, "be","av")}
+  if (grepl("Shoshone|Onieda", response, ignore.case = TRUE)) 
+    {ethnicities <- c(ethnicities, "ar")}
+  if (grepl("african", response, ignore.case = TRUE)) 
+    {ethnicities <- c(ethnicities, "as")}
+  if (grepl("Mexican|Hispanic|Panamanian", response, ignore.case = TRUE)) 
+    {ethnicities <- c(ethnicities, "au")}
+  if (grepl("N/A|None|Doesn't apply|Non|not|na", response, ignore.case = TRUE)) 
+    {ethnicities <- c(ethnicities, "not_br")}
+  return(paste(ethnicities, collapse = "; "))
+}
+
+# Extract the race of respondents who marked "Other NHPI", 
+# stored in the column revised_nhpi_response.
+svy_data <- svy_data %>%
+  mutate(revised_nhpi_response = map_chr(br, get_revised_nhpi_response),
+    # If revised_nhpi_response contains "not_br", the respondent actually marked 
+    # "Other NHPI" incorrectly. Therefore, unmark "Other NHPI" in the survey data.  
+    br = ifelse(grepl("not_br", revised_nhpi_response, ignore.case = TRUE), NA, br),
+    # Mark the respondent's correct race(s) based on revised_nhpi_response
+    across(all_of(setdiff(raceColumnList, c("br"))),  
+           ~ ifelse(str_detect(revised_nhpi_response, cur_column()), 1, .))
+  )
+```
+
+Creating columns to represent the race of each respondent. 
+```{r}
+svy_data <- svy_data %>%
+  mutate(
+    race_aian = case_when(is.na(ar) ~ 0, ar == 1 ~ 1),
+    race_black = case_when(is.na(as) ~ 0, as == 1 ~ 1),  
+    race_indigenous = case_when(is.na(at) ~ 0, at == 1 ~ 1),
+    race_latinx = case_when(is.na(au) ~ 0, au == 1 ~ 1),
+    race_asian = case_when(is.na(av) ~ 0, av == 1 ~ 1),
+    race_nhpi = case_when(is.na(aw) ~ 0, aw == 1 ~ 1),
+    race_swana = case_when(is.na(ax) ~ 0, ax == 1 ~ 1),
+    race_white = case_when(is.na(ay) ~ 0, ay == 1 ~ 1),
+    race_dwta = case_when(is.na(az) ~ 0, az == 1 ~ 1),
+    # If respondents pick "Other race", they write in a response.
+    race_other = case_when(is.na(ba) ~ 0, ba != "" ~ 1),
+  )
+```
+
+Create the myRacialComposition column in svy_data, which lists the racial 
+composition of each respondent. The column does not list the respondent's 
+specific ethnic origins.
+```{r}
+svy_data <- svy_data %>%
+  rowwise() %>%
+  mutate(myRacialComposition = {
+    races <- c()  # Initialize an empty vector
+    if (race_aian == 1) races <- c(races, svy_dd$response_1[svy_dd$variable == "ar"])
+    if (race_black == 1) races <- c(races, svy_dd$response_1[svy_dd$variable == "as"])
+    if (race_indigenous == 1) races <- c(races, svy_dd$response_1[svy_dd$variable == "at"])
+    if (race_latinx == 1) races <- c(races, svy_dd$response_1[svy_dd$variable == "au"])
+    if (race_asian == 1) races <- c(races, svy_dd$response_1[svy_dd$variable == "av"])
+    if (race_nhpi == 1) races <- c(races, svy_dd$response_1[svy_dd$variable == "aw"])
+    if (race_swana == 1) races <- c(races, svy_dd$response_1[svy_dd$variable == "ax"])
+    if (race_white == 1) races <- c(races, svy_dd$response_1[svy_dd$variable == "ay"])
+    if (race_dwta == 1) races <- c(races, svy_dd$response_1[svy_dd$variable == "az"])
+    if (race_other == 1) races <- c(races, svy_dd$response_1[svy_dd$variable == "ba"])
+    # Combine the non-empty races into a single string
+    paste(races, collapse = "; ")
+  }) %>%
+  ungroup()
+```
+
+Create the myAsianComposition column in svy_data, which lists the Asian ethnic 
+composition of each Asian/Asian American respondent.
+```{r}
+svy_data <- svy_data %>%
+  rowwise() %>%
+  mutate(myAsianComposition = {
+    ethnicities <- c()  # Initialize an empty vector
+    if (race_asian == 1) {
+      if (!is.na(bb) && bb == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bb"])
+      if (!is.na(bc) && bc == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bc"])
+      if (!is.na(bd) && bd == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bd"])
+      if (!is.na(be) && be == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "be"]);
+      if (!is.na(bf) && bf == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bf"]);
+      if (!is.na(bg) && bg == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bg"]);
+      if (!is.na(bh) && bh == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bh"]);
+      if (!is.na(bi) && bi == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bi"]);
+      if (!is.na(isCambodian) && isCambodian == 1) ethnicities <- c(ethnicities, "Cambodian");
+    }
+    # Combine the non-empty ethnicities into a single string
+    paste(ethnicities, collapse = "; ")
+  }) %>%
+  ungroup()
+```
+
+Create the myNHPIComposition column in svy_data, which lists the NHPI ethnic 
+composition of each NHPI respondent.
+```{r}
+svy_data <- svy_data %>%
+  rowwise() %>%
+  mutate(myNHPIComposition = {
+    ethnicities <- c()  # Initialize an empty vector
+    if (race_nhpi == 1) {
+      if (!is.na(bj) && bj == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bj"])
+      if (!is.na(bk) && bk == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bk"])
+      if (!is.na(bl) && bl == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bl"])
+      if (!is.na(bm) && bm == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bm"]);
+      if (!is.na(bn) && bn == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bn"]);
+      if (!is.na(bo) && bo == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bo"]);
+      if (!is.na(bp) && bp == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bp"]);
+      if (!is.na(bq) && bq == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bq"]);
+      if (!is.na(br) && br == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "br"]);
+      if (!is.na(bs) && bs == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bs"]);
+    }
+    # Combine the non-empty ethnicities into a single string
+    paste(ethnicities, collapse = "; ")
+  }) %>%
+  ungroup()
+```
+
+Export final data frame as relational table.
+```{r}
+# Get relevant columns from svy_data to put into a table in the database
+final_df<-svy_data%>%
+  select(response_id,  race_aian, race_black, race_indigenous, race_latinx, 
+         race_asian, race_nhpi, race_swana, race_white, race_dwta, race_other, myRacialComposition,
+           isSouthAsian, isSoutheastAsian, myAsianComposition, isCambodian, myNHPIComposition)
+
+# Write table with metadata
+table_name <- "race_ethnicity_data"
+schema <- "youth_thriving"
+indicator <- "A person-level table specifying the race and ethnicity of each respondent"
+source <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_race_ethnicity_data.docx
+Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/R/recoding_race.Rmd"
+table_comment <- paste0(indicator, source)
+dbWriteTable(con, c(schema, table_name), final_df,
+             overwrite = FALSE, row.names = FALSE)
+
+# Comment on table and columns
+column_names <- colnames(final_df) # Get column names
+column_comments <- c(
+  "A unique, numeric ID for each respondent",
+  "0/1 flag for whether the respondent is American Indian or Alaskan Native",
+  "0/1 flag for whether the respondent is Black",
+  "0/1 flag for whether the respondent is indigenous from Mexico, Central America, or South America",
+  "0/1 flag for whether the respondent is Latinx/Latino/a/Hispanic",
+  "0/1 flag for whether the respondent is Asian or Asian American",
+  "0/1 flag for whether the respondent is Native Hawaiian and Pacific Islander",
+  "0/1 flag for whether the respondent is South West Asian and North African",
+  "0/1 flag for whether the respondent is white",
+  "0/1 flag for whether the respondent did not wish to answer what their race is",
+  "0/1 flag for whether the respondent is of another race not previously mentioned",
+  "A string that lists the racial composition of each respondent. The column does not list the specific ethnic origins of each respondent",
+  "0/1 flag for whether the respondent is South Asian",
+  "0/1 flag for whether the respondent is Southeast Asian",  
+  "A string that lists the Asian ethnic composition of each Asian/Asian American respondent",
+  "0/1 flag for whether the respondent is Cambodian", 
+  "A string that lists the NHPI ethnic composition of each NHPI respondent"
+)
+
+add_table_comments <- function(con, schema, table_name, indicator, source, column_names, column_comments) {
+  comments <- character()
+  comments <- c(comments, paste0("
+    COMMENT ON TABLE ", schema, ".", table_name, " IS '", table_comment, "';"))
+  for (i in seq_along(column_names)) {
+    comment <- paste0("
+      COMMENT ON COLUMN ", schema, ".", table_name, '."', column_names[i], '" IS \'', column_comments[i], "';
+      ")
+    comments <- c(comments, comment)
+  }
+  sql_commands <- paste(comments, collapse = "")
+  dbSendQuery(con, sql_commands)
+}
+
+
+add_table_comments(con, schema, table_name, indicator, source, column_names, column_comments)
+
+dbDisconnect(con)
+```
+
+Calculate the percentage and sample size of each race category.
+```{r}
+total_responses <- nrow(svy_data)
+race_breakdown <- svy_data %>%
+  summarise(
+    race_aian_pct = 100 * sum(race_aian) / total_responses,
+    race_black_pct = 100 * sum(race_black) / total_responses,
+    race_indigenous_pct = 100 * sum(race_indigenous) / total_responses,
+    race_latinx_pct = 100 * sum(race_latinx) / total_responses,
+    race_asian_pct = 100 * sum(race_asian) / total_responses,
+    race_nhpi_pct = 100 * sum(race_nhpi) / total_responses,
+    race_swana_pct = 100 * sum(race_swana) / total_responses,
+    race_white_pct = 100 * sum(race_white) / total_responses,
+    race_dwta_pct = 100 * sum(race_dwta) / total_responses,
+    race_other_pct = 100 * sum(race_other) / total_responses
+  )
+
+# race_aian_pct 3.339141
+# race_black_pct 19.22184
+# race_indigenous_pct 0.174216
+# race_latinx_pct 54.47154
+# race_asian_pct 13.96632
+# race_nhpi_pct 1.248548
+# race_swana_pct 1.364692
+# race_white_pct 10.80139
+# race_dwta_pct 0.116144
+# race_other_pct 0.29036
+
+race_breakdown <- svy_data %>%
+  summarise(
+    race_aian_pct = sum(race_aian),
+    race_black_pct = sum(race_black),
+    race_indigenous_pct = sum(race_indigenous),
+    race_latinx_pct = sum(race_latinx),
+    race_asian_pct = sum(race_asian),
+    race_nhpi_pct = sum(race_nhpi),
+    race_swana_pct = sum(race_swana),
+    race_white_pct = sum(race_white),
+    race_dwta_pct = sum(race_dwta),
+    race_other_pct = sum(race_other)
+  )
+
+# race_aian_pct 117
+# race_black_pct 671
+# race_indigenous_pct 6
+# race_latinx_pct 1877
+# race_asian_pct 481
+# race_nhpi_pct 43
+# race_swana_pct 51
+# race_white_pct 372
+# race_dwta_pct 4
+# race_other_pct 10
+```
