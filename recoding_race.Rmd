@@ -58,9 +58,9 @@ get_revised_response <- function(response) {
   
   # Initialize an empty vector. This represents the respondent's racial composition. 
   races <- c()  
-  if (grepl("Native American", response, ignore.case = TRUE)) 
+  if (grepl("Native American|indigenous", response, ignore.case = TRUE)) 
     {races <- c(races, "ar")}
-  if (grepl("black|african american|afro", response, ignore.case = TRUE)) 
+  if (grepl("black|african american|afro|Carabian|Caribbean|Nigerian|Jamaican", response, ignore.case = TRUE)) 
     {races <- c(races, "as")}
   if (grepl("latina|latino|hispanic|Chicano|Mexican|Cuban|Puerto Rican|Bolivia|Nicaragua", response, ignore.case = TRUE)) 
     {races <- c(races, "au")}
@@ -76,7 +76,7 @@ get_revised_response <- function(response) {
     {races <- c(races, "ax")}
   if (grepl("Cockasain|white|Russian", response, ignore.case = TRUE)) 
     {races <- c(races, "ay")}
-  if (grepl("null|mixed|multi", response, ignore.case = TRUE)) 
+  if (grepl("null|mixed|multi|Belizean", response, ignore.case = TRUE)) 
     {races <- c(races, "ba")}
   return(paste(races, collapse = "; "))
 }
@@ -95,7 +95,6 @@ svy_data <- svy_data %>%
     across(all_of(setdiff(raceColumnList, "ba")),  
            ~ ifelse(str_detect(revised_response, cur_column()), 1, .))
   )
-
 ```
 
 Get unique responses of respondents who picked "Other Asian".
@@ -226,13 +225,41 @@ svy_data <- svy_data %>%
   )
 ```
 
-Create the myRacialComposition column in svy_data, which lists the racial 
+Creating the nh_race column in svy_data, which is "latinx" if the respondent is 
+Latinx. If the respondent identified as 2 or more races, the column is "nh_twoormore." If the respondent identified as a single race, the column is "nh_[insert chosen race]".
+```{r}
+svy_data <- svy_data %>%
+  rowwise() %>%
+  mutate(
+    race_sum = sum(c(race_aian, race_black, race_indigenous, race_asian, race_nhpi, race_swana, race_white)),
+    nh_race = case_when(
+      race_latinx == 1 ~ 'latinx',             # Prioritize Latinx
+      race_sum > 1 ~ 'nh_twoormor',            # If more than one race is selected
+      race_aian == 1 ~ 'nh_aian',              # If American Indian/Alaska Native
+      race_black == 1 ~ 'nh_black',            # If Black/African American
+      race_indigenous == 1 ~ 'nh_indigenous',  # If Indigenous
+      race_asian == 1 ~ 'nh_asian',            # If Asian
+      race_nhpi == 1 ~ 'nh_nhpi',              # If Native Hawaiian/Pacific Islander
+      race_swana == 1 ~ 'nh_swana',            # If SWANA (Southwest Asian/North African)
+      race_white == 1 ~ 'nh_white',            # If White
+      race_dwta == 1 ~ 'do_not_wish',          # If Don't want to answer
+      race_other == 1 ~ 'nh_other',            # If Other race
+    )
+  ) %>%
+  ungroup() %>%
+  select(-race_sum)  # Remove the helper column if not needed
+
+```
+
+
+
+Create the detailed_race column in svy_data, which lists the racial 
 composition of each respondent. The column does not list the respondent's 
 specific ethnic origins.
 ```{r}
 svy_data <- svy_data %>%
   rowwise() %>%
-  mutate(myRacialComposition = {
+  mutate(detailed_race = {
     races <- c()  # Initialize an empty vector
     if (race_aian == 1) races <- c(races, svy_dd$response_1[svy_dd$variable == "ar"])
     if (race_black == 1) races <- c(races, svy_dd$response_1[svy_dd$variable == "as"])
@@ -250,12 +277,12 @@ svy_data <- svy_data %>%
   ungroup()
 ```
 
-Create the myAsianComposition column in svy_data, which lists the Asian ethnic 
+Create the detailed_asian column in svy_data, which lists the Asian ethnic 
 composition of each Asian/Asian American respondent.
 ```{r}
 svy_data <- svy_data %>%
   rowwise() %>%
-  mutate(myAsianComposition = {
+  mutate(detailed_asian = {
     ethnicities <- c()  # Initialize an empty vector
     if (race_asian == 1) {
       if (!is.na(bb) && bb == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bb"])
@@ -274,12 +301,12 @@ svy_data <- svy_data %>%
   ungroup()
 ```
 
-Create the myNHPIComposition column in svy_data, which lists the NHPI ethnic 
+Create the detailed_nhpi column in svy_data, which lists the NHPI ethnic 
 composition of each NHPI respondent.
 ```{r}
 svy_data <- svy_data %>%
   rowwise() %>%
-  mutate(myNHPIComposition = {
+  mutate(detailed_nhpi = {
     ethnicities <- c()  # Initialize an empty vector
     if (race_nhpi == 1) {
       if (!is.na(bj) && bj == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bj"])
@@ -303,9 +330,9 @@ Export final data frame as relational table.
 ```{r}
 # Get relevant columns from svy_data to put into a table in the database
 final_df<-svy_data%>%
-  select(response_id,  race_aian, race_black, race_indigenous, race_latinx, 
-         race_asian, race_nhpi, race_swana, race_white, race_dwta, race_other, myRacialComposition,
-           isSouthAsian, isSoutheastAsian, myAsianComposition, isCambodian, myNHPIComposition)
+  select(response_id, nh_race,  race_aian, race_black, race_indigenous, race_latinx, 
+         race_asian, race_nhpi, race_swana, race_white, race_dwta, race_other, detailed_race,
+           isSouthAsian, isSoutheastAsian, detailed_asian, isCambodian, detailed_nhpi)
 
 # Write table with metadata
 table_name <- "race_ethnicity_data"
@@ -315,12 +342,13 @@ source <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Sur
 Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/R/recoding_race.Rmd"
 table_comment <- paste0(indicator, source)
 dbWriteTable(con, c(schema, table_name), final_df,
-             overwrite = FALSE, row.names = FALSE)
+             overwrite = TRUE, row.names = FALSE)
 
 # Comment on table and columns
 column_names <- colnames(final_df) # Get column names
 column_comments <- c(
   "A unique, numeric ID for each respondent",
+  "A string for whether the respondent is Latinx, two or more races, or a specific singlular race (e.g. Black, Asian)",
   "0/1 flag for whether the respondent is American Indian or Alaskan Native",
   "0/1 flag for whether the respondent is Black",
   "0/1 flag for whether the respondent is indigenous from Mexico, Central America, or South America",
