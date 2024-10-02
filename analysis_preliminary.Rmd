@@ -63,7 +63,7 @@ for (var_string in unique_indicators) {
 
 
   df_var <- as_survey(svy_data, weights = weights_final) %>%
-    group_by(!!rlang::ensym(var_string)) %>%
+    group_by((var_string)) %>%
     summarise(frequency = n()) %>%
     mutate(percent = round(frequency/sum(frequency)*100, 1))
 
@@ -82,7 +82,7 @@ for (var_string in unique_indicators) {
 
 # Strong Minds
 
-```{r, message = FALSE, results='asis'}
+```{r}
 
 dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc' AND response_domain = 'Strong Minds'")
 
@@ -103,16 +103,21 @@ for (var_string in unique_indicators) {
 
 
   df_var <- as_survey(svy_data, weights = weights_final) %>%
-    group_by(!!rlang::ensym(var_string)) %>%
+    group_by(!!rlang::enquo(var_string)) %>%
     summarise(frequency = n()) %>%
     mutate(percent = round(frequency/sum(frequency)*100, 1))
 
-  df_final <-  merge(x = df_var, y = dict_var, by.x = c(var_string), by.y = c("variable_merge_col")) %>%
-    relocate(paste0(var_string, "_labels")) %>% select(1, 3:8)
+}
 
-  visual <- print(kable(as.data.frame(df_final), "html") %>%
+for (var_string in unique_indicators) {
+test<-svy_data%>%as_survey(weights=c(weights_final))%>%
+    group_by(!!rlang::ensym(var_string))%>%
+    summarise(frequency=n(),rate=survey_mean(vartype="cv",level=.90))%>%mutate(rate=rate*100,rate_cv=rate_cv*100)
+
+ visual <- kable(as.data.frame(test)) %>%
   kable_styling("striped", full_width = F) %>%
-  row_spec(0, background = "#5E17EB", color = "white")) 
+  row_spec(0, background = "#5E17EB", color = "white")
+
 
   print(visual) 
 
