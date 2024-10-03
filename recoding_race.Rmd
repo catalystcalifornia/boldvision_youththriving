@@ -50,13 +50,17 @@ svy_dd <- svy_dd  %>%
 
 Get unique responses of respondents who picked "Other" and provided a write-in.
 ```{r}
-unique_other_race_responses <- svy_data %>%
-  select(response_id, ba) %>%
-  filter(!is.na(ba)) %>%  # Optional: Filter out NA values if needed
-  mutate(ba_lower = tolower(ba)) %>%  # Convert ba to lowercase
-  distinct(ba_lower, .keep_all = TRUE) %>%  # Get unique ba values, keeping the first corresponding response_id
-  select(ba, response_id)  # Select original columns to keep
-#   write.csv(unique_other_race_responses, file = "race recode/unique_other_race_responses.csv", row.names = FALSE)
+# unique_other_race_responses <- svy_data %>%
+#   select(response_id, ba) %>%
+#   filter(!is.na(ba)) %>%  # Optional: Filter out NA values if needed
+#   mutate(ba_lower = tolower(ba)) %>%  # Convert ba to lowercase
+#   distinct(ba_lower, .keep_all = TRUE) %>%  # Get unique ba values, keeping the first corresponding response_id
+#   select(ba, response_id)  # Select original columns to keep
+# 
+# file_name <- paste0("unique_other_race_responses_", Sys.Date(),".csv") %>%
+#   gsub("-", "", .)
+# 
+# write.csv(unique_other_race_responses, file = paste0("race recode/", file_name), row.names = FALSE)
 ```
 
 Recode respondents who selected "Other Race" accordingly.
@@ -116,7 +120,11 @@ Get unique responses of respondents who picked "Other Asian".
 #   mutate(bh_lower = tolower(bh)) %>%  # Convert bh to lowercase
 #   distinct(bh_lower, .keep_all = TRUE) %>%  # Get unique bh values, keeping the first corresponding response_id
 #   select(bh, response_id)  # Select original columns to keep
-#   write.csv(unique_other_asian_responses, file = "unique_other_asian_responses.csv", row.names = FALSE)
+# 
+# file_name <- paste0("unique_other_asian_responses_", Sys.Date(),".csv") %>%
+#   gsub("-", "", .)
+# 
+# write.csv(unique_other_asian_responses, file = paste0("race recode/", file_name), row.names = FALSE)
 ```
 
 Recode respondents who selected "Other Asian" accordingly.
@@ -177,7 +185,11 @@ Get unique responses of respondents who picked "Other NHPI".
 #   mutate(br_lower = tolower(br)) %>%  # Convert bh to lowercase
 #   distinct(br_lower, .keep_all = TRUE) %>%  # Get unique bh values, keeping the first corresponding response_id
 #   select(br, response_id)  # Select original columns to keep
-#   write.csv(unique_other_nhpi_responses, file = "unique_other_nhpi_responses.csv", row.names = FALSE)
+# 
+# file_name <- paste0("unique_other_nhpi_responses_", Sys.Date(),".csv") %>%
+#   gsub("-", "", .)
+# 
+# write.csv(unique_other_nhpi_responses, file = paste0("race recode/", file_name), row.names = FALSE)
 ```
 
 Recode respondents who selected "Other NHPI" accordingly.
