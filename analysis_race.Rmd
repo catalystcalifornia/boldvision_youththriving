@@ -1,0 +1,199 @@
+---
+title: Bold Vision Youth Thriving Survey Frequency Counts by Race Groups 
+output:
+  html_document:
+    code_folding: hide
+    number_sections: no
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+---
+
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+# source("W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\R\\analysis_functions.R")
+library(data.table)
+library(dplyr)
+library(RPostgreSQL)
+library(sf)
+library(tidyr)
+library(readxl)
+library(tidyverse)
+library(janitor)
+library(srvyr)
+library(survey)
+library(highcharter)
+library(knitr)
+library(kableExtra)
+options(scipen=999)
+
+##### 1a Make sure to open script with UTF-8 encoding ######
+
+# connect to postgres
+source("W:\\RDA Team\\R\\credentials_source.R")
+con <- connect_to_db("bold_vision")
+
+#### Step 2: Pull in and prep data ####
+svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
+svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE variable_name = 'Race'")
+
+```
+
+```{r, message = FALSE, results='asis'}
+
+#### Data Table of Question Responses by Race Group #####
+
+knitr::opts_chunk$set(echo = FALSE)
+
+dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc' AND response_domain = 'Strong Minds' AND question_number = 8 AND sub_question = 'I often feel happy'")
+
+unique_indicators <- unique(dd_filter$variable)
+
+ dict <- dd_filter %>% filter(variable == unique_indicators) 
+ 
+ dict <- dict %>%
+    pivot_longer(cols = response_1: response_12,
+                 names_to = "responses",
+                 values_to = paste0(unique_indicators, "_labels"),
+                 values_drop_na = TRUE)
+
+  dict_var <- dict %>%
+    mutate(variable_merge_col = 1:nrow(dict))
+
+  #NOTE: survey weight not working correctly, update and get cvs too, in QA doc for frequency 
+  df_var <- as_survey(svy_data, weights = weights_final) %>%
+    group_by(cm, race) %>%
+    summarise(frequency = n()) %>%
+    mutate(percent = round(frequency/sum(frequency)*100, 1))
+
+  df_almost_final <-  merge(x = df_var, y = dict_var, by.x = c(unique_indicators), by.y = c("variable_merge_col")) %>%
+    relocate(paste0(unique_indicators, "_labels")) 
+  
+  dict_race <- svy_dd %>% filter(variable == 'race')
+  dict_race <- dict_race %>%
+    pivot_longer(cols = response_1: response_12,
+                 names_to = "responses",
+                 values_to = paste0("race", "_labels"),
+                 values_drop_na = TRUE)
+  
+  dict_race <- dict_race %>%
+    mutate(race_merge_col = 1:nrow(dict_race))
+
+  df_final <-  merge(x = df_almost_final, y = dict_race, by.x = c('race'), by.y = c("race_merge_col")) %>%
+    relocate(paste0('race', "_labels")) 
+
+  View(df_final)
+
+  # print(kable(as.data.frame(df_final)) %>%
+  # kable_styling("striped", full_width = F) %>%
+  # row_spec(0, background = "#5E17EB", color = "white"))
+  
+  #ONCE EVERY QUESTION IS RUN BY FUNCTION, MERGE ALL AND PUT ON PGADMIN AS RAW CALCULATIONS 
+
+```
+
+```{r, message = FALSE, results='asis'}
+knitr::opts_chunk$set(echo = FALSE)
+
+#### Data Table of Question Responses WITHIN Race Group #####
+
+dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc' AND response_domain = 'Strong Minds' AND question_number = 8 AND sub_question = 'I often feel happy'")
+
+# svy_data_race <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data WHERE race = '1'")
+
+unique_indicators <- unique(dd_filter$variable)
+
+ dict <- dd_filter %>% filter(variable == unique_indicators) 
+ 
+ dict <- dict %>%
+    pivot_longer(cols = response_1: response_12,
+                 names_to = "responses",
+                 values_to = paste0(unique_indicators, "_labels"),
+                 values_drop_na = TRUE)
+
+  dict_var <- dict %>%
+    mutate(variable_merge_col = 1:nrow(dict))
+  df_var_per_race <- as_survey(svy_data, weights = weights_final) %>%
+    group_by(race, cm) %>%
+    summarise(frequency = n()) %>%
+    mutate(percent = round(frequency/sum(frequency)*100, 1))
+
+  df_almost_final <-  merge(x = df_var_per_race, y = dict_var, by.x = c(unique_indicators), by.y = c("variable_merge_col")) %>%
+  relocate(paste0(unique_indicators, "_labels"))
+  
+  dict_per_race <- svy_dd %>% filter(variable == 'race')
+  dict_per_race <- dict_per_race %>%
+    pivot_longer(cols = response_1: response_12,
+                 names_to = "responses",
+                 values_to = paste0("race", "_labels"),
+                 values_drop_na = TRUE)
+
+   dict_per_race <- dict_per_race %>%
+    mutate(race_merge_col = 1:nrow(dict_per_race))
+  
+  df_final_per_race <-  merge(x = df_almost_final, y = dict_per_race, by.x = c('race'), by.y = c("race_merge_col")) %>%
+     relocate(paste0('race', "_labels"))
+
+   View(df_final_per_race)
+
+  # print(kable(as.data.frame(df_final)) %>%
+  # kable_styling("striped", full_width = F) %>%
+  # row_spec(0, background = "#5E17EB", color = "white"))
+
+     #ONCE EVERY QUESTION IS RUN BY FUNCTION, MERGE ALL AND PUT ON PGADMIN AS RAW CALCULATIONS 
+
+```
+
+```{r, message = FALSE, results='asis'}
+knitr::opts_chunk$set(echo = FALSE)
+
+#### CHI-SQUARED TEST BY RACE #####
+
+df_for_chi <- df_final_per_race %>% 
+              select(race_labels, cm_labels, frequency) %>%
+              pivot_wider(names_from = cm_labels, values_from = frequency) %>%
+              as.data.frame() %>%
+              setDT()
+              # as.numeric(`Never True`, `Often True`, `Don't wish to answer`, `Sometimes True`, Often True`)
+
+df_for_chi[is.na(df_for_chi)] = 0
+
+
+#EXAMPLE A
+# chi_test <- lapply(df_for_chi[,-1], function(x) chisq.test(df_for_chi[,1], x)) 
+# 
+# chi_test
+
+# 
+# chi_test_table <- do.call(rbind, chi_test)[,c(1,3)] 
+# 
+# chi_test_table
+# 
+# chi_test_df <- as.data.frame(chi_test_table) %>% mutate(hypo = ifelse(as.numeric(p.value) <= .05, "REJECT NULL", "ACCEPT NULL"))
+# 
+# chi_test_df
+
+#EXAMPLE B 
+print(chisq.test(df_for_chi))
+
+print(is.data.table(df_for_chi))
+
+#EXAMPLE C
+wtd.chi.sq(svy_data$race, svy_data$cm, weight=svy_data$weights_final, na.rm=TRUE,
+drop.missing.levels=FALSE)
+
+
+#EXAMPLE D
+df_testd <- svydesign(data=svy_data, weights=~weights_final, id=~1)
+
+chis_test <- svychisq(~race + cm, 
+    design  = df_testd, 
+    statistic = "Chisq") 
+
+# do.call(rbind, chis_test[,c(1,3)])
+
+#NEXT, put in df ideally to question by chsq value, df, and pvalue 
+
+```
