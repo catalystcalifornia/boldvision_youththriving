@@ -48,6 +48,17 @@ svy_dd <- svy_dd  %>%
 
 ```
 
+Get unique responses of respondents who picked "Other" and provided a write-in.
+```{r}
+unique_other_race_responses <- svy_data %>%
+  select(response_id, ba) %>%
+  filter(!is.na(ba)) %>%  # Optional: Filter out NA values if needed
+  mutate(ba_lower = tolower(ba)) %>%  # Convert ba to lowercase
+  distinct(ba_lower, .keep_all = TRUE) %>%  # Get unique ba values, keeping the first corresponding response_id
+  select(ba, response_id)  # Select original columns to keep
+#   write.csv(unique_other_race_responses, file = "race recode/unique_other_race_responses.csv", row.names = FALSE)
+```
+
 Recode respondents who selected "Other Race" accordingly.
 ```{r}
 # Define a function get_revised_response to recode the respondent's write-in 
@@ -83,7 +94,7 @@ get_revised_response <- function(response) {
 
 # Extract the race of respondents who marked "Other race", 
 # stored in the column revised_response.
-svy_data <- svy_data %>%
+svy_data_revised <- svy_data %>%
   mutate(
     # Extract the revised response and correct ba if needed
     revised_response = map_chr(ba, get_revised_response),
