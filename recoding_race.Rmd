@@ -63,6 +63,18 @@ Get unique responses of respondents who picked "Other" and provided a write-in.
 # write.csv(unique_other_race_responses, file = paste0("race recode/", file_name), row.names = FALSE)
 ```
 
+Clean ba column
+```{r}
+svy_data_clean <- svy_data %>%
+  mutate(ba_clean = gsub("[Other race. Please write in:] ", "", ba, fixed=TRUE)) %>% # remove common piece of write-in string to simplify regex conditions later on
+  mutate(ba_clean = gsub("and|\\/", ",", ba_clean)) %>% # replace "and" and "/" with "," to get a common delimiter 
+  mutate(ba_clean = gsub("\\s*,\\s*",",", ba_clean)) %>% # clean white space for accurate regex conditions (e.g., ^ or $)
+  rowwise() %>%
+  mutate(ba_clean = list(as.list(strsplit(ba_clean, ",")[[1]]))) %>%
+  ungroup()
+
+```
+
 Recode respondents who selected "Other Race" accordingly.
 ```{r}
 # Define a function get_revised_response to recode the respondent's write-in 
@@ -74,7 +86,8 @@ get_revised_response <- function(response) {
   # Initialize an empty vector. This represents the respondent's racial composition. 
   races <- c()  
   if (grepl("Native American|indigenous", response, ignore.case = TRUE)) 
-    {races <- c(races, "ar")}
+  {races <- c(races, "ar")}
+  
   if (grepl("black|african american|afro|Carabian|Caribbean|Nigerian|Jamaican", response, ignore.case = TRUE)) 
     {races <- c(races, "as")}
   if (grepl("latina|latino|hispanic|Chicano|Mexican|Cuban|Puerto Rican|Bolivia|Nicaragua", response, ignore.case = TRUE)) 
