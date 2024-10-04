@@ -66,12 +66,14 @@ Get unique responses of respondents who picked "Other" and provided a write-in.
 Clean ba column
 ```{r}
 svy_data_clean <- svy_data %>%
-  mutate(ba_clean = gsub("[Other race. Please write in:] ", "", ba, fixed=TRUE)) %>% # remove common piece of write-in string to simplify regex conditions later on
+  mutate(ba_original = ba, # for QA purposes since ba will be overwritten/corrected later in script
+         ba_clean = gsub("[Other race. Please write in:] ", "", ba, fixed=TRUE)) %>% # remove common piece of write-in string to simplify regex conditions later on
+  mutate(ba_clean = tolower(ba_clean)) %>% # make all write-ins lowercase to help find distinct values
   mutate(ba_clean = gsub("and|\\/", ",", ba_clean)) %>% # replace "and" and "/" with "," to get a common delimiter 
   mutate(ba_clean = gsub("\\s*,\\s*",",", ba_clean)) %>% # clean white space for accurate regex conditions (e.g., ^ or $)
   rowwise() %>%
-  mutate(ba_clean = list(as.list(strsplit(ba_clean, ",")[[1]]))) %>%
-  ungroup()
+  mutate(ba_clean = list(as.list(strsplit(ba_clean, ",")[[1]]))) %>% # create a list of race/eth identities from write-in responses
+  ungroup() 
 
 ```
 
@@ -80,49 +82,75 @@ Recode respondents who selected "Other Race" accordingly.
 # Define a function get_revised_response to recode the respondent's write-in 
 # race(s) to racial categories already listed in the survey.
 get_revised_response <- function(response) {
+  response <- unlist(response)
   #If the respondent didn't mark "Other race", leave the function now.
-  if (is.na(response)) return('') 
+  if (anyNA(response)) return('') 
   
   # Initialize an empty vector. This represents the respondent's racial composition. 
-  races <- c()  
-  if (grepl("Native American|indigenous", response, ignore.case = TRUE)) 
-  {races <- c(races, "ar")}
+  races <- list()  
+  if (grepl("^Native American$|^might be mixed with indigenous.$", response, ignore.case = TRUE)) 
+  {races <- append(races, "ar")}
+
+  if (grepl("^Mexican Indian$", response, ignore.case = TRUE))
+  {races <- append(races, "at")}
+
+  if (grepl("^black$|^i know i'm black$|^african american$|^afro$|^Carabian$|^Caribbean$|^Nigerian$|^Jamaican$", response, ignore.case = TRUE))
+  {races <- append(races, "as")}
+
+  if (grepl("^latina$|^latino$|^hispanic$|^hispanic salvadoran$|^Chicano$|^Mexican$|^Mexican American$|^Cuban$|^Puerto Rican$|^Purto Rican$|^Puertorrican$|^Bolivia$|^Nicaragua$", response, ignore.case = TRUE))
+  {races <- append(races, "au")}
+
+  if (grepl("^asain$", response, ignore.case = TRUE))
+  {races <- append(races, "av")}
+    
+  if(grepl("^filipino$", response, ignore.case=TRUE)) 
+    {races <- append(races, list("av", "bd"))}
   
-  if (grepl("black|african american|afro|Carabian|Caribbean|Nigerian|Jamaican", response, ignore.case = TRUE)) 
-    {races <- c(races, "as")}
-  if (grepl("latina|latino|hispanic|Chicano|Mexican|Cuban|Puerto Rican|Bolivia|Nicaragua", response, ignore.case = TRUE)) 
-    {races <- c(races, "au")}
-  if (grepl("filipino|asain|Indian|Japanese|South Asian|Sri Lankan", response, ignore.case = TRUE)) 
-  {
-    races <- c(races, "av")
-    if(grepl("filipino", response, ignore.case=TRUE)) {races <- c(races, "bd")}
-    if(grepl("Indian", response, ignore.case=TRUE)) {races <- c(races, "bc")}
-    if(grepl("South Asian|Sri Lankan", response, ignore.case=TRUE)) {races <- c(races, "isSouthAsian")}
-    if(grepl("Japanese", response, ignore.case=TRUE)) {races <- c(races, "bg")}
-  }
-  if (grepl("armenian", response, ignore.case = TRUE)) 
-    {races <- c(races, "ax")}
-  if (grepl("Cockasain|white|Russian", response, ignore.case = TRUE)) 
-    {races <- c(races, "ay")}
-  if (grepl("null|mixed|multi|Belizean", response, ignore.case = TRUE)) 
-    {races <- c(races, "ba")}
-  return(paste(races, collapse = "; "))
+  if(grepl("^Indian$", response, ignore.case=TRUE)) 
+    {races <- append(races, list("av", "bc"))}
+  
+  if(grepl("^South Asian$|^Sri Lankan$", response, ignore.case=TRUE)) 
+    {races <- append(races, list("av", "isSouthAsian"))}
+  
+  if(grepl("^Japanese$", response, ignore.case=TRUE)) 
+    {races <- append(races, list("av", "bg"))}
+
+  if (grepl("^armenian$", response, ignore.case = TRUE))
+  {races <- append(races, "ax")}
+
+  if (grepl("^Cockasain$|^white$|^Russian$", response, ignore.case = TRUE))
+  {races <- append(races, "ay")}
+
+  if (grepl("^mixed white$", response, ignore.case = TRUE))
+  {races <- append(races, list("ay", "ba"))}
+
+  if (grepl("^null$|^mixed$|^multiracial$|^Belizean$|^two or more$|^i really don't know$", response, ignore.case = TRUE))
+  {races <- append(races, "ba")}
+
+  if (grepl("^belizean black$", response, ignore.case = TRUE))
+  {races <- append(races, list("ba", "as"))}
+  
+  return(races)
 }
 
 # Extract the race of respondents who marked "Other race", 
 # stored in the column revised_response.
-svy_data_revised <- svy_data %>%
+svy_data_revised <- svy_data_clean %>%
+  rowwise() %>%
   mutate(
     # Extract the revised response and correct ba if needed
-    revised_response = map_chr(ba, get_revised_response),
+    revised_response = list(unlist(map(ba_clean, get_revised_response_hk))),
     # If revised_response doesn't contain ba, the respondent actually marked 
     # "Other race" incorrectly. Therefore, unmark "Other race" in the survey data.      
-    ba = ifelse(grepl("ba", revised_response, ignore.case = TRUE), ba, NA),
-    
+    ba = ifelse("ba" %in% revised_response, ba, NA)
+    ) %>%
+  ungroup() %>%
+  mutate(  
     # Mark the respondent's correct race(s) based on revised_response
     across(all_of(setdiff(raceColumnList, "ba")),  
-           ~ ifelse(str_detect(revised_response, cur_column()), 1, .))
-  )
+           ~ ifelse(grepl(cur_column(), revised_response), 1, .))
+  ) 
+
 ```
 
 Get unique responses of respondents who picked "Other Asian".
