@@ -80,6 +80,7 @@ spas <- st_read(rda_con, query = "select * from geographies_la.la_county_service
 # check projection and transform
 st_crs(spas)
 spas<-st_transform(spas,3310)
+spas<-spas%>%select(OBJECTID,SPA,SPA_NAME,LABEL)
 
 # get tract boundaries
 ca_tracts <- tracts(state = "CA", cb = TRUE, year = 2022)
@@ -90,7 +91,7 @@ st_crs(ca_tracts)
 ca_tracts<-st_transform(ca_tracts,3310)
 
 # filter to lac tracts
-lac_tracts<-ca_tracts%>%filter(COUNTYFP=='037')
+lac_tracts<-ca_tracts%>%filter(COUNTYFP=='037')%>%select(GEOID)
 
 # check for match to age sex df
 nrow(lac_tracts) #2495
@@ -104,6 +105,8 @@ tract_spa_xwalk <- st_join(spas, st_centroid(lac_tracts), join = st_contains)
 
 # check result
 nrow(tract_spa_xwalk) # 2494, 1 missing
+missing<-lac_tracts%>%filter(!GEOID %in% tract_spa_xwalk$GEOID)
+
 tract_spa_xwalk_check<-st_transform(tract_spa_xwalk,4326)
 # create a color palette for the map
 pal <- colorFactor(
