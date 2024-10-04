@@ -1,40 +1,40 @@
-"ba","response_id"
-"[Other race. Please write in:] I really don't know, I know I'm black and might be mixed with indigenous.",136365608
-"[Other race. Please write in:] null",138111891
-"[Other race. Please write in:] Indian",138112557
-"[Other race. Please write in:] Black, white and filipino",138114220
-"[Other race. Please write in:] Chicano/Mexican American",138114414
-"[Other race. Please write in:] Nigerian",138114911
-"[Other race. Please write in:] belizean black",138115048
-"[Other race. Please write in:] Filipino",138116955
-"[Other race. Please write in:] Two or more",138117743
-"[Other race. Please write in:] Mixed White",138118754
-"[Other race. Please write in:] Purto Rican",138116660
-"[Other race. Please write in:] Afro/latina",138118867
-"[Other race. Please write in:] Puerto Rican",138119027
-"[Other race. Please write in:] Caribbean",138119668
-"[Other race. Please write in:] Armenian",138119716
-"[Other race. Please write in:] Mexican American",138121954
-"[Other race. Please write in:] Cuban",138122902
-"[Other race. Please write in:] mixed",138122506
-"[Other race. Please write in:] Mexican",138123013
-"[Other race. Please write in:] African American ,Mexican Indian",138123881
-"[Other race. Please write in:] Belizean",138134508
-"[Other race. Please write in:] Black and hispanic",138124367
-"[Other race. Please write in:] Jamaican/ Native American",138124748
-"[Other race. Please write in:] Bolivia",138124815
-"[Other race. Please write in:] Nicaragua",138128663
-"[Other race. Please write in:] Latino / Black",138130648
-"[Other race. Please write in:] Japanese",138131812
-"[Other race. Please write in:] South Asian",138132095
-"[Other race. Please write in:] Sri Lankan",138134262
-"[Other race. Please write in:] Puertorrican",138135805
-"[Other race. Please write in:] african american",138135891
-"[Other race. Please write in:] Carabian",138135968
-"[Other race. Please write in:] Mexican/Russian",138136549
-"[Other race. Please write in:] Cockasain/ asain",138136578
-"[Other race. Please write in:] Mixed race",138137355
-"[Other race. Please write in:] Hispanic Salvadoran",138139350
-"[Other race. Please write in:] Puerto Rican/Jamaican",138139773
-"[Other race. Please write in:] Mixed/Multiracial",138139830
-"[Other race. Please write in:] Hispanic",138141560
+ba,response_id,QA hk recode,QA notes
+"[Other race. Please write in:] I really don't know, I know I'm black and might be mixed with indigenous.",136365608,"as, ar, ba","we don't account for ""don't know"" but probably should"
+[Other race. Please write in:] null,138111891,ba,assuming null is imputed by Qualtrics if write-in was left blank 
+[Other race. Please write in:] Indian,138112557,av,
+"[Other race. Please write in:] Black, white and filipino",138114220,"as, bd, ay",
+[Other race. Please write in:] Chicano/Mexican American,138114414,au,
+[Other race. Please write in:] Nigerian,138114911,as,
+[Other race. Please write in:] belizean black,138115048,"ba, as",
+[Other race. Please write in:] Filipino,138116955,bd,how did these folks answer on Q4 and Q5?
+[Other race. Please write in:] Two or more,138117743,ba,missing
+[Other race. Please write in:] Mixed White,138118754,"ba, ay",
+[Other race. Please write in:] Purto Rican,138116660,au,missing
+[Other race. Please write in:] Afro/latina,138118867,"as, au",
+[Other race. Please write in:] Puerto Rican,138119027,au,
+[Other race. Please write in:] Caribbean,138119668,as,confirm with elycian/alicia - caribbean is other? Black? Latine?
+[Other race. Please write in:] Armenian,138119716,ax,
+[Other race. Please write in:] Mexican American,138121954,au,
+[Other race. Please write in:] Cuban,138122902,au,
+[Other race. Please write in:] mixed,138122506,ba,
+[Other race. Please write in:] Mexican,138123013,au,
+"[Other race. Please write in:] African American ,Mexican Indian",138123881,"as, at",
+[Other race. Please write in:] Belizean,138134508,ba,
+[Other race. Please write in:] Black and hispanic,138124367,"as, au",
+[Other race. Please write in:] Jamaican/ Native American,138124748,"as, ar","confirm if jamaican is black, other"
+[Other race. Please write in:] Bolivia,138124815,au,
+[Other race. Please write in:] Nicaragua,138128663,au,
+[Other race. Please write in:] Latino / Black,138130648,"au, as",
+[Other race. Please write in:] Japanese,138131812,"av, bg",
+[Other race. Please write in:] South Asian,138132095,"av, isSouthAsian",
+[Other race. Please write in:] Sri Lankan,138134262,"av, isSouthAsian",
+[Other race. Please write in:] Puertorrican,138135805,au,missing
+[Other race. Please write in:] african american,138135891,as,
+[Other race. Please write in:] Carabian,138135968,as,
+[Other race. Please write in:] Mexican/Russian,138136549,"au, ay",
+[Other race. Please write in:] Cockasain/ asain,138136578,"ay, av",
+[Other race. Please write in:] Mixed race,138137355,ba,
+[Other race. Please write in:] Hispanic Salvadoran,138139350,au,
+[Other race. Please write in:] Puerto Rican/Jamaican,138139773,"au, as",
+[Other race. Please write in:] Mixed/Multiracial,138139830,ba,
+[Other race. Please write in:] Hispanic,138141560,au,
