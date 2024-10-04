@@ -114,30 +114,28 @@ missing<-lac_tracts%>%filter(!GEOID %in% tract_spa_xwalk$GEOID)
 tract_spa_xwalk <- as.data.frame(tract_spa_xwalk%>%st_drop_geometry()) %>% select(GEOID, SPA, SPA_NAME,LABEL) %>% 
   rename(geoid = GEOID, spa = SPA, spa_name = SPA_NAME,label=LABEL)
 
-# check results through a map
-xwalk_check<-lac_tracts%>%left_join(tract_spa_xwalk,by=c("GEOID"='geoid'))
-xwalk_check<-st_transform(xwalk_check,4326)
-spa_check<-st_transform(spas,4326)
-
-# create a color palette for the map
-pal <- colorFactor(
-  palette = 'Dark2',
-  domain = xwalk_check$spa_name
-)
-
-# map the data
-leaflet(xwalk_check) %>%
-  addTiles() %>%
-  addPolygons(
-    stroke = FALSE, fillOpacity = 0.5,
-    smoothFactor = 0.5,  fillColor = ~ pal(spa_name),
-  )%>%
-  addPolygons(data = spa_check,
-              weight = 1)%>%
-  addLegend(
-    pal = pal, values = ~spa_name, opacity = 0.9,
-    position = "bottomleft"
-  )
+# # check results through a map
+# xwalk_check<-lac_tracts%>%left_join(tract_spa_xwalk,by=c("GEOID"='geoid'))
+# xwalk_check<-st_transform(xwalk_check,4326)
+# spa_check<-st_transform(spas,4326)
+# # create a color palette for the map
+# pal <- colorFactor(
+#   palette = 'Dark2',
+#   domain = xwalk_check$spa_name
+# )
+# # map the data
+# leaflet(xwalk_check) %>%
+#   addTiles() %>%
+#   addPolygons(
+#     stroke = FALSE, fillOpacity = 0.5,
+#     smoothFactor = 0.5,  fillColor = ~ pal(spa_name),
+#   )%>%
+#   addPolygons(data = spa_check,
+#               weight = 1)%>%
+#   addLegend(
+#     pal = pal, values = ~spa_name, opacity = 0.9,
+#     position = "bottomleft"
+#   )
   
 # add back one tract that fails in spatial join
 tract_spa_xwalk[nrow(tract_spa_xwalk) + 1, ] = c("06037599100", "8", "South Bay","SPA 8")
