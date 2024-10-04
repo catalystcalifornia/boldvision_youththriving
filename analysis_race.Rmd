@@ -27,6 +27,7 @@ library(survey)
 library(highcharter)
 library(knitr)
 library(kableExtra)
+library(weights)
 options(scipen=999)
 
 ##### 1a Make sure to open script with UTF-8 encoding ######
@@ -151,15 +152,15 @@ knitr::opts_chunk$set(echo = FALSE)
 
 #### CHI-SQUARED TEST BY RACE #####
 
-df_for_chi <- df_final_per_race %>% 
-              select(race_labels, cm_labels, frequency) %>%
-              pivot_wider(names_from = cm_labels, values_from = frequency) %>%
-              as.data.frame() %>%
-              setDT()
-              # as.numeric(`Never True`, `Often True`, `Don't wish to answer`, `Sometimes True`, Often True`)
-
-df_for_chi[is.na(df_for_chi)] = 0
-
+# df_for_chi <- df_final_per_race %>% 
+#               select(race_labels, cm_labels, frequency) %>%
+#               pivot_wider(names_from = cm_labels, values_from = frequency) %>%
+#               as.data.frame() %>%
+#               setDT()
+#               # as.numeric(`Never True`, `Often True`, `Don't wish to answer`, `Sometimes True`, Often True`)
+# 
+# df_for_chi[is.na(df_for_chi)] = 0
+# 
 
 #EXAMPLE A
 # chi_test <- lapply(df_for_chi[,-1], function(x) chisq.test(df_for_chi[,1], x)) 
@@ -175,22 +176,32 @@ df_for_chi[is.na(df_for_chi)] = 0
 # 
 # chi_test_df
 
-#EXAMPLE B 
-print(chisq.test(df_for_chi))
-
-print(is.data.table(df_for_chi))
+# #EXAMPLE B 
+# print(chisq.test(df_for_chi))
+# 
+# print(is.data.table(df_for_chi))
 
 #EXAMPLE C
-wtd.chi.sq(svy_data$race, svy_data$cm, weight=svy_data$weights_final, na.rm=TRUE,
-drop.missing.levels=FALSE)
+df_chi_test <- wtd.chi.sq(svy_data$race, svy_data$cm, weight=svy_data$weights_final, na.rm=TRUE,
+drop.missing.levels=FALSE) %>% as.data.frame() %>% t()
+#NEED TO CLEAN UP AND NAME THIS data frame columns and row and then move on to making funciton.   
 
 
-#EXAMPLE D
-df_testd <- svydesign(data=svy_data, weights=~weights_final, id=~1)
+  setNames(cbind(rownames(df_chi_test), df_chi_test, row.names = "cm"), 
+         c("variable", "chisq_value", "degrees_of_freedom", "p_value"))
 
-chis_test <- svychisq(~race + cm, 
-    design  = df_testd, 
-    statistic = "Chisq") 
+
+rownames(df_chi_test) <- NULL
+colnames(df_chi_test) <- c("variable", "chisq_value", "degrees_of_freedom", "p_value")
+
+#create an empty table and add the rows to it to eventually have one table and then merge that table with data dictionary to know what question/questionnumber/subquestion it is associated with. 
+# 
+# #EXAMPLE D
+# df_testd <- svydesign(data=svy_data, weights=~weights_final, id=~1)
+# 
+# chis_test <- svychisq(~race + cm, 
+#     design  = df_testd, 
+#     statistic = "Chisq") 
 
 # do.call(rbind, chis_test[,c(1,3)])
 
