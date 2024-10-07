@@ -345,7 +345,7 @@ svy_data_other_nhpi_recode <- svy_data_clean_br %>%
 
 Creating columns to represent the race of each respondent. 
 ```{r}
-svy_data <- svy_data %>%
+svy_data_final <- svy_data_other_nhpi_recode %>%
   mutate(
     race_aian = case_when(is.na(ar) ~ 0, ar == 1 ~ 1),
     race_black = case_when(is.na(as) ~ 0, as == 1 ~ 1),  
@@ -362,32 +362,31 @@ svy_data <- svy_data %>%
 ```
 
 Creating the nh_race column in svy_data, which is "latinx" if the respondent is 
-Latinx. If the respondent identified as 2 or more races, the column is "nh_twoormore." If the respondent identified as a single race, the column is "nh_[insert chosen race]".
+Latinx. If the respondent identified as 2 or more races, the column is "nh_twoormore." 
+If the respondent identified as a single race, the column is "nh_[insert chosen race]".
 ```{r}
-svy_data <- svy_data %>%
+svy_data_final <- svy_data_final %>%
   rowwise() %>%
   mutate(
     race_sum = sum(c(race_aian, race_black, race_indigenous, race_asian, race_nhpi, race_swana, race_white)),
     nh_race = case_when(
       race_latinx == 1 ~ 'latinx',             # Prioritize Latinx
       race_sum > 1 ~ 'nh_twoormor',            # If more than one race is selected
-      race_aian == 1 ~ 'nh_aian',              # If American Indian/Alaska Native
-      race_black == 1 ~ 'nh_black',            # If Black/African American
-      race_indigenous == 1 ~ 'nh_indigenous',  # If Indigenous
-      race_asian == 1 ~ 'nh_asian',            # If Asian
-      race_nhpi == 1 ~ 'nh_nhpi',              # If Native Hawaiian/Pacific Islander
-      race_swana == 1 ~ 'nh_swana',            # If SWANA (Southwest Asian/North African)
-      race_white == 1 ~ 'nh_white',            # If White
-      race_dwta == 1 ~ 'do_not_wish',          # If Don't want to answer
-      race_other == 1 ~ 'nh_other',            # If Other race
+      (race_aian == 1 & race_sum == 1) ~ 'nh_aian',              # If American Indian/Alaska Native
+      (race_black == 1 & race_sum == 1) ~ 'nh_black',            # If Black/African American
+      (race_indigenous == 1 & race_sum == 1) ~ 'nh_indigenous',  # If Indigenous
+      (race_asian == 1 & race_sum == 1) ~ 'nh_asian',            # If Asian
+      (race_nhpi == 1 & race_sum == 1) ~ 'nh_nhpi',              # If Native Hawaiian/Pacific Islander
+      (race_swana == 1 & race_sum == 1) ~ 'nh_swana',            # If SWANA (Southwest Asian/North African)
+      (race_white == 1 & race_sum == 1) ~ 'nh_white',            # If White
+      (race_dwta == 1 & race_sum == 1) ~ 'do_not_wish',          # If Don't want to answer
+      (race_other == 1 & race_sum == 1) ~ 'nh_other',            # If Other race
     )
   ) %>%
   ungroup() %>%
   select(-race_sum)  # Remove the helper column if not needed
 
 ```
-
-
 
 Create the detailed_race column in svy_data, which lists the racial 
 composition of each respondent. The column does not list the respondent's 
