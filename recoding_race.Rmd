@@ -392,7 +392,7 @@ Create the detailed_race column in svy_data, which lists the racial
 composition of each respondent. The column does not list the respondent's 
 specific ethnic origins.
 ```{r}
-svy_data <- svy_data %>%
+svy_data_final <- svy_data_final %>%
   rowwise() %>%
   mutate(detailed_race = {
     races <- c()  # Initialize an empty vector
@@ -415,7 +415,7 @@ svy_data <- svy_data %>%
 Create the detailed_asian column in svy_data, which lists the Asian ethnic 
 composition of each Asian/Asian American respondent.
 ```{r}
-svy_data <- svy_data %>%
+svy_data_final <- svy_data_final %>%
   rowwise() %>%
   mutate(detailed_asian = {
     ethnicities <- c()  # Initialize an empty vector
@@ -439,7 +439,7 @@ svy_data <- svy_data %>%
 Create the detailed_nhpi column in svy_data, which lists the NHPI ethnic 
 composition of each NHPI respondent.
 ```{r}
-svy_data <- svy_data %>%
+svy_data_final <- svy_data_final %>%
   rowwise() %>%
   mutate(detailed_nhpi = {
     ethnicities <- c()  # Initialize an empty vector
@@ -464,7 +464,7 @@ svy_data <- svy_data %>%
 Export final data frame as relational table.
 ```{r}
 # Get relevant columns from svy_data to put into a table in the database
-final_df<-svy_data%>%
+final_df<-svy_data_final%>%
   select(response_id, nh_race,  race_aian, race_black, race_indigenous, race_latinx, 
          race_asian, race_nhpi, race_swana, race_white, race_dwta, race_other, detailed_race,
            isSouthAsian, isSoutheastAsian, detailed_asian, isCambodian, detailed_nhpi)
@@ -483,7 +483,7 @@ dbWriteTable(con, c(schema, table_name), final_df,
 column_names <- colnames(final_df) # Get column names
 column_comments <- c(
   "A unique, numeric ID for each respondent",
-  "A string for whether the respondent is Latinx, two or more races, or a specific singlular race (e.g. Black, Asian)",
+  "A string for whether the respondent is latinx, nh_twoormor, nh_aian, nh_asian, nh_nhpi, nh_swana, nh_white, do_not_wish, nh_other",
   "0/1 flag for whether the respondent is American Indian or Alaskan Native",
   "0/1 flag for whether the respondent is Black",
   "0/1 flag for whether the respondent is indigenous from Mexico, Central America, or South America",
@@ -524,8 +524,8 @@ dbDisconnect(con)
 
 Calculate the percentage and sample size of each race category.
 ```{r}
-total_responses <- nrow(svy_data)
-race_breakdown <- svy_data %>%
+total_responses <- nrow(svy_data_final)
+race_breakdown <- svy_data_final %>%
   summarise(
     race_aian_pct = 100 * sum(race_aian) / total_responses,
     race_black_pct = 100 * sum(race_black) / total_responses,
