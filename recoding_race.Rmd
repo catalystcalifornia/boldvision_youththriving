@@ -234,12 +234,18 @@ get_revised_asian_response <- function(response) {
 svy_data_other_asian_recode <- svy_data_clean_bh %>%
   mutate(
     revised_asian_response = map_chr(bh_clean, get_revised_asian_response),
+    
+    # Mark the respondent's correct race(s) based on revised_asian_response
+    across(all_of(setdiff(raceColumnList, c("bh"))),  
+           ~ ifelse(str_detect(revised_asian_response, cur_column()), 1, .)),
+    
     # If revised_asian_response contains "not_bh", the respondent actually marked 
     # "Other Asian" incorrectly. Therefore, unmark "Other race" in the survey data.  
     bh = ifelse(grepl("not_bh", revised_asian_response, ignore.case = TRUE), NA, bh),
-    # Mark the respondent's correct race(s) based on revised_asian_response
-    across(all_of(setdiff(raceColumnList, c("bh"))),  
-           ~ ifelse(str_detect(revised_asian_response, cur_column()), 1, .))
+    
+    # If revised_asian_response contains "not_av", the respondent actually marked 
+    # "Asian" incorrectly. Therefore, unmark "Asian" (av) in the survey data.  
+    av = ifelse(grepl("not_av", revised_asian_response, ignore.case = TRUE), NA, av)
   )
 
 
