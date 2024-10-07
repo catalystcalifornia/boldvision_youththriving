@@ -139,7 +139,7 @@ svy_data_revised <- svy_data_clean %>%
   rowwise() %>%
   mutate(
     # Extract the revised response and correct ba if needed
-    revised_response = list(unlist(map(ba_clean, get_revised_response_hk))),
+    revised_response = list(unlist(map(ba_clean, get_revised_response))),
     # If revised_response doesn't contain ba, the respondent actually marked 
     # "Other race" incorrectly. Therefore, unmark "Other race" in the survey data.      
     ba = ifelse("ba" %in% revised_response, ba, NA)
