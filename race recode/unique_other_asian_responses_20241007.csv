@@ -1,20 +1,20 @@
-"bh","response_id"
-"[Other. Please write in:] Cambodian/ Thai",136141961
-"[Other. Please write in:] Taiwanese",136487862
-"[Other. Please write in:] Burmese",136634399
-"[Other. Please write in:] Bangladeshi",138114605
-"[Other. Please write in:] Khmer",138115567
-"[Other. Please write in:] Indonesian",138116705
-"[Other. Please write in:] Bengali",138116917
-"[Other. Please write in:] cambodian",138118851
-"[Other. Please write in:] Thai",138116843
-"[Other. Please write in:] Bangladesh",138119968
-"[Other. Please write in:] Pakistani",138122195
-"[Other. Please write in:] Southwest Asian",138122621
-"[Other. Please write in:] Tartarian/Mongolian",138125492
-"[Other. Please write in:] Central Asian / Uzbek",138133544
-"[Other. Please write in:] Kazakh",138135364
-"[Other. Please write in:] Laos",138136441
-"[Other. Please write in:] Cambodian Chinese",138137573
-"[Other. Please write in:] Filipino",138139600
-"[Other. Please write in:] Chinese Indonesian",138142122
+"bh_clean","response_id"
+"Bangladesh",138119968
+"Bangladeshi",138114605
+"Bengali",138116917
+"Burmese",136634399
+"Cambodian Chinese",138137573
+"Cambodian/ Thai",136141961
+"Central Asian / Uzbek",138133544
+"Chinese Indonesian",138142122
+"Filipino",138139600
+"Indonesian",138116705
+"Kazakh",138135364
+"Khmer",138115567
+"Laos",138136441
+"Pakistani",138122195
+"Southwest Asian",138122621
+"Taiwanese",136487862
+"Tartarian/Mongolian",138125492
+"Thai",138116843
+"cambodian",138118851

@@ -162,21 +162,26 @@ other_asian_responses <- svy_data_revised %>%
 # been directed to the Q4. used the check below to confirm that although Asian (av)  
 # was not selected in Q3, respondents have write-ins for Q4 (bh)
 qa_check <- other_asian_responses %>%
-  select(response_id, av, bh, bb:bg, bi, everything())
+  select(response_id, av, aw, bh, bb:bg, bi, everything())
 
 # clean bh column to remove folks where av = NA
 svy_data_clean_bh <- svy_data_revised %>%
-  mutate(bh = ifelse(av==1, bh, NA))
+  mutate(bh_original = bh, # for QA purposes since ba will be overwritten/corrected later in script
+         bh_clean = ifelse(av==1, bh, NA)) %>%
+  # remove common piece of write-in string to simplify regex conditions later on
+  mutate(bh_clean = gsub("[Other. Please write in:] ", "", 
+                                   svy_data_clean_bh$bh_clean, fixed=TRUE))
 ```
 
 Get unique responses of respondents who picked "Other Asian".
 ```{r}
 unique_other_asian_responses <- svy_data_clean_bh %>%
-  filter(!is.na(bh))  %>% # Optional: Filter out NA values if needed
-  select(response_id, bh) %>%
-  mutate(bh_lower = tolower(bh)) %>%  # Convert bh to lowercase
+  filter(!is.na(bh_clean))  %>% # Optional: Filter out NA values if needed
+  select(response_id, bh_clean) %>%
+  mutate(bh_lower = tolower(bh_clean)) %>%  # Convert bh to lowercase
   distinct(bh_lower, .keep_all = TRUE) %>%  # Get unique bh values, keeping the first corresponding response_id
-  select(bh, response_id)  # Select original columns to keep
+  select(bh_clean, response_id) %>%
+  arrange( bh_clean)
 
 # file_name <- paste0("unique_other_asian_responses_", Sys.Date(),".csv") %>%
 #   gsub("-", "", .)
@@ -193,48 +198,64 @@ get_revised_asian_response <- function(response) {
   if (is.na(response)) return('') 
   
   # Initialize an empty vector. This represents the respondent's write-in response.
-  ethnicities <- c()  
-  if (grepl("Chinese", response, ignore.case = TRUE))
-  {ethnicities <- c(ethnicities, "bb")}
+  ethnicities <- list()  
   
-  if (grepl("Filipino", response, ignore.case = TRUE))
-  {ethnicities <- c(ethnicities, "bd", "isSoutheastAsian")}
+  if (grepl("^Bangladesh$|^Bangladeshi$|^Bengali$|^Pakistani$", response, ignore.case = TRUE))
+  {ethnicities <- append(ethnicities, c("isSouthAsian"))}
   
-  if (grepl("Southwest", response, ignore.case = TRUE))
-  {ethnicities <- c(ethnicities, "ax")}
+  if (grepl("^Burmese$|^Indonesian$|^Laos$|^Thai$", response, ignore.case = TRUE))
+  {ethnicities <- append(ethnicities, c("isSoutheastAsian"))}
   
-  if (grepl("Thai|Burmese|Indonesian|Laos", response, ignore.case = TRUE))
-  {ethnicities <- c(ethnicities, "isSoutheastAsian")}
+  if (grepl("^Cambodian$|^Khmer$", response, ignore.case = TRUE)) 
+  {ethnicities <- append(ethnicities, c("isCambodian", "isSoutheastAsian"))}
   
-  if (grepl("Pakistani|Bangladesh|Bengali|Sri Lankan", response, ignore.case = TRUE))
-  {ethnicities <- c(ethnicities, "isSouthAsian")}
+  if (grepl("^Cambodian Chinese$", response, ignore.case = TRUE))
+  {ethnicities <- append(ethnicities, c("bb", "isCambodian", "isSoutheastAsian"))}
   
-  if (grepl("Cambodian|Khmer", response, ignore.case = TRUE)) 
-  {ethnicities <- c(ethnicities, "isCambodian")}
+  if (grepl("^Cambodian/ Thai$", response, ignore.case = TRUE))
+  {ethnicities <- append(ethnicities, c("isCambodian", "isSoutheastAsian"))}
   
-  if (grepl("Hawaiian", response, ignore.case = TRUE)) 
-  {ethnicities <- c(ethnicities, "aw")}
+  if (grepl("^Chinese Indonesian$", response, ignore.case = TRUE))
+  {ethnicities <- append(ethnicities, c("bb", "isSoutheastAsian"))}
+  
+  if (grepl("^Filipino$", response, ignore.case = TRUE))
+  {ethnicities <- append(ethnicities, c("bd", "isSoutheastAsian"))}
+  
+  if (grepl("^Southwest Asian$", response, ignore.case = TRUE))
+  {ethnicities <- append(ethnicities, c("ax"))}
   
   return(paste(ethnicities, collapse = "; "))
+  
 }
 
 # Extract the race of respondents who marked "Other Asian", 
 # stored in the column revised_asian_response.
-svy_data <- svy_data %>%
+svy_data_other_asian_recode <- svy_data_clean_bh %>%
   mutate(
-    revised_asian_response = map_chr(bh, get_revised_asian_response),
+    revised_asian_response = map_chr(bh_clean, get_revised_asian_response),
     # If revised_asian_response contains "not_bh", the respondent actually marked 
     # "Other Asian" incorrectly. Therefore, unmark "Other race" in the survey data.  
-    bh = ifelse(grepl("not_bh|isCambodian", revised_asian_response, ignore.case = TRUE), NA, bh),
+    bh_clean = ifelse(grepl("not_bh", revised_asian_response, ignore.case = TRUE), NA, bh_clean),
     # Mark the respondent's correct race(s) based on revised_asian_response
     across(all_of(setdiff(raceColumnList, c("bh"))),  
            ~ ifelse(str_detect(revised_asian_response, cur_column()), 1, .))
   )
 
-# Respondents who identify as Vietnamese, Filipino, or Cambodian will also be labelled as Southeast Asian
-svy_data$isSoutheastAsian[svy_data$bf == 1 | svy_data$bd == 1 | svy_data$isCambodian == 1] <- 1
-# Respondents who identify as Asian Indian will also be labelled as South Asian
-svy_data$isSouthAsian[svy_data$bc == 1] <- 1
+
+svy_data_other_asian_recode <- svy_data_other_asian_recode %>%
+  # Respondents who identify as Vietnamese, Filipino, or Cambodian will also be labelled as Southeast Asian
+  mutate(isSoutheastAsian = 
+           case_when(
+             bd == 1 ~ 1, # Filipino
+             bf == 1 ~ 1, # Vietnamese
+             isCambodian == 1 ~ 1,
+             .default = isSoutheastAsian),
+         # Respondents who identify as Asian Indian will also be labelled as South Asian
+         isSouthAsian = 
+           case_when(
+             bc == 1 ~ 1, # Asian Indian,
+             .default = isSouthAsian))
+
 ```
 
 Get unique responses of respondents who picked "Other NHPI".
