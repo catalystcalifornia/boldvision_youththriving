@@ -153,15 +153,31 @@ svy_data_revised <- svy_data_clean %>%
 
 ```
 
+Check and clean bh (Asian/Other write-in responses for Survey Question 4)
+```{r}
+other_asian_responses <- svy_data_revised %>%
+  filter(!is.na(bh)) # Optional: Filter out NA values if needed
+
+# based on some of the distinct responses it seems like folks shouldn't have 
+# been directed to the Q4. used the check below to confirm that although Asian (av)  
+# was not selected in Q3, respondents have write-ins for Q4 (bh)
+qa_check <- other_asian_responses %>%
+  select(response_id, av, bh, bb:bg, bi, everything())
+
+# clean bh column to remove folks where av = NA
+svy_data_clean_bh <- svy_data_revised %>%
+  mutate(bh = ifelse(av==1, bh, NA))
+```
+
 Get unique responses of respondents who picked "Other Asian".
 ```{r}
-# unique_other_asian_responses <- svy_data %>%
-#   select(response_id, bh) %>%
-#   filter(!is.na(bh)) %>%  # Optional: Filter out NA values if needed
-#   mutate(bh_lower = tolower(bh)) %>%  # Convert bh to lowercase
-#   distinct(bh_lower, .keep_all = TRUE) %>%  # Get unique bh values, keeping the first corresponding response_id
-#   select(bh, response_id)  # Select original columns to keep
-# 
+unique_other_asian_responses <- svy_data_clean_bh %>%
+  filter(!is.na(bh))  %>% # Optional: Filter out NA values if needed
+  select(response_id, bh) %>%
+  mutate(bh_lower = tolower(bh)) %>%  # Convert bh to lowercase
+  distinct(bh_lower, .keep_all = TRUE) %>%  # Get unique bh values, keeping the first corresponding response_id
+  select(bh, response_id)  # Select original columns to keep
+
 # file_name <- paste0("unique_other_asian_responses_", Sys.Date(),".csv") %>%
 #   gsub("-", "", .)
 # 
@@ -179,23 +195,26 @@ get_revised_asian_response <- function(response) {
   # Initialize an empty vector. This represents the respondent's write-in response.
   ethnicities <- c()  
   if (grepl("Chinese", response, ignore.case = TRUE))
-    {ethnicities <- c(ethnicities, "bb")}
+  {ethnicities <- c(ethnicities, "bb")}
+  
   if (grepl("Filipino", response, ignore.case = TRUE))
-    {ethnicities <- c(ethnicities, "bd")}
-  if (grepl("Pakistani|Southwest|Uzbek|Kazakh", response, ignore.case = TRUE))
-    {ethnicities <- c(ethnicities, "ax")}
+  {ethnicities <- c(ethnicities, "bd", "isSoutheastAsian")}
+  
+  if (grepl("Southwest", response, ignore.case = TRUE))
+  {ethnicities <- c(ethnicities, "ax")}
+  
   if (grepl("Thai|Burmese|Indonesian|Laos", response, ignore.case = TRUE))
-    {ethnicities <- c(ethnicities, "isSoutheastAsian")}
-  if (grepl("Bangladesh|Bengali|Sri Lankan", response, ignore.case = TRUE))
-    {ethnicities <- c(ethnicities, "isSouthAsian")}
+  {ethnicities <- c(ethnicities, "isSoutheastAsian")}
+  
+  if (grepl("Pakistani|Bangladesh|Bengali|Sri Lankan", response, ignore.case = TRUE))
+  {ethnicities <- c(ethnicities, "isSouthAsian")}
+  
   if (grepl("Cambodian|Khmer", response, ignore.case = TRUE)) 
   {ethnicities <- c(ethnicities, "isCambodian")}
+  
   if (grepl("Hawaiian", response, ignore.case = TRUE)) 
-    {ethnicities <- c(ethnicities, "aw")}
-  if (grepl("N/A|None|Doesn't apply|Non|Mexican|African|Hispanic|Pakistani|Southwest|Uzbek|Kazakh|Hawaiian|Filipino|German", response, ignore.case = TRUE)) 
-    {ethnicities <- c(ethnicities, "not_bh")}
-  if (grepl("German", response, ignore.case = TRUE)) 
-    {ethnicities <- c(ethnicities, "ay")}
+  {ethnicities <- c(ethnicities, "aw")}
+  
   return(paste(ethnicities, collapse = "; "))
 }
 
