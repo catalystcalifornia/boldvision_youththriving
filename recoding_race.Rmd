@@ -374,7 +374,7 @@ svy_data_final <- svy_data_final %>%
       race_sum > 1 ~ 'nh_twoormor',            # If more than one race is selected
       (race_aian == 1 & race_sum == 1) ~ 'nh_aian',              # If American Indian/Alaska Native
       (race_black == 1 & race_sum == 1) ~ 'nh_black',            # If Black/African American
-      (race_indigenous == 1 & race_sum == 1) ~ 'nh_indigenous',  # If Indigenous
+      (race_indigenous == 1 & race_sum == 1) ~ 'nh_aian',  # If Indigenous
       (race_asian == 1 & race_sum == 1) ~ 'nh_asian',            # If Asian
       (race_nhpi == 1 & race_sum == 1) ~ 'nh_nhpi',              # If Native Hawaiian/Pacific Islander
       (race_swana == 1 & race_sum == 1) ~ 'nh_swana',            # If SWANA (Southwest Asian/North African)
@@ -525,7 +525,7 @@ dbDisconnect(con)
 Calculate the percentage and sample size of each race category.
 ```{r}
 total_responses <- nrow(svy_data_final)
-race_breakdown <- svy_data_final %>%
+race_breakdown_pct <- svy_data_final %>%
   summarise(
     race_aian_pct = 100 * sum(race_aian) / total_responses,
     race_black_pct = 100 * sum(race_black) / total_responses,
@@ -550,28 +550,28 @@ race_breakdown <- svy_data_final %>%
 # race_dwta_pct 0.116144
 # race_other_pct 0.29036
 
-race_breakdown <- svy_data %>%
+race_breakdown_count <- svy_data_final %>%
   summarise(
-    race_aian_pct = sum(race_aian),
-    race_black_pct = sum(race_black),
-    race_indigenous_pct = sum(race_indigenous),
-    race_latinx_pct = sum(race_latinx),
-    race_asian_pct = sum(race_asian),
-    race_nhpi_pct = sum(race_nhpi),
-    race_swana_pct = sum(race_swana),
-    race_white_pct = sum(race_white),
-    race_dwta_pct = sum(race_dwta),
-    race_other_pct = sum(race_other)
+    race_aian_count = sum(race_aian),
+    race_black_count = sum(race_black),
+    race_indigenous_count = sum(race_indigenous),
+    race_latinx_count = sum(race_latinx),
+    race_asian_count = sum(race_asian),
+    race_nhpi_count = sum(race_nhpi),
+    race_swana_count = sum(race_swana),
+    race_white_count = sum(race_white),
+    race_dwta_count = sum(race_dwta),
+    race_other_count = sum(race_other)
   )
 
-# race_aian_pct 117
-# race_black_pct 671
-# race_indigenous_pct 6
-# race_latinx_pct 1877
-# race_asian_pct 481
-# race_nhpi_pct 43
-# race_swana_pct 51
-# race_white_pct 372
-# race_dwta_pct 4
-# race_other_pct 10
+# race_aian_count 117
+# race_black_count 671
+# race_indigenous_count 6
+# race_latinx_count 1877
+# race_asian_count 481
+# race_nhpi_count 43
+# race_swana_count 51
+# race_white_count 372
+# race_dwta_count 4
+# race_other_count 10
 ```
