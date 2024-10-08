@@ -27,23 +27,27 @@ library(survey)
 library(highcharter)
 library(knitr)
 library(kableExtra)
+library(devtools) 
 options(scipen=999)
 
-# connect to postgres
+# connect to postgres and source functions
 source("W:\\RDA Team\\R\\credentials_source.R")
+# source_url('https://github.com/catalystcalifornia/RDA-Functions/blob/main/Utility_Functions.R') 
+
 con <- connect_to_db("bold_vision")
 
 ### Step 2: Pull in and prep data ----
 svy_df <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
 svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc'")
+dd_all <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 ")
 
 # Descriptive Function -----
-question_sum<-function (svy_df,svy_dd,domain,variable) {
-df <- svy_dd%>%filter(response_domain=="domain" & variable_name=="variable")
+question_sum<-function (svy_df,svy_dd,domain,variable_target) {
+df <- svy_dd%>%filter(response_domain==domain & variable_name==variable_target)
 
 unique_vars <- unique(df$variable)
 
-all_vars_df<-NULL
+mylist<-list()
 
 for (i in unique_vars) {
 
@@ -77,384 +81,248 @@ for (i in unique_vars) {
 
 
   print(visual) 
-  
-  all_vars_df<-rbind(all_vars_df,df_final)
+  mylist[[i]] <- df_final
 
+# print(mylist)
+  }
+all_vars_df<-dplyr::bind_rows(mylist)%>%mutate(variable=variable_target)
+# return(all_vars_df)
 }
-}
+
+
+# function test
+# question_sum(svy_df,svy_dd,domain="Strong Minds",variable_target="Positive Emotions")
 
 
 ```
 
 
 # Strong Minds
+
 ## Positive Emotions
-```{r, message = FALSE, results='asis'}
 
-question_sum(svy_df,svy_dd,domain="Strong Minds",variable="Positive Emotions")
+```{r}
 
+sm_positive_emotions<-question_sum(svy_df,svy_dd,domain="Strong Minds",variable_target="Positive Emotions")
 
-question_sum(svy_df,svy_dd,domain="Strong Minds",variable="Growth Mindset")
+```
 
-  
+## Growth Mindset
 
-dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc' AND response_domain = 'Strong Minds'")
+```{r}
 
-unique_indicators <- unique(dd_filter$variable)
+sm_growth_mindset<-question_sum(svy_df,svy_dd,domain="Strong Minds",variable_target="Growth Mindset")
 
-knitr::opts_chunk$set(echo = FALSE)
-#### Step 3: Run Loop Funcion to produce tables ####
-for (var_string in unique_indicators) {
+```
 
-  dict <- dd_filter %>% filter(variable == var_string) %>%
-    pivot_longer(cols = response_1: response_12,
-                 names_to = "responses",
-                 values_to = paste0(var_string, "_labels"),
-                 values_drop_na = TRUE)
+## Psychological Distress
 
-  dict_var <- dict %>%
-    mutate(variable_merge_col = 1:nrow(dict))
+```{r}
 
+sm_psychologicaldistress<-question_sum(svy_df,svy_dd,domain="Strong Minds",variable_target="Psychological Distress")
 
-  df_var <- as_survey(svy_data, weights = weights_final) %>%
-    group_by(!!rlang::ensym(var_string)) %>%
-    summarise(frequency = n()) %>%
-    mutate(percent = round(frequency/sum(frequency)*100, 1))
-
-  df_final <-  merge(x = df_var, y = dict_var, by.x = c(var_string), by.y = c("variable_merge_col")) %>%
-    relocate(paste0(var_string, "_labels")) %>% select(1, 3:8)
-
-  visual <- print(kable(as.data.frame(df_final), "html") %>%
-  kable_styling("striped", full_width = F) %>%
-  row_spec(0, background = "#5E17EB", color = "white")) 
-
-  print(visual) 
-
-}
+# bind together all variables from factor
+df_sm<-rbind(sm_psychologicaldistress,sm_growth_mindset,sm_positive_emotions)%>%mutate(domain="Strong Minds")
 
 ```
 
 # Positive Identity And Self-Worth
 
-```{r, message = FALSE, results='asis'}
+## Self-Efficacy
 
-dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc' AND response_domain = 'Positive Identity and Self-Worth'")
+```{r}
 
-unique_indicators <- unique(dd_filter$variable)
-
-knitr::opts_chunk$set(echo = FALSE)
-#### Step 3: Run Loop Funcion to produce tables ####
-for (var_string in unique_indicators) {
-
-  dict <- dd_filter %>% filter(variable == var_string) %>%
-    pivot_longer(cols = response_1: response_12,
-                 names_to = "responses",
-                 values_to = paste0(var_string, "_labels"),
-                 values_drop_na = TRUE)
-
-  dict_var <- dict %>%
-    mutate(variable_merge_col = 1:nrow(dict))
-
-
-  df_var <- as_survey(svy_data, weights = weights_final) %>%
-    group_by(!!rlang::ensym(var_string)) %>%
-    summarise(frequency = n()) %>%
-    mutate(percent = round(frequency/sum(frequency)*100, 1))
-
-  df_final <-  merge(x = df_var, y = dict_var, by.x = c(var_string), by.y = c("variable_merge_col")) %>%
-    relocate(paste0(var_string, "_labels")) %>% select(1, 3:8)
-
-  visual <- print(kable(as.data.frame(df_final), "html") %>%
-  kable_styling("striped", full_width = F) %>%
-  row_spec(0, background = "#5E17EB", color = "white"))
-
-
-  print(visual) 
-
-}
+pi_self<-question_sum(svy_df,svy_dd,domain="Positive Identity And Self-Worth",variable_target="Self-Efficacy")
 
 ```
+
+## Hope For The Future
+
+```{r}
+
+pi_hope<-question_sum(svy_df,svy_dd,domain="Positive Identity And Self-Worth",variable_target="Hope For The Future")
+
+```
+
+## Freedom To Explore Self
+
+```{r}
+
+pi_freedom<-question_sum(svy_df,svy_dd,domain="Positive Identity And Self-Worth",variable_target="Freedom To Explore The Self")
+
+```
+
+## Sparks
+
+```{r}
+
+pi_sparks<-question_sum(svy_df,svy_dd,domain="Positive Identity And Self-Worth",variable_target="Sparks")
+
+```
+
+## Critical Action
+
+```{r}
+
+pi_action<-question_sum(svy_df,svy_dd,domain="Positive Identity And Self-Worth",variable_target="Critical Action")
+
+df_pi<-rbind(pi_action,pi_freedom,pi_hope,pi_self,pi_sparks)%>%mutate(domain='Positive Identity And Self-Worth')
+```
+
 
 # Caring Families And Relationships
 
-```{r, message = FALSE, results='asis'}
+## Relationships And Support
 
-dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc' AND response_domain = 'Caring Families And Relationships'")
+```{r}
 
-unique_indicators <- unique(dd_filter$variable)
-
-knitr::opts_chunk$set(echo = FALSE)
-#### Step 3: Run Loop Funcion to produce tables ####
-for (var_string in unique_indicators) {
-
-  dict <- dd_filter %>% filter(variable == var_string) %>%
-    pivot_longer(cols = response_1: response_12,
-                 names_to = "responses",
-                 values_to = paste0(var_string, "_labels"),
-                 values_drop_na = TRUE)
-
-  dict_var <- dict %>%
-    mutate(variable_merge_col = 1:nrow(dict))
-
-
-  df_var <- as_survey(svy_data, weights = weights_final) %>%
-    group_by(!!rlang::ensym(var_string)) %>%
-    summarise(frequency = n()) %>%
-    mutate(percent = round(frequency/sum(frequency)*100, 1))
-
-  df_final <-  merge(x = df_var, y = dict_var, by.x = c(var_string), by.y = c("variable_merge_col")) %>%
-    relocate(paste0(var_string, "_labels")) %>% select(1, 3:8)
-
-  visual <- print(kable(as.data.frame(df_final), "html") %>%
-  kable_styling("striped", full_width = F) %>%
-  row_spec(0, background = "#5E17EB", color = "white"))
-
-
-  print(visual) 
-
-}
+family_support<-question_sum(svy_df,svy_dd,domain="Caring Families And Relationships",variable_target="Relationships/Support")
 
 ```
 
-# Positive Identity And Self-Worth
+## Connectedness
 
-```{r, message = FALSE, results='asis'}
+```{r}
 
-dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc' AND response_domain = 'Positive Identity And Self-Worth'")
-
-unique_indicators <- unique(dd_filter$variable)
-
-knitr::opts_chunk$set(echo = FALSE)
-#### Step 3: Run Loop Funcion to produce tables ####
-for (var_string in unique_indicators) {
-
-  dict <- dd_filter %>% filter(variable == var_string) %>%
-    pivot_longer(cols = response_1: response_12,
-                 names_to = "responses",
-                 values_to = paste0(var_string, "_labels"),
-                 values_drop_na = TRUE)
-
-  dict_var <- dict %>%
-    mutate(variable_merge_col = 1:nrow(dict))
+family_connection<-question_sum(svy_df,svy_dd,domain="Caring Families And Relationships",variable_target="Connectedness")
 
 
-  df_var <- as_survey(svy_data, weights = weights_final) %>%
-    group_by(!!rlang::ensym(var_string)) %>%
-    summarise(frequency = n()) %>%
-    mutate(percent = round(frequency/sum(frequency)*100, 1))
-
-  df_final <-  merge(x = df_var, y = dict_var, by.x = c(var_string), by.y = c("variable_merge_col")) %>%
-    relocate(paste0(var_string, "_labels")) %>% select(1, 3:8)
-
-  visual <- print(kable(as.data.frame(df_final), "html") %>%
-  kable_styling("striped", full_width = F) %>%
-  row_spec(0, background = "#5E17EB", color = "white"))
-
-  print(visual) 
-
-}
-
+df_family<-rbind(family_connection,family_support)%>%mutate(domain="Caring Families And Relationships")
 ```
 
-# Vibrant Communities
-
-```{r, message = FALSE, results='asis'}
-
-dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc' AND response_domain = 'Vibrant Communities'")
-
-unique_indicators <- unique(dd_filter$variable)
-
-knitr::opts_chunk$set(echo = FALSE)
-#### Step 3: Run Loop Funcion to produce tables ####
-for (var_string in unique_indicators) {
-
-  dict <- dd_filter %>% filter(variable == var_string) %>%
-    pivot_longer(cols = response_1: response_12,
-                 names_to = "responses",
-                 values_to = paste0(var_string, "_labels"),
-                 values_drop_na = TRUE)
-
-  dict_var <- dict %>%
-    mutate(variable_merge_col = 1:nrow(dict))
-
-
-  df_var <- as_survey(svy_data, weights = weights_final) %>%
-    group_by(!!rlang::ensym(var_string)) %>%
-    summarise(frequency = n()) %>%
-    mutate(percent = round(frequency/sum(frequency)*100, 1))
-
-  df_final <-  merge(x = df_var, y = dict_var, by.x = c(var_string), by.y = c("variable_merge_col")) %>%
-    relocate(paste0(var_string, "_labels")) %>% select(1, 3:8)
-
-  visual <- print(kable(as.data.frame(df_final), "html") %>%
-  kable_styling("striped", full_width = F) %>%
-  row_spec(0, background = "#5E17EB", color = "white"))
-
-  print(visual) 
-
-}
-
-```
 
 # Cultural Identity
 
-```{r, message = FALSE, results='asis'}
+## Cultural Identity And Connection
 
-dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc' AND response_domain = 'Cultural Identity'")
+```{r}
 
-unique_indicators <- unique(dd_filter$variable)
+df_cultural<-question_sum(svy_df,svy_dd,domain="Cultural Identity",variable_target="Cultural Identity And Connection")
 
-knitr::opts_chunk$set(echo = FALSE)
-#### Step 3: Run Loop Funcion to produce tables ####
-for (var_string in unique_indicators) {
-
-  dict <- dd_filter %>% filter(variable == var_string) %>%
-    pivot_longer(cols = response_1: response_12,
-                 names_to = "responses",
-                 values_to = paste0(var_string, "_labels"),
-                 values_drop_na = TRUE)
-
-  dict_var <- dict %>%
-    mutate(variable_merge_col = 1:nrow(dict))
-
-
-  df_var <- as_survey(svy_data, weights = weights_final) %>%
-    group_by(!!rlang::ensym(var_string)) %>%
-    summarise(frequency = n()) %>%
-    mutate(percent = round(frequency/sum(frequency)*100, 1))
-
-  df_final <-  merge(x = df_var, y = dict_var, by.x = c(var_string), by.y = c("variable_merge_col")) %>%
-    relocate(paste0(var_string, "_labels")) %>% select(1, 3:8)
-
-  visual <- print(kable(as.data.frame(df_final), "html") %>%
-  kable_styling("striped", full_width = F) %>%
-  row_spec(0, background = "#5E17EB", color = "white"))
-
-  print(visual) 
-
-}
-
-```
-# Interrelated Domain
-
-```{r, message = FALSE, results='asis'}
-
-dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc' AND response_domain = 'Interrelated Domain'")
-
-unique_indicators <- unique(dd_filter$variable)
-
-knitr::opts_chunk$set(echo = FALSE)
-#### Step 3: Run Loop Funcion to produce tables ####
-for (var_string in unique_indicators) {
-
-  dict <- dd_filter %>% filter(variable == var_string) %>%
-    pivot_longer(cols = response_1: response_12,
-                 names_to = "responses",
-                 values_to = paste0(var_string, "_labels"),
-                 values_drop_na = TRUE)
-
-  dict_var <- dict %>%
-    mutate(variable_merge_col = 1:nrow(dict))
-
-
-  df_var <- as_survey(svy_data, weights = weights_final) %>%
-    group_by(!!rlang::ensym(var_string)) %>%
-    summarise(frequency = n()) %>%
-    mutate(percent = round(frequency/sum(frequency)*100, 1))
-
-  df_final <-  merge(x = df_var, y = dict_var, by.x = c(var_string), by.y = c("variable_merge_col")) %>%
-    relocate(paste0(var_string, "_labels")) %>% select(1, 3:8)
-
-  visual <- print(kable(as.data.frame(df_final), "html") %>%
-  kable_styling("striped", full_width = F) %>%
-  row_spec(0, background = "#5E17EB", color = "white"))
-
-  print(visual) 
-
-}
+df_cultural<-df_cultural%>%mutate(domain="Cultural Identity")
 
 ```
 
-# Racial Justice, Equity, And Inclusion
-
-```{r, message = FALSE, results='asis'}
-
-dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc' AND response_domain = 'Racial Justice, Equity, And Inclusion'")
-
-unique_indicators <- unique(dd_filter$variable)
-
-knitr::opts_chunk$set(echo = FALSE)
-#### Step 3: Run Loop Funcion to produce tables ####
-for (var_string in unique_indicators) {
-
-  dict <- dd_filter %>% filter(variable == var_string) %>%
-    pivot_longer(cols = response_1: response_12,
-                 names_to = "responses",
-                 values_to = paste0(var_string, "_labels"),
-                 values_drop_na = TRUE)
-
-  dict_var <- dict %>%
-    mutate(variable_merge_col = 1:nrow(dict))
-
-
-  df_var <- as_survey(svy_data, weights = weights_final) %>%
-    group_by(!!rlang::ensym(var_string)) %>%
-    summarise(frequency = n()) %>%
-    mutate(percent = round(frequency/sum(frequency)*100, 1))
-
-  df_final <-  merge(x = df_var, y = dict_var, by.x = c(var_string), by.y = c("variable_merge_col")) %>%
-    relocate(paste0(var_string, "_labels")) %>% select(1, 3:8)
-
-  visual <- print(kable(as.data.frame(df_final), "html") %>%
-  kable_styling("striped", full_width = F) %>%
-  row_spec(0, background = "#5E17EB", color = "white"))
-
-  print(visual) 
-
-}
-
-```
 
 # Safety
 
-```{r, message = FALSE, results='asis'}
+## Personal Safety
 
-dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 WHERE response_type = 'mc' AND response_domain = 'Safety'")
+```{r}
 
-unique_indicators <- unique(dd_filter$variable)
+df_safety<-question_sum(svy_df,svy_dd,domain="Safety",variable_target="Personal Safety")
 
-knitr::opts_chunk$set(echo = FALSE)
-#### Step 3: Run Loop Funcion to produce tables ####
-for (var_string in unique_indicators) {
-
-  dict <- dd_filter %>% filter(variable == var_string) %>%
-    pivot_longer(cols = response_1: response_12,
-                 names_to = "responses",
-                 values_to = paste0(var_string, "_labels"),
-                 values_drop_na = TRUE)
-
-  dict_var <- dict %>%
-    mutate(variable_merge_col = 1:nrow(dict))
-
-
-  df_var <- as_survey(svy_data, weights = weights_final) %>%
-    group_by(!!rlang::ensym(var_string)) %>%
-    summarise(frequency = n()) %>%
-    mutate(percent = round(frequency/sum(frequency)*100, 1))
-
-  df_final <-  merge(x = df_var, y = dict_var, by.x = c(var_string), by.y = c("variable_merge_col")) %>%
-    relocate(paste0(var_string, "_labels")) %>% select(1, 3:8)
-
-  visual <- print(kable(as.data.frame(df_final), "html") %>%
-  kable_styling("striped", full_width = F) %>%
-  row_spec(0, background = "#5E17EB", color = "white"))
-
-  print(visual) 
-
-}
+df_safety<-df_safety%>%mutate(domain="Safety")
 
 ```
 
+
+# Vibrant Communities
+
+## Safe Access To Public Spaces
+
+
+```{r}
+
+community_access<-question_sum(svy_df,svy_dd,domain="Vibrant Communities",variable_target="Safe Access To Public Spaces For Social, Cultural, And Literary Opportunities")
+
+df_community<-community_access%>%mutate(variable="Safe Access to Public Spaces",domain="Vibrant Communities")
+
+```
+
+
+# Racial Justice, Equity, And Inclusion
+
+## Microaggressions
+
+```{r}
+
+equity_micro<-question_sum(svy_df,svy_dd,domain="Racial Justice, Equity, And Inclusion",variable_target="Microaggressions")
+
+```
+
+## Experiences of Racism
+
+```{r}
+
+equity_experiences<-question_sum(svy_df,svy_dd,domain="Racial Justice, Equity, And Inclusion",variable_target="Experiences Of Racism And Discrimination")
+
+```
+
+
+## Structural Racism
+
+```{r}
+
+equity_structural<-question_sum(svy_df,svy_dd,domain="Racial Justice, Equity, And Inclusion",variable_target="Structural Racism")
+
+df_equity<-rbind(equity_micro,equity_experiences,equity_structural)%>%mutate(domain="Racial Justice, Equity, And Inclusion")
+
+```
+
+
+
 ```{r, echo=FALSE}
+
+# Push tables to postgres ----
+
+#### Strong Minds ----
+# table_name <- "strong_minds_frequencies"
+# schema <- 'youth_thriving'
+# 
+# # write table
+# dbWriteTable(con, c(schema, table_name),df_sm,
+#              overwrite = FALSE, row.names = FALSE)
+# 
+# 
+# #### Positive Identity and Self-Worth ----
+# table_name <- "positive_identity_frequencies"
+# schema <- 'youth_thriving'
+# 
+# # write table
+# dbWriteTable(con, c(schema, table_name),df_pi,
+#              overwrite = FALSE, row.names = FALSE)
+# 
+# 
+# #### Caring Families and Relationships ----
+# table_name <- "caring_families_frequencies"
+# schema <- 'youth_thriving'
+# 
+# # write table
+# dbWriteTable(con, c(schema, table_name),df_family,
+#              overwrite = FALSE, row.names = FALSE)
+# 
+# #### Cultural Identity ----
+# table_name <- "cultural_identity_frequencies"
+# schema <- 'youth_thriving'
+# 
+# # write table
+# dbWriteTable(con, c(schema, table_name),df_cultural,
+#              overwrite = FALSE, row.names = FALSE)
+# 
+# #### Safety ----
+# table_name <- "safety_frequencies"
+# schema <- 'youth_thriving'
+# 
+# # write table
+# dbWriteTable(con, c(schema, table_name),df_safety,
+#              overwrite = FALSE, row.names = FALSE)
+# 
+# #### Vibrant Communities ----
+# table_name <- "vibrant_community_frequencies"
+# schema <- 'youth_thriving'
+# 
+# # write table
+# dbWriteTable(con, c(schema, table_name),df_community,
+#              overwrite = FALSE, row.names = FALSE)
+# 
+# #### Racial Justice ----
+# table_name <- "racial_justice_frequencies"
+# schema <- 'youth_thriving'
+# 
+# # write table
+# dbWriteTable(con, c(schema, table_name),df_equity,
+#              overwrite = FALSE, row.names = FALSE)
+
 dbDisconnect(con)
 ```
