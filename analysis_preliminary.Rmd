@@ -70,17 +70,17 @@ for (i in unique_vars) {
   df_final <-  merge(x = df_var, y = dict_var, by.x = c(i), by.y = c("variable_merge_col"))%>%
     select(question,sub_question,response,frequency,weighted_percent,percent_cv)
  
-  df_table<-df_final%>%rename_with(toupper)%>%rename(PERCENT=WEIGHTED_PERCENT)
-  colnames(df_table)<-gsub("_", " ", colnames(df_table))
-  
- visual <- kable(as.data.frame(df_table)%>% 
-   mutate_if(is.numeric, format, digits=2)) %>%
-  kable_styling("striped", full_width = F) %>%
-  row_spec(0, background = "#2A12B2", color = "white",font_size=12)%>%
-   footnote(general="Frequencies are unweighted counts. Percentages and coefficients of variation (CV) are weighted")
+ #  df_table<-df_final%>%rename_with(toupper)%>%rename(PERCENT=WEIGHTED_PERCENT)
+ #  colnames(df_table)<-gsub("_", " ", colnames(df_table))
+ #  
+ # visual <- kable(as.data.frame(df_table)%>% 
+ #   mutate_if(is.numeric, format, digits=2)) %>%
+ #  kable_styling("striped", full_width = F) %>%
+ #  row_spec(0, background = "#2A12B2", color = "white",font_size=12)%>%
+ #   footnote(general="Frequencies are unweighted counts. Percentages and coefficients of variation (CV) are weighted")
 
 
-  print(visual) 
+  # print(visual) 
   mylist[[i]] <- df_final
 
 # print(mylist)
@@ -93,70 +93,143 @@ all_vars_df<-dplyr::bind_rows(mylist)%>%mutate(variable=variable_target)
 # function test
 # question_sum(svy_df,svy_dd,domain="Strong Minds",variable_target="Positive Emotions")
 
+# Heatmap function ----
+heatmap<-function(df,factors){
+df<-df
+
+df$response <- factor(x=df$response, levels = factors)
+
+ggplot(data = df, aes(x = response, y = sub_question,fill=weighted_percent))+
+  geom_tile(color="white",lwd = 1.5,
+            linetype = 1)+
+  geom_text(aes(label=round(weighted_percent,1)),size=3)+
+  scale_fill_gradient(low="#f9de8d", high="#EF4A66",name="Weighted Percent")+
+  scale_y_discrete(labels=function(x)str_wrap(x,width=20),)+
+  scale_x_discrete(labels=function(y)str_wrap(y,width=5))+
+  labs(title=str_wrap(df$question,width=60),
+       x="Response",
+       y="")+
+  coord_fixed()+
+  theme_bw()+
+  theme(plot.title=element_text(size=9),
+        legend.title=element_text(size=9),
+        axis.text.x=element_text(size=9))
+}
+
+# Factor options
+true_factors<-c("Never True","Sometimes True","Often True","Always True","Don't wish to answer")
 
 ```
 
+The following provides a summary of how youth answered each item in the Bold Vision Youth Thriving Survey for every category and construct measured.
 
 # Strong Minds
 
 ## Positive Emotions
-
 ```{r}
 
 sm_positive_emotions<-question_sum(svy_df,svy_dd,domain="Strong Minds",variable_target="Positive Emotions")
 
+# check factors
+# unique(sm_positive_emotions$response)
+
+heatmap(sm_positive_emotions,true_factors)
+
 ```
 
 ## Growth Mindset
-
 ```{r}
 
 sm_growth_mindset<-question_sum(svy_df,svy_dd,domain="Strong Minds",variable_target="Growth Mindset")
 
+# check factors
+# unique(sm_positive_emotions$response)
+
+heatmap(sm_growth_mindset,true_factors)
+
+
 ```
 
 ## Psychological Distress
-
 ```{r}
 
 sm_psychologicaldistress<-question_sum(svy_df,svy_dd,domain="Strong Minds",variable_target="Psychological Distress")
 
-# bind together all variables from factor
-df_sm<-rbind(sm_psychologicaldistress,sm_growth_mindset,sm_positive_emotions)%>%mutate(domain="Strong Minds")
+# check factors
+# unique(sm_psychologicaldistress$response)
+
+time_factors<-c("None of the time","A little of the time","Some of the time","Most of the time","All of the time","dont wish to answer")
+
+heatmap(sm_psychologicaldistress,time_factors)
 
 ```
 
 # Positive Identity And Self-Worth
 
 ## Self-Efficacy
-
 ```{r}
 
 pi_self<-question_sum(svy_df,svy_dd,domain="Positive Identity And Self-Worth",variable_target="Self-Efficacy")
 
+# check factors
+# unique(pi_self$response)
+
+heatmap(pi_self,true_factors)
+
 ```
 
 ## Hope For The Future
-
 ```{r}
 
 pi_hope<-question_sum(svy_df,svy_dd,domain="Positive Identity And Self-Worth",variable_target="Hope For The Future")
 
+# check factors
+# unique(pi_hope$response)
+
+heatmap(pi_hope,true_factors)
 ```
 
 ## Freedom To Explore Self
-
 ```{r}
 
 pi_freedom<-question_sum(svy_df,svy_dd,domain="Positive Identity And Self-Worth",variable_target="Freedom To Explore The Self")
 
+# check factors
+# unique(pi_freedom$response)
+
+heatmap(pi_freedom,true_factors)
+
 ```
 
 ## Sparks
-
 ```{r}
 
 pi_sparks<-question_sum(svy_df,svy_dd,domain="Positive Identity And Self-Worth",variable_target="Sparks")
+
+# check factors
+# unique(pi_sparks$response)
+
+yes_factors<-c("Yes","No","Not sure","Don't wish to answer")
+
+sparks<-pi_sparks%>%filter(question=="Q10. When people are really happy, energized, and passionate about their talents, interests, or hobbies, we say they have a “spark” in their life. This spark is more than just interesting or fun for them. They are passionate about it. It gives them joy and energy. It is a really important part of their life that gives them real purpose, direction, or focus. Do you have this kind of spark in your life?")%>%mutate(question="Q10. When people are really happy, energized, and passionate about their talents, interests, or hobbies, we say they have a “spark” in their life.",sub_question="Do you have this kind of spark in your life?")
+
+heatmap(sparks,yes_factors)
+
+sparks_table<-pi_sparks%>%filter(question!="Q10. When people are really happy, energized, and passionate about their talents, interests, or hobbies, we say they have a “spark” in their life. This spark is more than just interesting or fun for them. They are passionate about it. It gives them joy and energy. It is a really important part of their life that gives them real purpose, direction, or focus. Do you have this kind of spark in your life?")
+
+  df_table<-sparks_table%>%rename_with(toupper)%>%rename(PERCENT=WEIGHTED_PERCENT)%>%
+    select(-c(2,6:7))
+  colnames(df_table)<-gsub("_", " ", colnames(df_table))
+
+kable(as.data.frame(df_table)%>%
+   mutate_if(is.numeric, format, digits=2)) %>%
+  kable_styling("striped", full_width = F) %>%
+  row_spec(0, background = "#2A12B2", color = "white",font_size=12)
+ 
+ # print(visual)
+
+
+
 
 ```
 
@@ -166,7 +239,10 @@ pi_sparks<-question_sum(svy_df,svy_dd,domain="Positive Identity And Self-Worth",
 
 pi_action<-question_sum(svy_df,svy_dd,domain="Positive Identity And Self-Worth",variable_target="Critical Action")
 
-df_pi<-rbind(pi_action,pi_freedom,pi_hope,pi_self,pi_sparks)%>%mutate(domain='Positive Identity And Self-Worth')
+# check factors
+# unique(pi_action$response)
+
+heatmap(pi_action,true_factors)
 ```
 
 
@@ -178,6 +254,22 @@ df_pi<-rbind(pi_action,pi_freedom,pi_hope,pi_self,pi_sparks)%>%mutate(domain='Po
 
 family_support<-question_sum(svy_df,svy_dd,domain="Caring Families And Relationships",variable_target="Relationships/Support")
 
+# check factors
+# unique(family_support$response)
+
+df<-family_support%>%filter(question=="Q10a. How many adults really know what your sparks are and help you go after them?")%>%mutate(sub_question='')
+
+count_factors<-c("None","One","Two","Three or more","Not Sure","Don't wish to answer")
+
+heatmap(df,count_factors)
+
+temp_family<-family_support%>%
+  filter(!question%in% c("Q10a. How many adults really know what your sparks are and help you go after them?","Q12. Are you currently in school or have been in the past 12 months?"))%>%
+  mutate(sub_question=ifelse(question=="Q12a. How true is this about you. At my school, there is a teacher or some other adult who really cares about me","There is a teacher or some other adult who really cares about me",sub_question),
+                                     question="How true is this about you")
+
+heatmap(temp_family,true_factors)
+
 ```
 
 ## Connectedness
@@ -186,8 +278,12 @@ family_support<-question_sum(svy_df,svy_dd,domain="Caring Families And Relations
 
 family_connection<-question_sum(svy_df,svy_dd,domain="Caring Families And Relationships",variable_target="Connectedness")
 
+# check factors
+# unique(family_connection$response)
 
-df_family<-rbind(family_connection,family_support)%>%mutate(domain="Caring Families And Relationships")
+heatmap(family_connection,true_factors)
+
+
 ```
 
 
@@ -199,7 +295,12 @@ df_family<-rbind(family_connection,family_support)%>%mutate(domain="Caring Famil
 
 df_cultural<-question_sum(svy_df,svy_dd,domain="Cultural Identity",variable_target="Cultural Identity And Connection")
 
-df_cultural<-df_cultural%>%mutate(domain="Cultural Identity")
+
+# check factors
+# unique(df_cultural$response)
+
+heatmap(df_cultural,true_factors)
+
 
 ```
 
@@ -212,7 +313,13 @@ df_cultural<-df_cultural%>%mutate(domain="Cultural Identity")
 
 df_safety<-question_sum(svy_df,svy_dd,domain="Safety",variable_target="Personal Safety")
 
-df_safety<-df_safety%>%mutate(domain="Safety")
+# check factors
+# unique(df_safety$response)
+
+frequency_factors<-c("Never","Rarely","Sometimes","Most of the time","All of the time","Does not apply to me")
+
+heatmap(df_safety%>%mutate(sub_question=''),frequency_factors)
+
 
 ```
 
@@ -226,7 +333,13 @@ df_safety<-df_safety%>%mutate(domain="Safety")
 
 community_access<-question_sum(svy_df,svy_dd,domain="Vibrant Communities",variable_target="Safe Access To Public Spaces For Social, Cultural, And Literary Opportunities")
 
-df_community<-community_access%>%mutate(variable="Safe Access to Public Spaces",domain="Vibrant Communities")
+
+# check factors
+# unique(community_access$response)
+
+yes_factors_2<-c("No","Yes","Dont Know","Don't wish to answer")
+
+heatmap(community_access,yes_factors_2)
 
 ```
 
@@ -239,6 +352,12 @@ df_community<-community_access%>%mutate(variable="Safe Access to Public Spaces",
 
 equity_micro<-question_sum(svy_df,svy_dd,domain="Racial Justice, Equity, And Inclusion",variable_target="Microaggressions")
 
+# check factors
+# unique(equity_micro$response)
+
+
+heatmap(equity_micro,frequency_factors)
+
 ```
 
 ## Experiences of Racism
@@ -246,6 +365,12 @@ equity_micro<-question_sum(svy_df,svy_dd,domain="Racial Justice, Equity, And Inc
 ```{r}
 
 equity_experiences<-question_sum(svy_df,svy_dd,domain="Racial Justice, Equity, And Inclusion",variable_target="Experiences Of Racism And Discrimination")
+
+# check factors
+# unique(equity_experiences$response)
+
+
+heatmap(equity_experiences,frequency_factors)
 
 ```
 
@@ -256,13 +381,43 @@ equity_experiences<-question_sum(svy_df,svy_dd,domain="Racial Justice, Equity, A
 
 equity_structural<-question_sum(svy_df,svy_dd,domain="Racial Justice, Equity, And Inclusion",variable_target="Structural Racism")
 
-df_equity<-rbind(equity_micro,equity_experiences,equity_structural)%>%mutate(domain="Racial Justice, Equity, And Inclusion")
+
+# check factors
+# unique(equity_structural$response)
+
+
+heatmap(equity_structural,frequency_factors)
+
+
 
 ```
 
 
 
 ```{r, echo=FALSE}
+
+# Bind together all variables from every category/factor----
+## Strong Minds -----
+df_sm<-rbind(sm_psychologicaldistress,sm_growth_mindset,sm_positive_emotions)%>%mutate(domain="Strong Minds")
+
+## Positive Identity ----
+df_pi<-rbind(pi_action,pi_freedom,pi_hope,pi_self,pi_sparks)%>%mutate(domain='Positive Identity And Self-Worth')
+
+## Caring Families and Relationships ----
+df_family<-rbind(family_connection,family_support)%>%mutate(domain="Caring Families And Relationships")
+
+## Cultural Identity ----
+df_cultural<-df_cultural%>%mutate(domain="Cultural Identity")
+
+## Safety ----
+df_safety<-df_safety%>%mutate(domain="Safety")
+
+## Vibrant Communities ----
+df_community<-community_access%>%mutate(variable="Safe Access to Public Spaces",domain="Vibrant Communities")
+
+## Racial Justice, Equity----
+df_equity<-rbind(equity_micro,equity_experiences,equity_structural)%>%mutate(domain="Racial Justice, Equity, And Inclusion")
+
 
 # Push tables to postgres ----
 
