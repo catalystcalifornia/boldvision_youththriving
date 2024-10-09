@@ -36,6 +36,16 @@ con <- connect_to_db("bold_vision")
 #pull in data and data dictionary
 svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
 svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 where response_type = 'mc'")
+#filtering for all the variables of interest
+svy_dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 where response_type = 'mc' AND response_domain !='Demographics' AND response_domain != 'Info'")
+#making sure to only use unique ones and creating a list that the loop functions can run through
+unique_indicators <- unique(svy_dd_filter$variable)
+#function used to create master datasets to push to pgAdmin
+combine_data_frames <- function(df_list) {
+  combined_df <- do.call(rbind, df_list)
+  return(combined_df)
+}
+
 
 ```
 
@@ -44,11 +54,6 @@ svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024
 #### Data Table of Question Responses BY Race Group #####
 
 knitr::opts_chunk$set(echo = FALSE)
-
-#filtering for all the variables 
-svy_dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 where response_type = 'mc' AND response_domain !='Demographics' AND response_domain != 'Info'")
-#making sure to only use unique ones and creating a list that the loop function can run through
-unique_indicators <- unique(svy_dd_filter$variable)
 
 for (i in unique_indicators) { 
 #filtering for the variable and pivoting the table to match the survey data format for a merge later  
@@ -105,11 +110,6 @@ data_frames_list <- paste("df_", unique_indicators, sep = "")
 
 actual_data_frames <- lapply(data_frames_list, get)
 
-combine_data_frames <- function(df_list) {
-  combined_df <- do.call(rbind, df_list)
-  return(combined_df)
-}
-
 df_merged <- combine_data_frames(actual_data_frames)
 
 #push to postgres in pgAdmin 
@@ -149,11 +149,6 @@ dbSendQuery(con, "COMMENT ON COLUMN youth_thriving.response_analysis_by_race.var
 ```{r, message = FALSE, results='asis'}
 
 #### Data Table of Question Responses WITHIN Race Group #####
-
-#filtering for all the variables 
-svy_dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 where response_type = 'mc' AND response_domain !='Demographics' AND response_domain != 'Info'")
-#making sure to only use unique ones and creating a list that the loop function can run through
-unique_indicators <- unique(svy_dd_filter$variable)
 
 for (i in unique_indicators) { 
 #filtering for the variable and pivoting the table to match the survey data format for a merge later  
@@ -210,11 +205,6 @@ data_frames_list <- paste("df_per_", unique_indicators, sep = "")
 
 actual_data_frames <- lapply(data_frames_list, get)
 
-combine_data_frames <- function(df_list) {
-  combined_df <- do.call(rbind, df_list)
-  return(combined_df)
-}
-
 df_merged_per_race <- combine_data_frames(actual_data_frames)
 
 #push to postgres in pgAdmin 
@@ -259,10 +249,6 @@ dbSendQuery(con, "COMMENT ON COLUMN youth_thriving.response_analysis_per_race.va
 knitr::opts_chunk$set(echo = FALSE)
 
 #### CHI-SQUARED TEST BY RACE #####
-#filtering for all the variables 
-svy_dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 where response_type = 'mc' AND response_domain !='Demographics' AND response_domain != 'Info'")
-#making sure to only use unique ones and creating a list that the loop function can run through
-unique_indicators <- unique(svy_dd_filter$variable)
 
 for (i in unique_indicators) { 
 chi_test <- wtd.chi.sq(svy_data$race, svy_data[[i]], weight=svy_data$weights_final, na.rm=TRUE,
@@ -296,11 +282,6 @@ assign(paste0("df_chi_", i), df_chi_test_final)
 data_frames_list <- paste("df_chi_", unique_indicators, sep = "")
 
 actual_data_frames <- lapply(data_frames_list, get)
-
-combine_data_frames <- function(df_list) {
-  combined_df <- do.call(rbind, df_list)
-  return(combined_df)
-}
 
 df_merged_chi_test <- combine_data_frames(actual_data_frames)
 
