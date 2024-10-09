@@ -259,9 +259,9 @@ p_value <- chi_test["p.value"]
 df <- chi_test["df"]
 
 df_chi_test <- data.frame(
-  chi_square = chi_square_value,
-  p_value = p_value,
-  degrees_of_freedom = df
+  chi_square = as.numeric(chi_square_value),
+  p_value = as.numeric(p_value),
+  degrees_of_freedom = as.numeric(df)
 ) 
 
 row.names(df_chi_test) <- NULL
