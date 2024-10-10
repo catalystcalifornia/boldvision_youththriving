@@ -4,7 +4,7 @@
 ####Step 1: Set Up ####
 
 
-packages <- c("dplyr", "RPostgreSQL", "usethis", "readxl", "janitor") 
+packages <- c("dplyr", "RPostgreSQL", "usethis", "readxl", "janitor", "stringr") 
 
 
 for(pkg in packages){
@@ -18,7 +18,8 @@ source("W:\\RDA Team\\R\\credentials_source.R")
 con_bv <- connect_to_db("bold_vision") 
 
 
-####Step 2: Read in dataset and sent to database with comments ####
+####Step 2: Read in dataset, add adjusted weights, and sent to database with comments ####
+## Read in data
 ys_data <- read_excel("W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Updated - 09252024\\BVYTSDatabase_Updated.xlsx", sheet="Data Base")
 
 ys_data <- clean_names(ys_data)
@@ -35,6 +36,76 @@ ys_data <- ys_data %>%
 colnames(ys_data)[grepl('q12a_how_true_is_this_about_you',colnames(ys_data))] <- 'q12a'
 colnames(ys_data)[grepl('q10b_which_of_the_following_',colnames(ys_data))] <- 'q10b'
 colnames(ys_data)[grepl('q10a_how_many_adults_really_',colnames(ys_data))] <- 'q10a'
+
+## add adjusted weights
+# remove original weighting cols from vendor (note: will reuse column names in table exported to pg)
+ys_data <- ys_data %>%
+  select(-c(weights_a1, weights_a2, weights_a3, weights_final))
+
+# read in acs population weights (age, sex, SPA)
+acs_pop_weights <- dbGetQuery(conn=con_bv, statement="SELECT * FROM youth_thriving.acs_weighting_population_counts;")
+
+# read in acs population weights (race)
+acs_population_races <- c("latino", "nh_white", "nh_black", "nh_asian", "nh_aian",
+                          "nh_pacisl", "nh_twoormor", "nh_other")
+acs_race_pop_weights <- dbGetQuery(conn=con_bv, statement="SELECT * FROM youth_thriving.acs_pums_race_pop_15_24;") %>%
+  filter(race %in% acs_population_races) %>%
+  select(geoid, race, count, rate) %>%
+  mutate(race = str_replace(string=race, "nh_twoormor", "nh_other")) %>%
+  group_by(race) %>%
+  summarise(pop_count = sum(count)) %>%
+  ungroup() %>%
+  mutate(pop_rate = pop_count/sum(pop_count))
+
+# read in race recode values for final race sample counts
+race_recode <- dbGetQuery(conn=con_bv, statement="SELECT nh_race FROM youth_thriving.race_ethnicity_data;") %>%
+  table(., useNA = "ifany") %>%
+  as.data.frame() %>%
+  mutate(nh_race = as.character(nh_race)) %>%
+  mutate(nh_race = replace_na(nh_race, "NA"))
+
+
+# race sample groups (and definitions) used to create race_dict:
+# latino/Hispanic - alone or in combination - 1877
+# nh_white/White alone (includes SWANA alone) - 226 (195 + 31)
+# nh_black/Black or African American alone - 554
+# nh_asian/Asian alone - 388
+# nh_aian/AIAN alone (includes indigenous alone) - 67 (63 + 4)
+# nh_pacisl/Native Hawaiian and Other Pacific Islander alone - 27
+# nh_other/Other - includes nh_twoormore, none selected/NA, don't wish to answer alone, other alone - 305 (112 + 185 + 4 + 4)
+race_dict <-c("do_not_wish" = "nh_other", 
+              "latinx" = "latino", 
+              "nh_aian" = "nh_aian", 
+              "nh_asian" = "nh_asian", 
+              "nh_black" = "nh_black", 
+              "nh_indigenous" = "nh_aian",
+              "nh_nhpi" = "nh_pacisl", 
+              "nh_other" = "nh_other", 
+              "nh_swana" = "nh_white", # per Census methods
+              "nh_twoormor" = "nh_other", 
+              "nh_white" = "nh_white", 
+              "NA" = "nh_other")
+
+acs_race_sample_weights <- race_recode %>%
+  rename(race = nh_race) %>%
+  mutate(race = str_replace_all(string = race,
+                                pattern = race_dict)) %>%
+  group_by(race) %>%
+  summarise(Freq = sum(Freq)) %>%
+  ungroup() %>%
+  rename(sample_count=Freq) %>%
+  mutate(sample_rate = sample_count/sum(sample_count))
+
+race_weights <- acs_race_pop_weights %>%
+  left_join(acs_race_sample_weights) %>%
+  mutate(
+    weights = pop_rate/sample_rate,
+    weighted_count = sample_count * weights,
+    weighted_rate = weighted_count / sum(sample_count)
+  )
+
+
+
 
 
 # dbWriteTable(con_bv, c('youth_thriving', 'raw_survey_data'), ys_data,
