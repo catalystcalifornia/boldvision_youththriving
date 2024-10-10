@@ -8,7 +8,7 @@ output: html_document
 
 # Pull data from database.
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE) 
 library(data.table)
 library(dplyr)
 library(RPostgreSQL)

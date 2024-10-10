@@ -48,6 +48,12 @@ svy_dd <- svy_dd  %>%
 
 ```
 
+```{r}
+response = "rican"
+grepl("latina|latino|hispanic|Chicano|Mexican|Cuban|Puerto Rican|Purto Rican|Puertorrican|Bolivia|Nicaragua", response, ignore.case = TRUE)
+```
+
+
 Recode respondents who selected "Other Race" accordingly.
 ```{r}
 # Define a function get_revised_response to recode the respondent's write-in 
@@ -62,7 +68,7 @@ get_revised_response <- function(response) {
     {races <- c(races, "ar")}
   if (grepl("black|african american|afro|Carabian|Caribbean|Nigerian|Jamaican", response, ignore.case = TRUE)) 
     {races <- c(races, "as")}
-  if (grepl("latina|latino|hispanic|Chicano|Mexican|Cuban|Puerto Rican|Bolivia|Nicaragua", response, ignore.case = TRUE)) 
+  if (grepl("latina|latino|hispanic|Chicano|Mexican|Cuban|Puerto Rican|Purto Rican|Puertorrican|Bolivia|Nicaragua", response, ignore.case = TRUE)) 
     {races <- c(races, "au")}
   if (grepl("filipino|asain|Indian|Japanese|South Asian|Sri Lankan", response, ignore.case = TRUE)) 
   {
@@ -76,7 +82,7 @@ get_revised_response <- function(response) {
     {races <- c(races, "ax")}
   if (grepl("Cockasain|white|Russian", response, ignore.case = TRUE)) 
     {races <- c(races, "ay")}
-  if (grepl("null|mixed|multi|Belizean", response, ignore.case = TRUE)) 
+  if (grepl("Two or more|null|mixed|multi|Belizean", response, ignore.case = TRUE)) 
     {races <- c(races, "ba")}
   return(paste(races, collapse = "; "))
 }
@@ -122,18 +128,20 @@ get_revised_asian_response <- function(response) {
     {ethnicities <- c(ethnicities, "bb")}
   if (grepl("Filipino", response, ignore.case = TRUE))
     {ethnicities <- c(ethnicities, "bd")}
-  if (grepl("Pakistani|Southwest|Uzbek|Kazakh", response, ignore.case = TRUE))
-    {ethnicities <- c(ethnicities, "ax")}
+  # if (grepl("Southwest|Uzbek|Kazakh", response, ignore.case = TRUE))
+  #   {ethnicities <- c(ethnicities, "ax")}
   if (grepl("Thai|Burmese|Indonesian|Laos", response, ignore.case = TRUE))
     {ethnicities <- c(ethnicities, "isSoutheastAsian")}
-  if (grepl("Bangladesh|Bengali|Sri Lankan", response, ignore.case = TRUE))
+  if (grepl("Pakistani|Bangladesh|Bengali", response, ignore.case = TRUE))
     {ethnicities <- c(ethnicities, "isSouthAsian")}
   if (grepl("Cambodian|Khmer", response, ignore.case = TRUE)) 
   {ethnicities <- c(ethnicities, "isCambodian")}
+  if (grepl("N/A|None|Doesn't apply|Non|Mexican|African|Hispanic|Pakistani|Southwest Asian|Hawaiian|Filipino|German", response, ignore.case = TRUE)) 
+    {ethnicities <- c(ethnicities, "not_bh")}  
   if (grepl("Hawaiian", response, ignore.case = TRUE)) 
-    {ethnicities <- c(ethnicities, "aw")}
-  if (grepl("N/A|None|Doesn't apply|Non|Mexican|African|Hispanic|Pakistani|Southwest|Uzbek|Kazakh|Hawaiian|Filipino|German", response, ignore.case = TRUE)) 
-    {ethnicities <- c(ethnicities, "not_bh")}
+  {ethnicities <- c(ethnicities, "aw")}
+  if (grepl("Southwest Asian", response, ignore.case = TRUE)) 
+    {ethnicities <- c(ethnicities, "ax")}
   if (grepl("German", response, ignore.case = TRUE)) 
     {ethnicities <- c(ethnicities, "ay")}
   return(paste(ethnicities, collapse = "; "))
@@ -152,10 +160,6 @@ svy_data <- svy_data %>%
            ~ ifelse(str_detect(revised_asian_response, cur_column()), 1, .))
   )
 
-# Respondents who identify as Vietnamese, Filipino, or Cambodian will also be labelled as Southeast Asian
-svy_data$isSoutheastAsian[svy_data$bf == 1 | svy_data$bd == 1 | svy_data$isCambodian == 1] <- 1
-# Respondents who identify as Asian Indian will also be labelled as South Asian
-svy_data$isSouthAsian[svy_data$bc == 1] <- 1
 ```
 
 Get unique responses of respondents who picked "Other NHPI".
@@ -189,7 +193,7 @@ get_revised_nhpi_response <- function(response) {
     {ethnicities <- c(ethnicities, "as")}
   if (grepl("Mexican|Hispanic|Panamanian", response, ignore.case = TRUE)) 
     {ethnicities <- c(ethnicities, "au")}
-  if (grepl("N/A|None|Doesn't apply|Non|not|na", response, ignore.case = TRUE)) 
+  if (grepl("N/A|None|Doesn't apply|Non|not|na|Shoshone|Onieda", response, ignore.case = TRUE)) 
     {ethnicities <- c(ethnicities, "not_br")}
   return(paste(ethnicities, collapse = "; "))
 }
@@ -205,6 +209,13 @@ svy_data <- svy_data %>%
     across(all_of(setdiff(raceColumnList, c("br"))),  
            ~ ifelse(str_detect(revised_nhpi_response, cur_column()), 1, .))
   )
+```
+
+```{r}
+# Respondents who identify as Vietnamese, Filipino, or Cambodian will also be labelled as Southeast Asian
+svy_data$isSoutheastAsian[svy_data$bf == 1 | svy_data$bd == 1 | svy_data$isCambodian == 1] <- 1
+# Respondents who identify as Asian Indian will also be labelled as South Asian
+svy_data$isSouthAsian[svy_data$bc == 1] <- 1
 ```
 
 Creating columns to represent the race of each respondent. 
