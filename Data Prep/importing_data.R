@@ -4,8 +4,7 @@
 ####Step 1: Set Up ####
 
 
-packages <- c("data.table", "stringr", "dplyr", "RPostgreSQL", "dbplyr", "srvyr", "tidyverse","tidycensus", "tidyr", "here", "sf", "usethis", 
-              "readxl", "janitor") 
+packages <- c("dplyr", "RPostgreSQL", "usethis", "readxl", "janitor") 
 
 
 for(pkg in packages){
@@ -22,14 +21,16 @@ con_bv <- connect_to_db("bold_vision")
 ####Step 2: Read in dataset and sent to database with comments ####
 ys_data <- read_excel("W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Final Data\\BVYTSWeightSummary_Database.xlsx",sheet="Database")
 
-ys_data<-clean_names(ys_data)
+ys_data <- clean_names(ys_data)
 
 # check for NA columns
-columns_na_counts<- lapply(ys_data, function(x) sum(is.na(x)))%>%as.data.frame()%>%
-  pivot_longer(everything(),names_to="variable",values_to="na_count")
+columns_na_counts <- lapply(ys_data, function(x) sum(is.na(x)))%>%
+  as.data.frame()%>%
+  pivot_longer(everything(), names_to="variable",values_to="na_count")
 
 # exclude extra blank columns
-ys_data<-ys_data%>%select(-c(x155,x159))
+ys_data <- ys_data %>%
+  select(-c(x155,x159))
 
 colnames(ys_data)[grepl('q12a_how_true_is_this_about_you',colnames(ys_data))] <- 'q12a'
 colnames(ys_data)[grepl('q10b_which_of_the_following_',colnames(ys_data))] <- 'q10b'
@@ -42,16 +43,17 @@ colnames(ys_data)[grepl('q10a_how_many_adults_really_',colnames(ys_data))] <- 'q
 # dbSendQuery(con_bv, "COMMENT ON TABLE youth_thriving.raw_survey_data IS 'The following dataset are responses from the Youth Thriving Survey conducted by Bold Vision in 2024. The data dictionary explaining each variable is here: youth_thriving.bvys_datadictionary_2024 . Steps explaining data cleaning can be found here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Final Data\\BVYTSPopulationWeighting_DataCleaning.pdf Original Dataset is here: a)	W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Final Data\\BVYTSWeightSummary_Database.xlsx The process for cleaning and uploading the data is explained in the QA Documentation here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_dataimport_datadictionary.docx'")
 
 
-
 ####Step 3: Read in data dictionary and send to database comments ####
 
 data_dictionary <- read_excel("W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\bvys_datadictionary_2024.xlsx")
 
-data_dictionary <- data_dictionary %>% mutate(
-  variable_name = str_to_title(variable_name),
-  response_domain = str_to_title(response_domain)) %>%
+data_dictionary <- data_dictionary %>% 
+  mutate(
+    variable_name = str_to_title(variable_name),
+    response_domain = str_to_title(response_domain)) %>%
   filter_all(any_vars(!is.na(.))) %>%
-  mutate(primary_key = row_number()) %>%
+  mutate(
+    primary_key = row_number()) %>%
   select(primary_key, everything())
 
 # generalize variables in Caring Families and Relationships to align with conceptboard
@@ -64,8 +66,10 @@ data_dictionary$response_domain[data_dictionary$response_domain=="Demographic"] 
 data_dictionary$response_domain[data_dictionary$variable=="org"] <- "Info"
 
 # do some other clean up for consistent labels
-data_dictionary<-data_dictionary%>%mutate(variable_name=str_replace(variable_name," Nhpi "," NHPI "),
-                                          variable_name=str_replace(variable_name,"Spa ","SPA "))
+data_dictionary <- data_dictionary %>%
+  mutate(
+    variable_name=str_replace(variable_name," Nhpi "," NHPI "),
+    variable_name=str_replace(variable_name,"Spa ","SPA "))
 
 
 data_dictionary[data_dictionary=="Don't Wish to Answer"]<-"Don't wish to answer"
