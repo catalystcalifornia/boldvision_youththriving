@@ -123,3 +123,12 @@ dbSendQuery(con_bv, "COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.v
 dbSendQuery(con_bv, "ALTER TABLE youth_thriving.bvys_datadictionary_2024 ADD PRIMARY KEY (primary_key)");
 
 dbDisconnect(con_bv)
+
+# QA check: survey columns are equal to data dictionary variables
+survey_colnames <- sort(colnames(ys_data))
+datadict_variables <- sort(data_dictionary$variable)
+
+identical(survey_colnames, datadict_variables) 
+setdiff(survey_colnames, datadict_variables) 
+
+
