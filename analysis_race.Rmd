@@ -114,8 +114,8 @@ df_merged <- combine_data_frames(actual_data_frames)
 
 #push to postgres in pgAdmin 
 
-dbWriteTable(con, c('youth_thriving', 'response_analysis_by_race'), df_merged,
-             overwrite = FALSE, row.names = FALSE)
+# dbWriteTable(con, c('youth_thriving', 'response_analysis_by_race'), df_merged,
+#              overwrite = FALSE, row.names = FALSE)
 
 dbSendQuery(con, "COMMENT ON TABLE youth_thriving.response_analysis_by_race IS 'The following is a table of response frequency and rate by race group. In other words- of the potential responses to a question, what % of X race group said Y compared to other race groups that also said Y: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_racetables_chi_analysis.docx'")
 
@@ -241,9 +241,45 @@ dbSendQuery(con, "COMMENT ON COLUMN youth_thriving.response_analysis_per_race.va
 
 
 
+### VISUAL OPTION ####
+
+df <- svy_dd%>%filter(response_domain=="Strong Minds" & variable_name=="Positive Emotions") # filter dictionary just for questions of interest
+
+unique_vars <- unique(df$variable) # create a list of questions/variables to analyze
+
+# Factor options
+true_factors<-c("Never True","Sometimes True","Often True","Always True","Don't wish to answer") # most commonly used factor here
+
+
+for (i in unique_vars) {   df<-df_merged_per_race%>%filter(variable==i)%>%filter(rate_cv<40)
+my_height <- 0.95 # height and width of ggplot
+my_width <- 0.95
+df$response_labels <- factor(x=df$response_labels, levels = true_factors) # factor levels to order plot by
+# plot styling
+visual<-ggplot(data = df, aes(x = response_labels, y = race_labels,fill=rate))+
+  geom_tile(height=my_height, width=my_width, color="white",lwd = 1.5,
+            linetype = 1)+
+  geom_text(aes(label=round(rate,1)),size=3)+
+  scale_fill_gradient(low="#f9de8d", high="#EF4A66",name="Weighted Percent")+
+  scale_y_discrete(labels=function(x)str_wrap(x,width=20),)+
+  scale_x_discrete(labels=function(y)str_wrap(y,width=5))+
+  labs(title=paste0(str_wrap(df$question,width=60), " ", str_wrap(df$sub_question,width=60)),
+       x="",
+       y="")+
+  # coord_fixed()+
+  theme_bw()+
+  theme(plot.title=element_text(size=10),
+        legend.title=element_text(size=9),
+        axis.text.x=element_text(size=10),
+        axis.text.y=element_text(size=10))
+print(visual)}
+
+
 
 
 ```
+
+
 
 ```{r, message = FALSE, results='asis'}
 knitr::opts_chunk$set(echo = FALSE)
