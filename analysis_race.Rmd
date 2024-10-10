@@ -276,6 +276,66 @@ print(visual)}
 
 
 
+df <- svy_dd%>%filter(response_domain=="Cultural Identity" & variable_name=="Cultural Identity And Connection") # filter dictionary just for questions of interest
+
+unique_vars <- unique(df$variable) # create a list of questions/variables to analyze
+
+for (i in unique_vars) {   df<-df_merged_per_race%>%filter(variable==i)%>%filter(rate_cv<40)
+my_height <- 0.95 # height and width of ggplot
+my_width <- 0.95
+df$response_labels <- factor(x=df$response_labels, levels = true_factors) # factor levels to order plot by
+# plot styling
+visual<-ggplot(data = df, aes(x = response_labels, y = race_labels,fill=rate))+
+  geom_tile(height=my_height, width=my_width, color="white",lwd = 1.5,
+            linetype = 1)+
+  geom_text(aes(label=round(rate,1)),size=3)+
+  scale_fill_gradient(low="#f9de8d", high="#EF4A66",name="Weighted Percent")+
+  scale_y_discrete(labels=function(x)str_wrap(x,width=20),)+
+  scale_x_discrete(labels=function(y)str_wrap(y,width=5))+
+  labs(title=paste0(str_wrap(df$question,width=60), " ", str_wrap(df$sub_question,width=60)),
+       x="",
+       y="")+
+  # coord_fixed()+
+  theme_bw()+
+  theme(plot.title=element_text(size=10),
+        legend.title=element_text(size=9),
+        axis.text.x=element_text(size=10),
+        axis.text.y=element_text(size=10))
+print(visual)}
+
+
+
+df <- svy_dd%>%filter(response_domain=="Racial Justice, Equity, And Inclusion" & variable_name=="Experiences Of Racism And Discrimination") # filter dictionary just for questions of interest
+
+frequency_factors_2<-c("Never","Rarely","Sometimes","Most of the time","All of the time","Don't wish to answer","Does not apply to me")
+
+unique_vars <- unique(df$variable) # create a list of questions/variables to analyze
+
+for (i in unique_vars) {   df<-df_merged_per_race%>%filter(variable==i)%>%filter(rate_cv<40)
+my_height <- 0.95 # height and width of ggplot
+my_width <- 0.95
+df$response_labels <- factor(x=df$response_labels, levels = frequency_factors_2) # factor levels to order plot by
+# plot styling
+visual<-ggplot(data = df, aes(x = response_labels, y = race_labels,fill=rate))+
+  geom_tile(height=my_height, width=my_width, color="white",lwd = 1.5,
+            linetype = 1)+
+  geom_text(aes(label=round(rate,1)),size=3)+
+  scale_fill_gradient(low="#f9de8d", high="#EF4A66",name="Weighted Percent")+
+  scale_y_discrete(labels=function(x)str_wrap(x,width=20),)+
+  scale_x_discrete(labels=function(y)str_wrap(y,width=5))+
+  labs(title=paste0(str_wrap(df$question,width=60), " ", str_wrap(df$sub_question,width=60)),
+       x="",
+       y="")+
+  # coord_fixed()+
+  theme_bw()+
+  theme(plot.title=element_text(size=10),
+        legend.title=element_text(size=9),
+        axis.text.x=element_text(size=10),
+        axis.text.y=element_text(size=10))
+print(visual)}
+
+
+
 
 ```
 
