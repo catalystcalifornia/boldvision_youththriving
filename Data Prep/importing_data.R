@@ -116,6 +116,7 @@ dbSendQuery(con_bv, "COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.v
                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_11 IS 'what the response is if the variable has a 11 coded for the data.';
                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_12 IS 'what the response is if the variable has a 12 coded for the data.';
                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.notes IS 'any important notes like what variables were just for the weights and whether skip logic was applied';
+                     COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.likert IS 'notes if a Likert scale was used and how many points/options given (e.g., 5pt_scale, 4pt_scale, etc.)';
             ")
 
 # add primary key for editing in database
