@@ -286,7 +286,7 @@ data_dictionary[data_dictionary=="Always True"]<-"Always true"
 
 # Export data dictionary table and comments
 # dbWriteTable(con_bv, c('youth_thriving', 'bvys_datadictionary_2024'), data_dictionary,
-#              overwrite = TRUE, row.names = FALSE)
+#              overwrite = FALSE, row.names = FALSE)
 
 # dbSendQuery(con_bv, "COMMENT ON TABLE youth_thriving.bvys_datadictionary_2024 IS 'The following data dictionary aims to decode the data for the Bold Visin Youth Thriving Survey Data for 2024. QA Documentation here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_dataimport_datadictionary.docx'")
 # 
