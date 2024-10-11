@@ -83,7 +83,6 @@ acs_population_races <- c("latino", "nh_white", "nh_black", "nh_asian", "nh_aian
 acs_race_pop_weights <- dbGetQuery(conn=con_bv, statement="SELECT * FROM youth_thriving.acs_pums_race_pop_15_24;") %>%
   filter(race %in% acs_population_races) %>%
   select(geoid, race, count, rate) %>%
-  mutate(race = str_replace(string=race, "nh_twoormor", "nh_other")) %>%
   group_by(race) %>%
   summarise(pop_count = sum(count)) %>%
   ungroup() %>%
@@ -106,8 +105,9 @@ race_recode_counts <- race_recode %>%
 # nh_black/Black or African American alone - 554
 # nh_asian/Asian alone - 388
 # nh_aian/AIAN alone (includes indigenous alone) - 67 (63 + 4)
-# nh_pacisl/Native Hawaiian and Other Pacific Islander alone - 27
-# nh_other/Other - includes nh_twoormore, none selected/NA, don't wish to answer alone, other alone - 305 (112 + 185 + 4 + 4)
+# nh_pacisl/Native Hawaiian and Other Pacific Islander alone - 23
+# nh_other/Other - none selected/NA, don't wish to answer alone, other alone - 192
+# nh_twoormor - includes nh_twoormore (150)
 race_dict <-c("do_not_wish" = "nh_other", 
               "latinx" = "latino", 
               "nh_aian" = "nh_aian", 
@@ -117,7 +117,7 @@ race_dict <-c("do_not_wish" = "nh_other",
               "nh_nhpi" = "nh_pacisl", 
               "nh_other" = "nh_other", 
               "nh_swana" = "nh_white", # per Census methods
-              "nh_twoormor" = "nh_other", 
+              "nh_twoormor" = "nh_twoormor", # per Census categories
               "nh_white" = "nh_white", 
               "NA" = "nh_other")
 
@@ -229,8 +229,13 @@ ys_data_finalwts <- ys_data_finalwts %>%
 # dbWriteTable(con_bv, c('youth_thriving', 'raw_survey_data'), ys_data_finalwts,
 #                           overwrite = FALSE, row.names = FALSE)
 # 
-# dbSendQuery(con_bv, "COMMENT ON TABLE youth_thriving.raw_survey_data IS 'The following dataset are responses from the Youth Thriving Survey conducted by Bold Vision in 2024. The data dictionary explaining each variable is here: youth_thriving.bvys_datadictionary_2024 . Steps explaining data cleaning can be found here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Final Data\\BVYTSPopulationWeighting_DataCleaning.pdf Original Dataset is here: a)	W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Final Data\\BVYTSWeightSummary_Database.xlsx The process for cleaning and uploading the data is explained in the QA Documentation here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_dataimport_datadictionary.docx'")
-
+# dbSendQuery(con_bv, "COMMENT ON TABLE youth_thriving.raw_survey_data IS 
+#             'The following dataset are responses from the Youth Thriving Survey conducted by Bold Vision in 2024. The data dictionary explaining each variable is here: youth_thriving.bvys_datadictionary_2024 . 
+#             Steps explaining data cleaning can be found here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Updated - 09252024\\BVYTSPopulationWeighting_DataCleaning.pdf 
+#             Original Dataset is here: a)	W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\09252024\\BVYTSWeightSummary_Database.xlsx 
+#             The process for cleaning and uploading the data is explained in the QA Documentation here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_dataimport_datadictionary.docx
+#             Script for cleaning data and recalculating sample weights can be found here Data Prep/importing_data.R'")
+# 
 
 ####Step 3: Read in data dictionary and send to database comments ####
 
@@ -265,6 +270,7 @@ data_dictionary[data_dictionary=="Don't Wish to Answer"]<-"Don't wish to answer"
 data_dictionary[data_dictionary=="Don't Wish to Answer"]<-"Don't wish to answer"
 data_dictionary[data_dictionary=="Dont wish to answer"]<-"Don't wish to answer"
 data_dictionary[data_dictionary=="Dont Wish to Answer"]<-"Don't wish to answer"
+data_dictionary[data_dictionary=="dont wish to answer"]<-"Don't wish to answer"
 data_dictionary[data_dictionary=="I am not sure or Questioning"]<-"I am not sure or questioning"
 data_dictionary[data_dictionary=="Dont know"]<-"Don't know"
 data_dictionary[data_dictionary=="Don't Know"]<-"Don't know"
@@ -278,10 +284,10 @@ data_dictionary[data_dictionary=="Sometimes True"]<-"Sometimes true"
 data_dictionary[data_dictionary=="Often True"]<-"Often true"
 data_dictionary[data_dictionary=="Always True"]<-"Always true"
 
-# # Export data dictionary table and comments
+# Export data dictionary table and comments
 # dbWriteTable(con_bv, c('youth_thriving', 'bvys_datadictionary_2024'), data_dictionary,
-#              overwrite = FALSE, row.names = FALSE)
-# 
+#              overwrite = TRUE, row.names = FALSE)
+
 # dbSendQuery(con_bv, "COMMENT ON TABLE youth_thriving.bvys_datadictionary_2024 IS 'The following data dictionary aims to decode the data for the Bold Visin Youth Thriving Survey Data for 2024. QA Documentation here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_dataimport_datadictionary.docx'")
 # 
 # 
