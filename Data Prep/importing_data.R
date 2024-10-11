@@ -48,6 +48,7 @@ acs_pop_weights <- dbGetQuery(conn=con_bv, statement="SELECT * FROM youth_thrivi
 # read in acs population weights (race)
 acs_population_races <- c("latino", "nh_white", "nh_black", "nh_asian", "nh_aian",
                           "nh_pacisl", "nh_twoormor", "nh_other")
+
 acs_race_pop_weights <- dbGetQuery(conn=con_bv, statement="SELECT * FROM youth_thriving.acs_pums_race_pop_15_24;") %>%
   filter(race %in% acs_population_races) %>%
   select(geoid, race, count, rate) %>%
@@ -58,11 +59,14 @@ acs_race_pop_weights <- dbGetQuery(conn=con_bv, statement="SELECT * FROM youth_t
   mutate(pop_rate = pop_count/sum(pop_count))
 
 # read in race recode values for final race sample counts
-race_recode <- dbGetQuery(conn=con_bv, statement="SELECT nh_race FROM youth_thriving.race_ethnicity_data;") %>%
-  table(., useNA = "ifany") %>%
-  as.data.frame() %>%
+race_recode <- dbGetQuery(conn=con_bv, statement="SELECT response_id, nh_race FROM youth_thriving.race_ethnicity_data;") %>%
   mutate(nh_race = as.character(nh_race)) %>%
   mutate(nh_race = replace_na(nh_race, "NA"))
+
+race_recode_counts <- race_recode %>%
+  select(nh_race) %>%
+  table(., useNA = "ifany") %>%
+  as.data.frame() 
 
 
 # race sample groups (and definitions) used to create race_dict:
@@ -86,7 +90,7 @@ race_dict <-c("do_not_wish" = "nh_other",
               "nh_white" = "nh_white", 
               "NA" = "nh_other")
 
-acs_race_sample_weights <- race_recode %>%
+acs_race_sample_weights <- race_recode_counts %>%
   rename(race = nh_race) %>%
   mutate(race = str_replace_all(string = race,
                                 pattern = race_dict)) %>%
@@ -104,8 +108,14 @@ race_weights <- acs_race_pop_weights %>%
     weighted_rate = weighted_count / sum(sample_count)
   )
 
-
-
+# add a temporary acs_race column, fill with race_dict values (against nh_race col) then add race_weight col
+ys_data_racewts <- ys_data %>%
+  left_join(select(race_recode, response_id, nh_race)) %>%
+  
+  mutate(acs_race = str_replace_all(string = nh_race,
+                                    pattern = race_dict)) %>%
+  left_join(select(race_weights, race, weights), by=c("acs_race"="race")) %>%
+  rename(race_wt = weights)
 
 
 # dbWriteTable(con_bv, c('youth_thriving', 'raw_survey_data'), ys_data,
