@@ -181,9 +181,9 @@ vars<-svy_dd%>%filter(variable_name=='Gender')%>%select(variable,response_1)
 
 df<-svy_data %>% select(all_of(vars$variable))%>%select(where(is.numeric))%>%
   summarise_all(sum,na.rm=TRUE)%>%
-  mutate(category='Gender')
+  mutate(variable_name='Gender')
 
-df_long<-df%>%pivot_longer(!category,names_to='variable',values_to='count')%>%
+df_long<-df%>%pivot_longer(!variable_name,names_to='response',values_to='count')%>%
   left_join(vars)
 
 gender_demographics_df <- svy_data %>%
