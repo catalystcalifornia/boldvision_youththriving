@@ -18,7 +18,7 @@ source("W:\\RDA Team\\R\\credentials_source.R")
 con_bv <- connect_to_db("bold_vision") 
 
 
-####Step 2: Read in dataset, add adjusted weights, and sent to database with comments ####
+#### Step 2: Read in dataset and clean column names ####
 ## Read in data
 ys_data <- read_excel("W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Updated - 09252024\\BVYTSDatabase_Updated.xlsx", sheet="Data Base")
 
@@ -37,7 +37,7 @@ colnames(ys_data)[grepl('q12a_how_true_is_this_about_you',colnames(ys_data))] <-
 colnames(ys_data)[grepl('q10b_which_of_the_following_',colnames(ys_data))] <- 'q10b'
 colnames(ys_data)[grepl('q10a_how_many_adults_really_',colnames(ys_data))] <- 'q10a'
 
-## add adjusted weights
+#### Step 3: Add adjusted weights ####
 # remove original weighting cols from vendor (note: will reuse column names in table exported to pg)
 ys_data <- ys_data %>%
   select(-c(weights_a1, weights_a2, weights_a3, weights_final))
@@ -45,7 +45,7 @@ ys_data <- ys_data %>%
 # read in acs population weights (age, sex, SPA)
 acs_pop_weights <- dbGetQuery(conn=con_bv, statement="SELECT * FROM youth_thriving.acs_weighting_population_counts;")
 
-# 1. add age_wt col to survey data
+###### 1. add age_wt col to survey data -----
 acs_age_pop <- acs_pop_weights %>%
   filter(weighting_group=='Age') %>%
   rename(pop_count = count,
@@ -75,7 +75,7 @@ ys_data_agewts <- ys_data %>%
   left_join(select(age_weights, variable, weights), by=c("age_minor_adult"="variable")) %>%
   rename(age_wt = weights)
 
-# 2. add race_wt col to survey data
+##### 2. add race_wt col to survey data -----
 # read in acs population weights (race)
 acs_population_races <- c("latino", "nh_white", "nh_black", "nh_asian", "nh_aian",
                           "nh_pacisl", "nh_twoormor", "nh_other")
@@ -113,7 +113,7 @@ race_dict <-c("do_not_wish" = "nh_other",
               "nh_aian" = "nh_aian", 
               "nh_asian" = "nh_asian", 
               "nh_black" = "nh_black", 
-              "nh_indigenous" = "nh_aian",
+              "nh_indigenous" = "nh_aian", # per Census methods
               "nh_nhpi" = "nh_pacisl", 
               "nh_other" = "nh_other", 
               "nh_swana" = "nh_white", # per Census methods
@@ -148,7 +148,7 @@ ys_data_racewts <- ys_data_agewts %>%
   left_join(select(race_weights, race, weights), by=c("acs_race"="race")) %>%
   rename(race_wt = weights)
 
-# 3. add sex_wt col to survey data
+##### 3. add sex_wt col to survey data ----
 acs_sex_pop <- acs_pop_weights %>%
   filter(weighting_group=='Sex at birth') %>%
   rename(pop_count = count,
@@ -179,7 +179,7 @@ ys_data_sexwts <- ys_data_racewts %>%
   left_join(select(sex_weights, variable, weights), by=c("q22"="variable")) %>%
   rename(sex_wt = weights)
 
-# 4. add spa_wt col to survey data
+##### 4. add spa_wt col to survey data ----
 acs_spa_pop <- acs_pop_weights %>%
   filter(weighting_group=='SPA') %>%
   rename(pop_count = count,
@@ -206,6 +206,7 @@ ys_data_spawts <- ys_data_sexwts %>%
   left_join(select(spa_weights, variable, weights), by=c("spa_final_respondent"="variable")) %>%
   rename(spa_wt = weights)
 
+##### 5. Calculate final weights ----
 # calculate weights_a1, weights_a2, weights_a3, and weights_final
 # replace NAs in _wt cols with 1
 ys_data_finalwts <- ys_data_spawts %>%
