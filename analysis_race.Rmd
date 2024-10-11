@@ -1,0 +1,318 @@
+---
+title: Bold Vision Youth Thriving Survey Frequency Counts by Race Groups 
+output:
+  html_document:
+    code_folding: hide
+    number_sections: no
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+---
+
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(data.table)
+library(dplyr)
+library(RPostgreSQL)
+library(sf)
+library(tidyr)
+library(readxl)
+library(tidyverse)
+library(janitor)
+library(srvyr)
+library(survey)
+library(highcharter)
+library(knitr)
+library(kableExtra)
+library(weights)
+options(scipen=999)
+
+# connect to postgres and pull credentials
+source("W:\\RDA Team\\R\\credentials_source.R")
+con <- connect_to_db("bold_vision")
+
+#pull in data and data dictionary
+svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
+svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 where response_type = 'mc'")
+#filtering for all the variables of interest
+svy_dd_filter <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 where response_type = 'mc' AND response_domain !='Demographics' AND response_domain != 'Info'")
+#making sure to only use unique ones and creating a list that the loop functions can run through
+unique_indicators <- unique(svy_dd_filter$variable)
+#function used to create master datasets to push to pgAdmin
+combine_data_frames <- function(df_list) {
+  combined_df <- do.call(rbind, df_list)
+  return(combined_df)
+}
+
+
+```
+
+```{r, message = FALSE, results='asis'}
+
+#### Data Table of Question Responses BY Race Group #####
+
+knitr::opts_chunk$set(echo = FALSE)
+
+for (i in unique_indicators) { 
+#filtering for the variable and pivoting the table to match the survey data format for a merge later  
+dict <- svy_dd_filter %>% filter(variable == i) %>%
+  pivot_longer(cols = response_1: response_12,
+               names_to = "responses",
+               values_to = paste0("response_labels"),
+               values_drop_na = TRUE)
+
+dict_var <- dict %>%
+  mutate(variable_merge_col = 1:nrow(dict))
+#filtering the survey data and summarize with a count, rate, and cv // grouping by the variable first and then the race group
+df_var <- as_survey(svy_data, weights = c(weights_final)) %>% 
+   filter(!is.na(!!as.symbol(i)))%>%
+    group_by(!!rlang::ensym(i), race)%>%
+  summarise(count = n(), rate=survey_mean(vartype="cv",level=.90))%>%
+  mutate(rate=rate*100,rate_cv=rate_cv*100)
+#merging data with data dictionary 
+df_almost_final <-  merge(x = df_var, y = dict_var, by.x = c(i), by.y = c("variable_merge_col")) %>%
+  relocate(paste0("response_labels")) 
+#getting just the race column labels for data dictionary to label those as well in data
+dict_race <- svy_dd %>% filter(variable == 'race')
+dict_race <- dict_race %>%
+  pivot_longer(cols = response_1: response_12,
+               names_to = "responses",
+               values_to = paste0("race_labels"),
+               values_drop_na = TRUE)
+
+dict_race <- dict_race %>%
+  mutate(race_merge_col = 1:nrow(dict_race)) %>%
+  select(race_merge_col, race_labels)
+#finally this merge lables the race columns and cleans up the data for just what we need.  
+df_final_by_race <-  merge(x = df_almost_final, y = dict_race, by.x = c('race'), by.y = c("race_merge_col")) %>%
+  relocate(paste0("race_labels")) %>%
+  subset(select = c(race_labels, 
+                 response_labels,
+                 count,
+                 rate,
+                 rate_cv,
+                 variable,
+                 question,
+                 sub_question,
+                 question_number,
+                 variable_category,
+                 variable_name,
+                 response_domain))
+#producing multiple data frames in the environment to eventually merge together and create one giant dataframe for analysis and visualization later
+assign(paste0("df_", i), df_final_by_race)
+}
+
+#merging them all together through a function
+
+data_frames_list <- paste("df_", unique_indicators, sep = "")
+
+actual_data_frames <- lapply(data_frames_list, get)
+
+df_merged <- combine_data_frames(actual_data_frames)
+
+#push to postgres in pgAdmin 
+
+dbWriteTable(con, c('youth_thriving', 'response_analysis_by_race'), df_merged,
+             overwrite = FALSE, row.names = FALSE)
+
+dbSendQuery(con, "COMMENT ON TABLE youth_thriving.response_analysis_by_race IS 'The following is a table of response frequency and rate by race group. In other words- of the potential responses to a question, what % of X race group said Y compared to other race groups that also said Y: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_racetables_chi_analysis.docx'")
+
+
+dbSendQuery(con, "COMMENT ON COLUMN youth_thriving.response_analysis_by_race.variable IS 
+                      'refers to the column label or variable in the survey data';
+                     COMMENT ON COLUMN youth_thriving.response_analysis_by_race.question IS 
+                      'the question that this variable refers to';
+                     COMMENT ON COLUMN youth_thriving.response_analysis_by_race.sub_question IS 
+                      'the subquestion that this variable refers to';
+                     COMMENT ON COLUMN youth_thriving.response_analysis_by_race.variable_category IS 
+                      'the categories the data collector identified in their codebook';
+                     COMMENT ON COLUMN youth_thriving.response_analysis_by_race.variable_name IS 
+                      'a more explanatory name of what the variable aims to measure';
+                     COMMENT ON COLUMN youth_thriving.response_analysis_by_race.response_domain IS 
+                      'the survey domain this variable refers to';
+                      COMMENT ON COLUMN youth_thriving.response_analysis_by_race.race_labels IS 
+                      'race group';
+                      COMMENT ON COLUMN youth_thriving.response_analysis_by_race.response_labels IS 
+                      'the response that the data is about';
+                      COMMENT ON COLUMN youth_thriving.response_analysis_by_race.count IS 
+                      'the count of people within this race that answered this response';
+                      COMMENT ON COLUMN youth_thriving.response_analysis_by_race.rate IS 
+                      'the rate of people in this race group that answered with this response compared to OTHER race groups';
+                    COMMENT ON COLUMN youth_thriving.response_analysis_by_race.rate_cv IS 
+                      'coefficient of variation for this rate';
+            ")
+
+```
+
+```{r, message = FALSE, results='asis'}
+
+#### Data Table of Question Responses WITHIN Race Group #####
+
+for (i in unique_indicators) { 
+#filtering for the variable and pivoting the table to match the survey data format for a merge later  
+dict <- svy_dd_filter %>% filter(variable == i) %>%
+  pivot_longer(cols = response_1: response_12,
+               names_to = "responses",
+               values_to = paste0("response_labels"),
+               values_drop_na = TRUE)
+
+dict_var <- dict %>%
+  mutate(variable_merge_col = 1:nrow(dict))
+#filtering the survey data and summarize with a count, rate, and cv // grouping by the variable first and then the race group
+df_var <- as_survey(svy_data, weights = c(weights_final)) %>% 
+   filter(!is.na(!!as.symbol(i)))%>%
+    group_by(race, !!rlang::ensym(i))%>%
+  summarise(count = n(), rate=survey_mean(vartype="cv",level=.90))%>%
+  mutate(rate=rate*100,rate_cv=rate_cv*100)
+#merging data with data dictionary 
+df_almost_final <-  merge(x = df_var, y = dict_var, by.x = c(i), by.y = c("variable_merge_col")) %>%
+  relocate(paste0("response_labels")) 
+#getting just the race column labels for data dictionary to label those as well in data
+dict_race <- svy_dd %>% filter(variable == 'race')
+dict_race <- dict_race %>%
+  pivot_longer(cols = response_1: response_12,
+               names_to = "responses",
+               values_to = paste0("race_labels"),
+               values_drop_na = TRUE)
+
+dict_race <- dict_race %>%
+  mutate(race_merge_col = 1:nrow(dict_race)) %>%
+  select(race_merge_col, race_labels)
+#finally this merge lables the race columns and cleans up the data for just what we need.  
+df_final_per_race <-  merge(x = df_almost_final, y = dict_race, by.x = c('race'), by.y = c("race_merge_col")) %>%
+  relocate(paste0("race_labels")) %>%
+  subset(select = c(race_labels, 
+                 response_labels,
+                 count,
+                 rate,
+                 rate_cv,
+                 variable,
+                 question,
+                 sub_question,
+                 question_number,
+                 variable_category,
+                 variable_name,
+                 response_domain))
+#producing multiple data frames in the environment to eventually merge together and create one giant dataframe for analysis and visualization later
+assign(paste0("df_per_", i), df_final_per_race)
+}
+
+#merging them all together through a function
+
+data_frames_list <- paste("df_per_", unique_indicators, sep = "")
+
+actual_data_frames <- lapply(data_frames_list, get)
+
+df_merged_per_race <- combine_data_frames(actual_data_frames)
+
+#push to postgres in pgAdmin 
+
+dbWriteTable(con, c('youth_thriving', 'response_analysis_per_race'), df_merged_per_race,
+             overwrite = FALSE, row.names = FALSE)
+
+dbSendQuery(con, "COMMENT ON TABLE youth_thriving.response_analysis_per_race IS 'The following is a table of response frequency and rate PER race group. In other words- of the potential responses to a question, what % of X race group said Y compared to how many of that race group said Y: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_racetables_chi_analysis.docx'")
+
+
+dbSendQuery(con, "COMMENT ON COLUMN youth_thriving.response_analysis_per_race.variable IS 
+                      'refers to the column label or variable in the survey data';
+                     COMMENT ON COLUMN youth_thriving.response_analysis_per_race.question IS 
+                      'the question that this variable refers to';
+                     COMMENT ON COLUMN youth_thriving.response_analysis_per_race.sub_question IS 
+                      'the subquestion that this variable refers to';
+                     COMMENT ON COLUMN youth_thriving.response_analysis_per_race.variable_category IS 
+                      'the categories the data collector identified in their codebook';
+                     COMMENT ON COLUMN youth_thriving.response_analysis_per_race.variable_name IS 
+                      'a more explanatory name of what the variable aims to measure';
+                     COMMENT ON COLUMN youth_thriving.response_analysis_per_race.response_domain IS 
+                      'the survey domain this variable refers to';
+                      COMMENT ON COLUMN youth_thriving.response_analysis_per_race.race_labels IS 
+                      'race group';
+                      COMMENT ON COLUMN youth_thriving.response_analysis_per_race.response_labels IS 
+                      'the response that the data is about';
+                      COMMENT ON COLUMN youth_thriving.response_analysis_per_race.count IS 
+                      'the count of people within this race that answered this response';
+                      COMMENT ON COLUMN youth_thriving.response_analysis_per_race.rate IS 
+                      'the rate of people in this race group that answered with this response compared to how others in this race group responded';
+                    COMMENT ON COLUMN youth_thriving.response_analysis_per_race.rate_cv IS 
+                      'coefficient of variation for this rate';
+            ")
+
+
+
+
+
+```
+
+```{r, message = FALSE, results='asis'}
+knitr::opts_chunk$set(echo = FALSE)
+
+#### CHI-SQUARED TEST BY RACE #####
+
+for (i in unique_indicators) { 
+chi_test <- wtd.chi.sq(svy_data$race, svy_data[[i]], weight=svy_data$weights_final, na.rm=TRUE,
+drop.missing.levels=FALSE)
+
+chi_square_value <- chi_test["Chisq"]
+p_value <- chi_test["p.value"]
+df <- chi_test["df"]
+
+df_chi_test <- data.frame(
+  chi_square = as.numeric(chi_square_value),
+  p_value = as.numeric(p_value),
+  degrees_of_freedom = as.numeric(df)
+) 
+
+row.names(df_chi_test) <- NULL
+
+df_chi_test_final <- df_chi_test %>%
+  mutate(variable = i,
+         null_hypothesis = ifelse(p_value <= .05, "reject", "accept")) %>%
+  relocate(variable, null_hypothesis) %>%
+  left_join(svy_dd, by = 'variable') %>%
+  subset(select = c(variable, null_hypothesis, chi_square, p_value, degrees_of_freedom, question, sub_question, question_number, response_domain, variable_category, variable_name))
+
+assign(paste0("df_chi_", i), df_chi_test_final)
+}
+
+
+#merging them all together through a function
+
+data_frames_list <- paste("df_chi_", unique_indicators, sep = "")
+
+actual_data_frames <- lapply(data_frames_list, get)
+
+df_merged_chi_test <- combine_data_frames(actual_data_frames)
+
+#push to postgres in pgAdmin 
+
+dbWriteTable(con, c('youth_thriving', 'chi_testing_per_race'), df_merged_chi_test,
+             overwrite = FALSE, row.names = FALSE)
+
+dbSendQuery(con, "COMMENT ON TABLE youth_thriving.chi_testing_per_race IS 'The following is a table of chi square tests run for the race by question for all the domains in the survey. The Chi-Square tests gives us an indication if there were equal responses by race group to the responses or was there variation enough to suspect inequity. W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_racetables_chi_analysis.docx'")
+
+
+dbSendQuery(con, "COMMENT ON COLUMN youth_thriving.chi_testing_per_race.variable IS 
+                      'refers to the column label or variable in the survey data';
+                     COMMENT ON COLUMN youth_thriving.chi_testing_per_race.question IS 
+                      'the question that this variable refers to';
+                     COMMENT ON COLUMN youth_thriving.chi_testing_per_race.sub_question IS 
+                      'the subquestion that this variable refers to';
+                     COMMENT ON COLUMN youth_thriving.chi_testing_per_race.variable_category IS 
+                      'the categories the data collector identified in their codebook';
+                     COMMENT ON COLUMN youth_thriving.chi_testing_per_race.variable_name IS 
+                      'a more explanatory name of what the variable aims to measure';
+                     COMMENT ON COLUMN youth_thriving.chi_testing_per_race.response_domain IS 
+                      'the survey domain this variable refers to';
+                      COMMENT ON COLUMN youth_thriving.chi_testing_per_race.null_hypothesis IS 
+                      'if the null hypothesis (that all race groups answered at about the same rate) is true or false. If it is true, we accept it and if it is false, we reject it. this is based on the p-value. if the p-value is greater than .05 we accept the null hypothesis and if it is lower than .05, we reject it';
+                      COMMENT ON COLUMN youth_thriving.chi_testing_per_race.p_value IS 
+                      'the p value';
+                      COMMENT ON COLUMN youth_thriving.chi_testing_per_race.chi_square IS 
+                      'the chi square statistic';
+                      COMMENT ON COLUMN youth_thriving.chi_testing_per_race.degrees_of_freedom IS 
+                      'the degrees of freedom or sometimes referred to the parameters';
+            ")
+
+```
