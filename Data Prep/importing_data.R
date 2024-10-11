@@ -46,10 +46,41 @@ ys_data <- ys_data %>%
 acs_pop_weights <- dbGetQuery(conn=con_bv, statement="SELECT * FROM youth_thriving.acs_weighting_population_counts;")
 
 # add age_wt col to survey data
+acs_age_pop <- acs_pop_weights %>%
+  filter(weighting_group=='Age') %>%
+  rename(pop_count = count,
+         pop_rate = percent)
+
+acs_age_pop$variable <- str_replace(acs_age_pop$variable, "15-17","1")
+acs_age_pop$variable <- str_replace(acs_age_pop$variable, "18-24", "2")
+
+acs_age_sample <- ys_data %>%
+  select(age_minor_adult) %>%
+  table(., useNA = "ifany") %>%
+  as.data.frame() %>%
+  mutate(age_minor_adult = as.character(age_minor_adult)) %>%
+  rename(sample_count = Freq) %>%
+  mutate(sample_rate = sample_count/sum(sample_count))
+
+age_weights <- acs_age_pop %>%
+  left_join(acs_age_sample, by=c('variable'='age_minor_adult')) %>%
+  mutate(
+    weights = pop_rate/sample_rate,
+    weighted_count = sample_count * weights,
+    weighted_rate = weighted_count / sum(sample_count),
+    variable = as.numeric(variable)
+  )
+
+ys_data_agewts <- ys_data %>%
+  left_join(select(age_weights, variable, weights), by=c("age_minor_adult"="variable")) %>%
+  rename(age_wt = weights)
+
+# add sex_wt col to survey data
 acs_sex_pop <- acs_pop_weights %>%
   filter(weighting_group=='Sex at birth') %>%
   rename(pop_count = count,
          pop_rate = percent)
+
 acs_sex_pop$variable <- str_replace(acs_sex_pop$variable, "Male","1")
 acs_sex_pop$variable <- str_replace(acs_sex_pop$variable, "Female", "2")
 
@@ -71,7 +102,7 @@ sex_weights <- acs_sex_pop %>%
     variable = as.numeric(variable)
   )
 
-ys_data_agewts <- ys_data %>%
+ys_data_sexwts <- ys_data_agewts %>%
   left_join(select(sex_weights, variable, weights), by=c("q22"="variable")) %>%
   rename(sex_wt = weights)
 
@@ -139,7 +170,7 @@ race_weights <- acs_race_pop_weights %>%
   )
 
 # add a temporary acs_race column, fill with race_dict values (against nh_race col) then add race_weight col
-ys_data_racewts <- ys_data_agewts %>%
+ys_data_racewts <- ys_data_sexwts %>%
   left_join(select(race_recode, response_id, nh_race)) %>%
   
   mutate(acs_race = str_replace_all(string = nh_race,
