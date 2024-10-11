@@ -88,8 +88,9 @@ for (i in unique_vars) {
 
 # print(mylist)
   }
-all_vars_df<-dplyr::bind_rows(mylist)%>%mutate(variable=variable_target) # assign to a data frame to return
-# return(all_vars_df)
+all_vars_df<-dplyr::bind_rows(mylist)%>%mutate(variable_name=variable_target)%>% # assign to a data frame to return
+        left_join(df%>%select(question,sub_question,variable),by=c("question","sub_question"))
+  # return(all_vars_df)
 }
 
 
@@ -99,7 +100,7 @@ all_vars_df<-dplyr::bind_rows(mylist)%>%mutate(variable=variable_target) # assig
 # Heatmap function ----
 # Function creates a basic ggplot heatmap to visualize after each dataframe is created with function above
 heatmap<-function(df,factors){
-df<-df
+df<-df%>%filter(percent_cv<=40) # visualize only stable rates
 
 my_height <- 0.95 # height and width of ggplot
 my_width <- 0.95
@@ -126,7 +127,7 @@ ggplot(data = df, aes(x = response, y = sub_question,fill=weighted_percent))+
 }
 
 # Factor options
-true_factors<-c("Never True","Sometimes True","Often True","Always True","Don't wish to answer") # most commonly used factor here
+true_factors<-c("Never true","Sometimes true","Often true","Always true","Don't wish to answer") # most commonly used factor here
 
 ```
 
@@ -172,7 +173,7 @@ sm_psychologicaldistress<-question_sum(svy_df,svy_dd,domain="Strong Minds",varia
 # unique(sm_psychologicaldistress$response)
 
 # new factors
-time_factors<-c("None of the time","A little of the time","Some of the time","Most of the time","All of the time","dont wish to answer")
+time_factors<-c("None of the time","A little of the time","Some of the time","Most of the time","All of the time","Don't wish to answer")
 
 heatmap(sm_psychologicaldistress,time_factors)
 
@@ -458,7 +459,7 @@ equity_experiences<-question_sum(svy_df,svy_dd,domain="Racial Justice, Equity, A
 
 frequency_factors_2<-c("Never","Rarely","Sometimes","Most of the time","All of the time","Don't wish to answer","Does not apply to me")
 
-heatmap(equity_experiences,frequency_factors)
+heatmap(equity_experiences,frequency_factors_2)
 
 ```
 
@@ -510,7 +511,7 @@ df_equity<-rbind(equity_micro,equity_experiences,equity_structural)%>%mutate(dom
 
 # Push tables to postgres ----
 
-#### Strong Minds ----
+# #### Strong Minds ----
 # table_name <- "strong_minds_frequencies"
 # schema <- 'youth_thriving'
 # 
