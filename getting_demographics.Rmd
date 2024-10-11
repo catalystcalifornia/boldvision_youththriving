@@ -26,6 +26,7 @@ source("W:\\RDA Team\\R\\Github\\RDA Functions\\main\\RDA-Functions\\Utility_Fun
 
 # Pull in the raw survey data 
 svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
+svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024")
 
 # Pull in table of respondents with recoded race/ethnicity
 race_ethnicity_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.race_ethnicity_data")
@@ -33,11 +34,11 @@ race_ethnicity_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.race_ethnic
 
 # Calculate the frequencies and percentages of each race category.
 ```{r}
-total_respondents <- nrow(svy_data)
+total_responses <- nrow(svy_data)
 race_demographics_df <- race_ethnicity_data %>%
   summarise(
     race_aian_count = sum(race_aian),
-    race_aian_pct = round(100 * sum(race_aian) / total_responses, 1),
+    race_aian_pct = sum(race_aian) / total_responses*100,
     
     race_black_count = sum(race_black),
     race_black_pct = round(100 * sum(race_black) / total_responses, 1),
@@ -67,6 +68,19 @@ race_demographics_df <- race_ethnicity_data %>%
     race_other_pct = round(100 * sum(race_other) / total_responses, 1))
 
 print(race_demographics_df)
+
+race_ethnicity_demographics_df_qa<-race_ethnicity_data %>%
+   filter(detailed_race != "") %>%  # Remove any empty entries
+  group_by(detailed_race)%>%
+  summarise(count=n(),.groups='drop')%>%
+  mutate(rate=count/sum(count)*100)
+
+nh_race_demographics_df_qa<-race_ethnicity_data %>%
+   filter(nh_race!="") %>%  # Remove any empty entries
+  group_by(nh_race)%>%
+  summarise(count=n(),.groups='drop')%>%
+  mutate(rate=count/sum(count)*100)
+
 ```
 
 # Calculate the frequencies and percentages of regional Asian categories (i.e. South Asian, Southeast Asian). Percentages are based on the total count of Asian Americans being the denominator.
@@ -104,6 +118,15 @@ asian_ethnicity_demographics_df <- asian_ethnicity_fractions %>%
 
 # View the results
 print(asian_ethnicity_demographics_df)
+
+asian_ethnicity_demographics_df_qa<-race_ethnicity_data %>%
+   filter(detailed_asian != "") %>%  # Remove any empty entries
+  group_by(detailed_asian)%>%
+  summarise(count=n(),.groups='drop')%>%
+  mutate(rate=count/sum(count)*100)
+
+
+
 ```
 
 # Calculate the frequencies and percentages of detailed NHPI ethnicities. The sum of all percentages do not add up to 100 because some NHPI ethnicities are not included (e.g. Filipino).
@@ -128,6 +151,14 @@ nhpi_ethnicity_demographics_df <- nhpi_ethnicity_fractions %>%
 
 # View the results
 print(nhpi_ethnicity_demographics_df)
+
+nhpi_demographics_df_qa<-race_ethnicity_data %>%
+   filter(detailed_nhpi != "") %>%  # Remove any empty entries
+  group_by(detailed_nhpi)%>%
+  summarise(count=n(),.groups='drop')%>%
+  mutate(rate=count/sum(count)*100)
+
+
 ```
 
 ```{r}
@@ -146,6 +177,15 @@ print(race_demographics)
 # Calculate the frequencies and percentages of gender identities.
 ```{r}
 # Summarise the frequency and percentage for each gender identity
+vars<-svy_dd%>%filter(variable_name=='Gender')%>%select(variable,response_1)
+
+df<-svy_data %>% select(all_of(vars$variable))%>%select(where(is.numeric))%>%
+  summarise_all(sum,na.rm=TRUE)%>%
+  mutate(category='Gender')
+
+df_long<-df%>%pivot_longer(!category,names_to='variable',values_to='count')%>%
+  left_join(vars)
+
 gender_demographics_df <- svy_data %>%
   summarise(
     girl_woman_count = sum(fc, na.rm = TRUE),
