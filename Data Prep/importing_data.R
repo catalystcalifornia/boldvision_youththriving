@@ -178,6 +178,37 @@ ys_data_racewts <- ys_data_sexwts %>%
   left_join(select(race_weights, race, weights), by=c("acs_race"="race")) %>%
   rename(race_wt = weights)
 
+# add spa_wt col to survey data
+
+# add age_wt col to survey data
+acs_spa_pop <- acs_pop_weights %>%
+  filter(weighting_group=='SPA') %>%
+  rename(pop_count = count,
+         pop_rate = percent) %>%
+  mutate(variable = as.numeric(str_replace_all(variable, "SPA ", "")))
+
+acs_spa_sample <- ys_data %>%
+  select(spa_final_respondent) %>%
+  table(.) %>%
+  as.data.frame() %>%
+  rename(sample_count = Freq) %>%
+  mutate(sample_rate = sample_count/sum(sample_count),
+         spa_final_respondent = as.numeric(spa_final_respondent))
+
+spa_weights <- acs_spa_pop %>%
+  left_join(acs_spa_sample, by=c('variable'='spa_final_respondent')) %>%
+  mutate(
+    weights = pop_rate/sample_rate,
+    weighted_count = sample_count * weights,
+    weighted_rate = weighted_count / sum(sample_count)
+  )
+
+ys_data_spawts <- ys_data_racewts %>%
+  left_join(select(spa_weights, variable, weights), by=c("spa_final_respondent"="variable")) %>%
+  rename(spa_wt = weights)
+
+
+
 
 # dbWriteTable(con_bv, c('youth_thriving', 'raw_survey_data'), ys_data,
 #                           overwrite = FALSE, row.names = FALSE)
