@@ -45,7 +45,7 @@ ys_data <- ys_data %>%
 # read in acs population weights (age, sex, SPA)
 acs_pop_weights <- dbGetQuery(conn=con_bv, statement="SELECT * FROM youth_thriving.acs_weighting_population_counts;")
 
-# add age_wt col to survey data
+# 1. add age_wt col to survey data
 acs_age_pop <- acs_pop_weights %>%
   filter(weighting_group=='Age') %>%
   rename(pop_count = count,
@@ -75,37 +75,7 @@ ys_data_agewts <- ys_data %>%
   left_join(select(age_weights, variable, weights), by=c("age_minor_adult"="variable")) %>%
   rename(age_wt = weights)
 
-# add sex_wt col to survey data
-acs_sex_pop <- acs_pop_weights %>%
-  filter(weighting_group=='Sex at birth') %>%
-  rename(pop_count = count,
-         pop_rate = percent)
-
-acs_sex_pop$variable <- str_replace(acs_sex_pop$variable, "Male","1")
-acs_sex_pop$variable <- str_replace(acs_sex_pop$variable, "Female", "2")
-
-acs_sex_sample <- ys_data %>%
-  select(q22) %>%
-  table(., useNA = "ifany") %>%
-  as.data.frame() %>%
-  filter(q22==1 | q22==2) %>%
-  mutate(q22 = as.character(q22)) %>%
-  rename(sample_count = Freq) %>%
-  mutate(sample_rate = sample_count/sum(sample_count))
-
-sex_weights <- acs_sex_pop %>%
-  left_join(acs_sex_sample, by=c('variable'='q22')) %>%
-  mutate(
-    weights = pop_rate/sample_rate,
-    weighted_count = sample_count * weights,
-    weighted_rate = weighted_count / sum(sample_count),
-    variable = as.numeric(variable)
-  )
-
-ys_data_sexwts <- ys_data_agewts %>%
-  left_join(select(sex_weights, variable, weights), by=c("q22"="variable")) %>%
-  rename(sex_wt = weights)
-
+# 2. add race_wt col to survey data
 # read in acs population weights (race)
 acs_population_races <- c("latino", "nh_white", "nh_black", "nh_asian", "nh_aian",
                           "nh_pacisl", "nh_twoormor", "nh_other")
@@ -170,7 +140,7 @@ race_weights <- acs_race_pop_weights %>%
   )
 
 # add a temporary acs_race column, fill with race_dict values (against nh_race col) then add race_weight col
-ys_data_racewts <- ys_data_sexwts %>%
+ys_data_racewts <- ys_data_agewts %>%
   left_join(select(race_recode, response_id, nh_race)) %>%
   
   mutate(acs_race = str_replace_all(string = nh_race,
@@ -178,9 +148,38 @@ ys_data_racewts <- ys_data_sexwts %>%
   left_join(select(race_weights, race, weights), by=c("acs_race"="race")) %>%
   rename(race_wt = weights)
 
-# add spa_wt col to survey data
+# 3. add sex_wt col to survey data
+acs_sex_pop <- acs_pop_weights %>%
+  filter(weighting_group=='Sex at birth') %>%
+  rename(pop_count = count,
+         pop_rate = percent)
 
-# add age_wt col to survey data
+acs_sex_pop$variable <- str_replace(acs_sex_pop$variable, "Male","1")
+acs_sex_pop$variable <- str_replace(acs_sex_pop$variable, "Female", "2")
+
+acs_sex_sample <- ys_data %>%
+  select(q22) %>%
+  table(., useNA = "ifany") %>%
+  as.data.frame() %>%
+  filter(q22==1 | q22==2) %>%
+  mutate(q22 = as.character(q22)) %>%
+  rename(sample_count = Freq) %>%
+  mutate(sample_rate = sample_count/sum(sample_count))
+
+sex_weights <- acs_sex_pop %>%
+  left_join(acs_sex_sample, by=c('variable'='q22')) %>%
+  mutate(
+    weights = pop_rate/sample_rate,
+    weighted_count = sample_count * weights,
+    weighted_rate = weighted_count / sum(sample_count),
+    variable = as.numeric(variable)
+  )
+
+ys_data_sexwts <- ys_data_racewts %>%
+  left_join(select(sex_weights, variable, weights), by=c("q22"="variable")) %>%
+  rename(sex_wt = weights)
+
+# 4. add spa_wt col to survey data
 acs_spa_pop <- acs_pop_weights %>%
   filter(weighting_group=='SPA') %>%
   rename(pop_count = count,
@@ -203,7 +202,7 @@ spa_weights <- acs_spa_pop %>%
     weighted_rate = weighted_count / sum(sample_count)
   )
 
-ys_data_spawts <- ys_data_racewts %>%
+ys_data_spawts <- ys_data_sexwts %>%
   left_join(select(spa_weights, variable, weights), by=c("spa_final_respondent"="variable")) %>%
   rename(spa_wt = weights)
 
