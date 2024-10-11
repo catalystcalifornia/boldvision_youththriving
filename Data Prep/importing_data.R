@@ -4,8 +4,7 @@
 ####Step 1: Set Up ####
 
 
-packages <- c("data.table", "stringr", "dplyr", "RPostgreSQL", "dbplyr", "srvyr", "tidyverse","tidycensus", "tidyr", "here", "sf", "usethis", 
-              "readxl", "janitor") 
+packages <- c("dplyr", "RPostgreSQL", "usethis", "readxl", "janitor", "stringr") 
 
 
 for(pkg in packages){
@@ -19,39 +18,230 @@ source("W:\\RDA Team\\R\\credentials_source.R")
 con_bv <- connect_to_db("bold_vision") 
 
 
-####Step 2: Read in dataset and sent to database with comments ####
-ys_data <- read_excel("W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Final Data\\BVYTSWeightSummary_Database.xlsx",sheet="Database")
+####Step 2: Read in dataset, add adjusted weights, and sent to database with comments ####
+## Read in data
+ys_data <- read_excel("W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Updated - 09252024\\BVYTSDatabase_Updated.xlsx", sheet="Data Base")
 
-ys_data<-clean_names(ys_data)
+ys_data <- clean_names(ys_data)
 
 # check for NA columns
-columns_na_counts<- lapply(ys_data, function(x) sum(is.na(x)))%>%as.data.frame()%>%
-  pivot_longer(everything(),names_to="variable",values_to="na_count")
+columns_na_counts <- lapply(ys_data, function(x) sum(is.na(x)))%>%
+  as.data.frame()%>%
+  pivot_longer(everything(), names_to="variable",values_to="na_count")
 
 # exclude extra blank columns
-ys_data<-ys_data%>%select(-c(x155,x159))
+ys_data <- ys_data %>%
+  select(-c(x155,x159))
 
 colnames(ys_data)[grepl('q12a_how_true_is_this_about_you',colnames(ys_data))] <- 'q12a'
 colnames(ys_data)[grepl('q10b_which_of_the_following_',colnames(ys_data))] <- 'q10b'
 colnames(ys_data)[grepl('q10a_how_many_adults_really_',colnames(ys_data))] <- 'q10a'
 
+## add adjusted weights
+# remove original weighting cols from vendor (note: will reuse column names in table exported to pg)
+ys_data <- ys_data %>%
+  select(-c(weights_a1, weights_a2, weights_a3, weights_final))
 
-# dbWriteTable(con_bv, c('youth_thriving', 'raw_survey_data'), ys_data,
+# read in acs population weights (age, sex, SPA)
+acs_pop_weights <- dbGetQuery(conn=con_bv, statement="SELECT * FROM youth_thriving.acs_weighting_population_counts;")
+
+# 1. add age_wt col to survey data
+acs_age_pop <- acs_pop_weights %>%
+  filter(weighting_group=='Age') %>%
+  rename(pop_count = count,
+         pop_rate = percent)
+
+acs_age_pop$variable <- str_replace(acs_age_pop$variable, "15-17","1")
+acs_age_pop$variable <- str_replace(acs_age_pop$variable, "18-24", "2")
+
+acs_age_sample <- ys_data %>%
+  select(age_minor_adult) %>%
+  table(., useNA = "ifany") %>%
+  as.data.frame() %>%
+  mutate(age_minor_adult = as.character(age_minor_adult)) %>%
+  rename(sample_count = Freq) %>%
+  mutate(sample_rate = sample_count/sum(sample_count))
+
+age_weights <- acs_age_pop %>%
+  left_join(acs_age_sample, by=c('variable'='age_minor_adult')) %>%
+  mutate(
+    weights = pop_rate/sample_rate,
+    weighted_count = sample_count * weights,
+    weighted_rate = weighted_count / sum(sample_count),
+    variable = as.numeric(variable)
+  )
+
+ys_data_agewts <- ys_data %>%
+  left_join(select(age_weights, variable, weights), by=c("age_minor_adult"="variable")) %>%
+  rename(age_wt = weights)
+
+# 2. add race_wt col to survey data
+# read in acs population weights (race)
+acs_population_races <- c("latino", "nh_white", "nh_black", "nh_asian", "nh_aian",
+                          "nh_pacisl", "nh_twoormor", "nh_other")
+
+acs_race_pop_weights <- dbGetQuery(conn=con_bv, statement="SELECT * FROM youth_thriving.acs_pums_race_pop_15_24;") %>%
+  filter(race %in% acs_population_races) %>%
+  select(geoid, race, count, rate) %>%
+  mutate(race = str_replace(string=race, "nh_twoormor", "nh_other")) %>%
+  group_by(race) %>%
+  summarise(pop_count = sum(count)) %>%
+  ungroup() %>%
+  mutate(pop_rate = pop_count/sum(pop_count))
+
+# read in race recode values for final race sample counts
+race_recode <- dbGetQuery(conn=con_bv, statement="SELECT response_id, nh_race FROM youth_thriving.race_ethnicity_data;") %>%
+  mutate(nh_race = as.character(nh_race)) %>%
+  mutate(nh_race = replace_na(nh_race, "NA"))
+
+race_recode_counts <- race_recode %>%
+  select(nh_race) %>%
+  table(., useNA = "ifany") %>%
+  as.data.frame() 
+
+
+# race sample groups (and definitions) used to create race_dict:
+# latino/Hispanic - alone or in combination - 1877
+# nh_white/White alone (includes SWANA alone) - 226 (195 + 31)
+# nh_black/Black or African American alone - 554
+# nh_asian/Asian alone - 388
+# nh_aian/AIAN alone (includes indigenous alone) - 67 (63 + 4)
+# nh_pacisl/Native Hawaiian and Other Pacific Islander alone - 27
+# nh_other/Other - includes nh_twoormore, none selected/NA, don't wish to answer alone, other alone - 305 (112 + 185 + 4 + 4)
+race_dict <-c("do_not_wish" = "nh_other", 
+              "latinx" = "latino", 
+              "nh_aian" = "nh_aian", 
+              "nh_asian" = "nh_asian", 
+              "nh_black" = "nh_black", 
+              "nh_indigenous" = "nh_aian",
+              "nh_nhpi" = "nh_pacisl", 
+              "nh_other" = "nh_other", 
+              "nh_swana" = "nh_white", # per Census methods
+              "nh_twoormor" = "nh_other", 
+              "nh_white" = "nh_white", 
+              "NA" = "nh_other")
+
+acs_race_sample_weights <- race_recode_counts %>%
+  rename(race = nh_race) %>%
+  mutate(race = str_replace_all(string = race,
+                                pattern = race_dict)) %>%
+  group_by(race) %>%
+  summarise(Freq = sum(Freq)) %>%
+  ungroup() %>%
+  rename(sample_count=Freq) %>%
+  mutate(sample_rate = sample_count/sum(sample_count))
+
+race_weights <- acs_race_pop_weights %>%
+  left_join(acs_race_sample_weights) %>%
+  mutate(
+    weights = pop_rate/sample_rate,
+    weighted_count = sample_count * weights,
+    weighted_rate = weighted_count / sum(sample_count)
+  )
+
+# add a temporary acs_race column, fill with race_dict values (against nh_race col) then add race_weight col
+ys_data_racewts <- ys_data_agewts %>%
+  left_join(select(race_recode, response_id, nh_race)) %>%
+  
+  mutate(acs_race = str_replace_all(string = nh_race,
+                                    pattern = race_dict)) %>%
+  left_join(select(race_weights, race, weights), by=c("acs_race"="race")) %>%
+  rename(race_wt = weights)
+
+# 3. add sex_wt col to survey data
+acs_sex_pop <- acs_pop_weights %>%
+  filter(weighting_group=='Sex at birth') %>%
+  rename(pop_count = count,
+         pop_rate = percent)
+
+acs_sex_pop$variable <- str_replace(acs_sex_pop$variable, "Male","1")
+acs_sex_pop$variable <- str_replace(acs_sex_pop$variable, "Female", "2")
+
+acs_sex_sample <- ys_data %>%
+  select(q22) %>%
+  table(., useNA = "ifany") %>%
+  as.data.frame() %>%
+  filter(q22==1 | q22==2) %>%
+  mutate(q22 = as.character(q22)) %>%
+  rename(sample_count = Freq) %>%
+  mutate(sample_rate = sample_count/sum(sample_count))
+
+sex_weights <- acs_sex_pop %>%
+  left_join(acs_sex_sample, by=c('variable'='q22')) %>%
+  mutate(
+    weights = pop_rate/sample_rate,
+    weighted_count = sample_count * weights,
+    weighted_rate = weighted_count / sum(sample_count),
+    variable = as.numeric(variable)
+  )
+
+ys_data_sexwts <- ys_data_racewts %>%
+  left_join(select(sex_weights, variable, weights), by=c("q22"="variable")) %>%
+  rename(sex_wt = weights)
+
+# 4. add spa_wt col to survey data
+acs_spa_pop <- acs_pop_weights %>%
+  filter(weighting_group=='SPA') %>%
+  rename(pop_count = count,
+         pop_rate = percent) %>%
+  mutate(variable = as.numeric(str_replace_all(variable, "SPA ", "")))
+
+acs_spa_sample <- ys_data %>%
+  select(spa_final_respondent) %>%
+  table(.) %>%
+  as.data.frame() %>%
+  rename(sample_count = Freq) %>%
+  mutate(sample_rate = sample_count/sum(sample_count),
+         spa_final_respondent = as.numeric(spa_final_respondent))
+
+spa_weights <- acs_spa_pop %>%
+  left_join(acs_spa_sample, by=c('variable'='spa_final_respondent')) %>%
+  mutate(
+    weights = pop_rate/sample_rate,
+    weighted_count = sample_count * weights,
+    weighted_rate = weighted_count / sum(sample_count)
+  )
+
+ys_data_spawts <- ys_data_sexwts %>%
+  left_join(select(spa_weights, variable, weights), by=c("spa_final_respondent"="variable")) %>%
+  rename(spa_wt = weights)
+
+# calculate weights_a1, weights_a2, weights_a3, and weights_final
+# replace NAs in _wt cols with 1
+ys_data_finalwts <- ys_data_spawts %>%
+  mutate(across(ends_with("_wt"), ~replace_na(., 1))) %>%
+  mutate(
+    weights_a1 = age_wt,
+    weights_a2 = age_wt * race_wt,
+    weights_a3 = age_wt * race_wt * sex_wt,
+    weights_final = age_wt* race_wt * sex_wt * spa_wt
+  )
+
+# save to csv for QA
+write.csv(ys_data_finalwts, file = "./Data Prep/ys_data_finalwts.csv", row.names=FALSE, fileEncoding = "UTF-8")
+
+# remove _wt cols, etc 
+ys_data_finalwts <- ys_data_finalwts %>%
+  select(-c(age_wt, nh_race, acs_race, race_wt, sex_wt, spa_wt))
+
+# # export survey data table and comments
+# dbWriteTable(con_bv, c('youth_thriving', 'raw_survey_data'), ys_data_finalwts,
 #                           overwrite = FALSE, row.names = FALSE)
-
+# 
 # dbSendQuery(con_bv, "COMMENT ON TABLE youth_thriving.raw_survey_data IS 'The following dataset are responses from the Youth Thriving Survey conducted by Bold Vision in 2024. The data dictionary explaining each variable is here: youth_thriving.bvys_datadictionary_2024 . Steps explaining data cleaning can be found here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Final Data\\BVYTSPopulationWeighting_DataCleaning.pdf Original Dataset is here: a)	W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Final Data\\BVYTSWeightSummary_Database.xlsx The process for cleaning and uploading the data is explained in the QA Documentation here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_dataimport_datadictionary.docx'")
-
 
 
 ####Step 3: Read in data dictionary and send to database comments ####
 
 data_dictionary <- read_excel("W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\bvys_datadictionary_2024.xlsx")
 
-data_dictionary <- data_dictionary %>% mutate(
-  variable_name = str_to_title(variable_name),
-  response_domain = str_to_title(response_domain)) %>%
+data_dictionary <- data_dictionary %>% 
+  mutate(
+    variable_name = str_to_title(variable_name),
+    response_domain = str_to_title(response_domain)) %>%
   filter_all(any_vars(!is.na(.))) %>%
-  mutate(primary_key = row_number()) %>%
+  mutate(
+    primary_key = row_number()) %>%
   select(primary_key, everything())
 
 # generalize variables in Caring Families and Relationships to align with conceptboard
@@ -64,8 +254,10 @@ data_dictionary$response_domain[data_dictionary$response_domain=="Demographic"] 
 data_dictionary$response_domain[data_dictionary$variable=="org"] <- "Info"
 
 # do some other clean up for consistent labels
-data_dictionary<-data_dictionary%>%mutate(variable_name=str_replace(variable_name," Nhpi "," NHPI "),
-                                          variable_name=str_replace(variable_name,"Spa ","SPA "))
+data_dictionary <- data_dictionary %>%
+  mutate(
+    variable_name=str_replace(variable_name," Nhpi "," NHPI "),
+    variable_name=str_replace(variable_name,"Spa ","SPA "))
 
 
 data_dictionary[data_dictionary=="Don't Wish to Answer"]<-"Don't wish to answer"
@@ -85,36 +277,46 @@ data_dictionary[data_dictionary=="Sometimes True"]<-"Sometimes true"
 data_dictionary[data_dictionary=="Often True"]<-"Often true"
 data_dictionary[data_dictionary=="Always True"]<-"Always true"
 
-
+# # Export data dictionary table and comments
 # dbWriteTable(con_bv, c('youth_thriving', 'bvys_datadictionary_2024'), data_dictionary,
 #              overwrite = FALSE, row.names = FALSE)
+# 
+# dbSendQuery(con_bv, "COMMENT ON TABLE youth_thriving.bvys_datadictionary_2024 IS 'The following data dictionary aims to decode the data for the Bold Visin Youth Thriving Survey Data for 2024. QA Documentation here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_dataimport_datadictionary.docx'")
+# 
+# 
+# dbSendQuery(con_bv, "COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.variable IS 'refers to the column label or variable in the survey data';
+#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.question IS 'the question that this variable refers to';
+#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.sub_question IS 'the subquestion that this variable refers to';
+#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.variable_category IS 'the categories the data collector identified in their codebook';
+#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.variable_name IS 'a more explanatory name of what the variable aims to measure';
+#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_domain IS 'the survey domain this variable refers to';
+#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_type IS 'the type of question this is so oe: open ended, mc: multiple choice, tf: true or false, fun: fun questions used to break up survey';
+#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_1 IS 'what the response is if the variable has a 1 coded for the data. True and False questions will also show an actual response too. So there is no 0 which is just not true but for 1, we coded what is true for the respondent';
+#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_2 IS 'what the response is if the variable has a 2 coded for the data.';
+#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_3 IS 'what the response is if the variable has a 3 coded for the data.';
+#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_4 IS 'what the response is if the variable has a 4 coded for the data.';
+#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_5 IS 'what the response is if the variable has a 5 coded for the data.';
+#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_6 IS 'what the response is if the variable has a 6 coded for the data.';
+#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_7 IS 'what the response is if the variable has a 7 coded for the data.';
+#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_8 IS 'what the response is if the variable has a 8 coded for the data.';
+#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_9 IS 'what the response is if the variable has a 9 coded for the data.';
+#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_10 IS 'what the response is if the variable has a 10 coded for the data.';
+#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_11 IS 'what the response is if the variable has a 11 coded for the data.';
+#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_12 IS 'what the response is if the variable has a 12 coded for the data.';
+#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.notes IS 'any important notes like what variables were just for the weights and whether skip logic was applied';
+#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.likert IS 'notes if a Likert scale was used and how many points/options given (e.g., 5pt_scale, 4pt_scale, etc.)';
+#             ")
+# 
+# # add primary key for editing in database
+# dbSendQuery(con_bv, "ALTER TABLE youth_thriving.bvys_datadictionary_2024 ADD PRIMARY KEY (primary_key)");
+# 
+# dbDisconnect(con_bv)
 
-dbSendQuery(con_bv, "COMMENT ON TABLE youth_thriving.bvys_datadictionary_2024 IS 'The following data dictionary aims to decode the data for the Bold Visin Youth Thriving Survey Data for 2024. QA Documentation here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_dataimport_datadictionary.docx'")
+# QA check: survey columns are equal to data dictionary variables
+survey_colnames <- sort(colnames(ys_data_finalwts))
+datadict_variables <- sort(data_dictionary$variable)
+
+identical(survey_colnames, datadict_variables) 
+setdiff(survey_colnames, datadict_variables) 
 
 
-dbSendQuery(con_bv, "COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.variable IS 'refers to the column label or variable in the survey data';
-                     COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.question IS 'the question that this variable refers to';
-                     COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.sub_question IS 'the subquestion that this variable refers to';
-                     COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.variable_category IS 'the categories the data collector identified in their codebook';
-                     COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.variable_name IS 'a more explanatory name of what the variable aims to measure';
-                     COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_domain IS 'the survey domain this variable refers to';
-                     COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_type IS 'the type of question this is so oe: open ended, mc: multiple choice, tf: true or false, fun: fun questions used to break up survey';
-                     COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_1 IS 'what the response is if the variable has a 1 coded for the data. True and False questions will also show an actual response too. So there is no 0 which is just not true but for 1, we coded what is true for the respondent';
-                     COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_2 IS 'what the response is if the variable has a 2 coded for the data.';
-                     COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_3 IS 'what the response is if the variable has a 3 coded for the data.';
-                     COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_4 IS 'what the response is if the variable has a 4 coded for the data.';
-                     COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_5 IS 'what the response is if the variable has a 5 coded for the data.';
-                     COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_6 IS 'what the response is if the variable has a 6 coded for the data.';
-                     COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_7 IS 'what the response is if the variable has a 7 coded for the data.';
-                     COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_8 IS 'what the response is if the variable has a 8 coded for the data.';
-                     COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_9 IS 'what the response is if the variable has a 9 coded for the data.';
-                     COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_10 IS 'what the response is if the variable has a 10 coded for the data.';
-                     COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_11 IS 'what the response is if the variable has a 11 coded for the data.';
-                     COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_12 IS 'what the response is if the variable has a 12 coded for the data.';
-                     COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.notes IS 'any important notes like what variables were just for the weights and whether skip logic was applied';
-            ")
-
-# add primary key for editing in database
-dbSendQuery(con_bv, "ALTER TABLE youth_thriving.bvys_datadictionary_2024 ADD PRIMARY KEY (primary_key)");
-
-dbDisconnect(con_bv)
