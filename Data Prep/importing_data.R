@@ -206,12 +206,28 @@ ys_data_spawts <- ys_data_sexwts %>%
   left_join(select(spa_weights, variable, weights), by=c("spa_final_respondent"="variable")) %>%
   rename(spa_wt = weights)
 
+# calculate weights_a1, weights_a2, weights_a3, and weights_final
+# replace NAs in _wt cols with 1
+ys_data_finalwts <- ys_data_spawts %>%
+  mutate(across(ends_with("_wt"), ~replace_na(., 1))) %>%
+  mutate(
+    weights_a1 = age_wt,
+    weights_a2 = age_wt * race_wt,
+    weights_a3 = age_wt * race_wt * sex_wt,
+    weights_final = age_wt* race_wt * sex_wt * spa_wt
+  )
 
+# save to csv for QA
+write.csv(ys_data_finalwts, file = "./Data Prep/ys_data_finalwts.csv", row.names=FALSE, fileEncoding = "UTF-8")
 
+# remove _wt cols, etc 
+ys_data_finalwts <- ys_data_finalwts %>%
+  select(-c(age_wt, nh_race, acs_race, race_wt, sex_wt, spa_wt))
 
-# dbWriteTable(con_bv, c('youth_thriving', 'raw_survey_data'), ys_data,
+# # export survey data table and comments
+# dbWriteTable(con_bv, c('youth_thriving', 'raw_survey_data'), ys_data_finalwts,
 #                           overwrite = FALSE, row.names = FALSE)
-
+# 
 # dbSendQuery(con_bv, "COMMENT ON TABLE youth_thriving.raw_survey_data IS 'The following dataset are responses from the Youth Thriving Survey conducted by Bold Vision in 2024. The data dictionary explaining each variable is here: youth_thriving.bvys_datadictionary_2024 . Steps explaining data cleaning can be found here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Final Data\\BVYTSPopulationWeighting_DataCleaning.pdf Original Dataset is here: a)	W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Final Data\\BVYTSWeightSummary_Database.xlsx The process for cleaning and uploading the data is explained in the QA Documentation here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_dataimport_datadictionary.docx'")
 
 
@@ -261,10 +277,10 @@ data_dictionary[data_dictionary=="Sometimes True"]<-"Sometimes true"
 data_dictionary[data_dictionary=="Often True"]<-"Often true"
 data_dictionary[data_dictionary=="Always True"]<-"Always true"
 
-
+# # Export data dictionary table and comments
 # dbWriteTable(con_bv, c('youth_thriving', 'bvys_datadictionary_2024'), data_dictionary,
 #              overwrite = FALSE, row.names = FALSE)
-
+# 
 # dbSendQuery(con_bv, "COMMENT ON TABLE youth_thriving.bvys_datadictionary_2024 IS 'The following data dictionary aims to decode the data for the Bold Visin Youth Thriving Survey Data for 2024. QA Documentation here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_dataimport_datadictionary.docx'")
 # 
 # 
@@ -297,7 +313,7 @@ data_dictionary[data_dictionary=="Always True"]<-"Always true"
 # dbDisconnect(con_bv)
 
 # QA check: survey columns are equal to data dictionary variables
-survey_colnames <- sort(colnames(ys_data))
+survey_colnames <- sort(colnames(ys_data_finalwts))
 datadict_variables <- sort(data_dictionary$variable)
 
 identical(survey_colnames, datadict_variables) 
