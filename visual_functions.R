@@ -62,21 +62,31 @@ font_axis_label <- "HelveticaNeueLTStdMdCn"
 source("W:\\RDA Team\\R\\credentials_source.R")
 con <- connect_to_db("bold_vision")
 
-data_per_race <- dbGetQuery(con, "SELECT * FROM youth_thriving.response_analysis_per_race")
+data_per_race <- dbGetQuery(con, "SELECT * FROM youth_thriving.response_analysis_per_race") %>%
+  mutate(race_labels = if_else(race == 'latinx', 'Latine',
+                              if_else(race == 'nh_aian', 'American Indian & Alaskan Native',
+                                      if_else(race == 'nh_black', 'Black',
+                                              ifelse(race == 'nh_white', 'White',
+                                                     if_else(race == 'nh_asian', 'Asian',
+                                                              if_else(race == 'nh_swana', 'Southwest Asian & North African',
+                                                                      if_else(race == 'nh_twoormor', 'Multiracial', 
+                                                                              if_else(race == 'nh_nhpi', 'Native Hawaiian & Pacific Islander' ,'NA')))))))))
 
 #### Step 4 Function: Horizontal Bar Chart by Subgroup (RACE/ETHNICITY) ####
 
-
-
-#Filter for a domain, question, subquestion and responses we are interested in capturing
-df_filter <- data_per_race %>% filter(question_number == '16', 
-                                      sub_question == 'At school', 
-                                      response_labels == 'Sometimes' | response_labels == 'Most of the time' | response_labels =='All of the time')
-
-
-df_visual <- ggplot(df_filter, aes(x = rate, y = reorder(race_labels, rate), fill = response_labels)) +
-  geom_bar(stat = "identity", position = "dodge") + 
-  scale_y_discrete(labels = function(race_labels) str_wrap(race_labels, width = 18)) +
+fx_grouped_barchart <- function(question_number_i, sub_question_i, #these are the inputs, i stands for insert/input of the variable of interest we want to look at
+                                response_label_1, response_label_2, response_label_3, #insert the responses we want to capture data for, up to 3
+                                title_text, x_axis_text #insert text on graph that is customized
+                                ) { 
+  
+  df_filter <- data_per_race %>% filter(question_number == question_number_i, 
+                                        sub_question == sub_question_i, 
+                                        response == response_label_1 | response == response_label_2 | response == response_label_3)
+  
+  
+  df_visual <- ggplot(df_filter, aes(x = rate, y = reorder(race_labels, rate), fill = response)) +
+    geom_bar(stat = "identity", position = "dodge") + 
+    scale_y_discrete(labels = function(race_labels) str_wrap(race_labels, width = 18)) +
     # bar labels
     geom_text(data = df_filter,
               aes(label = paste0(round(rate, digits = 1), "%")),
@@ -86,18 +96,18 @@ df_visual <- ggplot(df_filter, aes(x = rate, y = reorder(race_labels, rate), fil
               # vjust = 2.25 , 
               hjust= 1.15,
               fontface = "bold", family=font_bar_label) +  
-  labs(title = paste(str_wrap("Insert Findings Based Title", whitespace_only = TRUE, width = 57), collapse = "\n"),
-       x = paste(str_wrap("Rate of youth surveyed reporting being treated unfairly due to their race at school", whitespace_only = TRUE, width = 70), collapse = "\n"),
-       y = "",
-       caption= paste(str_wrap(paste0("Question: ", unique(df_filter$question), "\n",
-                       " Sub Question: ", unique(df_filter$sub_question), "\n",
-                       " Category: ", unique(df_filter$response_domain), "\n",
-                       " Data Source: Catalyst California, Bold Vision Youth Thriving Survey, 2024."),
-                       whitespace_only = TRUE, width = 80), collapse = "\n")) +
-        #theme/aesthetics
-        theme_minimal() +
-        theme(legend.title = element_blank(),
-              legend.position = "bottom", # no legend title 
+    labs(title = paste(str_wrap(title_text, whitespace_only = TRUE, width = 57), collapse = "\n"),
+         x = paste(str_wrap(x_axis_text, whitespace_only = TRUE, width = 70), collapse = "\n"),
+         y = "",
+         caption= paste(str_wrap(paste0("Question: ", unique(df_filter$question), "\n",
+                                        " Sub Question: ", unique(df_filter$sub_question), "\n",
+                                        " Category: ", unique(df_filter$response_domain), "\n",
+                                        " Data Source: Catalyst California, Bold Vision Youth Thriving Survey, 2024."),
+                                 whitespace_only = TRUE, width = 80), collapse = "\n")) +
+    #theme/aesthetics
+    theme_minimal() +
+    theme(legend.title = element_blank(),
+          legend.position = "bottom", # no legend title 
           # define style for axis text
           axis.text.y = element_text(size = 9, colour = "black", family= font_axis_label, face = "bold"),
           axis.title.x = element_text(size = 10, colour = "black", family = font_axis_label, face = "bold"),
@@ -107,10 +117,23 @@ df_visual <- ggplot(df_filter, aes(x = rate, y = reorder(race_labels, rate), fil
           # grid line style
           panel.grid.minor = element_blank(),
           panel.grid.major = element_blank())  + 
-          scale_fill_manual(values = c(pink, dark_pink, orange))
-
+    scale_fill_manual(values = c(pink, dark_pink, orange))
+  
   ggsave(plot=df_visual, 
          file=paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", unique(df_filter$response_domain), "/",
                      unique(df_filter$variable), "_question_", unique(df_filter$question_number),"_race_barchart", ".svg"),
          units = c("in"),  width = 8, height = 5.5)
   
+}
+
+
+#### Step 7: Running Examples ####
+
+fx_grouped_barchart(question_number_i = '16', sub_question_i = 'At your job', #these are the inputs, i stands for insert/input of the variable of interest we want to look at
+                    response_label_1 = 'Sometimes', response_label_2 = 'Most of the time', response_label_3 = 'All of the time', #insert the responses we want to capture data for, up to 3
+                    title_text = 'insert title', x_axis_text = 'Rate of youth surveyed reporting being treated unfairly due to their race at their job' #insert text on graph that is customized
+                    )
+
+  
+#### Last Step: Disconnect ####
+  dbDisconnect(con)
