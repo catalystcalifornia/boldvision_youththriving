@@ -89,9 +89,9 @@ get_revised_response <- function(response) {
   races <- list()  
   if (grepl("^Native American$|^might be mixed with indigenous.$", response, ignore.case = TRUE)) 
   {races <- append(races, "ar")}
-
-  if (grepl("^Mexican Indian$", response, ignore.case = TRUE))
-  {races <- append(races, "at")}
+  
+  if (grepl("^Mexican Indian$", response, ignore.case = TRUE)) # Recoding to Latinx and South Asian
+  {races <- c(races, "au", "av","bc","isSouthAsian")}
 
   if (grepl("^black$|^i know i'm black$|^african american$|^afro$|^Carabian$|^Caribbean$|^Nigerian$|^Jamaican$", response, ignore.case = TRUE))
   {races <- append(races, "as")}
@@ -234,9 +234,9 @@ svy_data_other_asian_recode <- svy_data_clean_bh %>%
   mutate(
     revised_asian_response = map_chr(bh_clean, get_revised_asian_response),
     
-    # Mark the respondent's correct race(s) based on revised_asian_response
+    # Mark the respondent's correct race(s) based on revised_asian_response. Adding \\b around cur_column ensures that we're looking for an exact string match
     across(all_of(setdiff(raceColumnList, c("bh"))),  
-           ~ ifelse(str_detect(revised_asian_response, cur_column()), 1, .)),
+           ~ ifelse(str_detect(revised_asian_response, paste0("\\b", cur_column(), "\\b")), 1, .)),
     
     # If revised_asian_response contains "not_bh", the respondent actually marked 
     # "Other Asian" incorrectly. Therefore, unmark "Other race" in the survey data.  
@@ -301,6 +301,8 @@ Recode respondents who selected "Other NHPI" accordingly.
 ```{r}
 # Define a function get_revised_nhpi_response to recode the respondent's write-in 
 # race(s) to racial categories already listed in the survey.
+
+
 get_revised_nhpi_response <- function(response) {
   #If the respondent didn't mark "Other NHPI", leave the function now.
   if (is.na(response)) return('') 
@@ -316,7 +318,6 @@ get_revised_nhpi_response <- function(response) {
   
   if (grepl("^Panamanian$", response, ignore.case = TRUE)) 
   {ethnicities <- append(ethnicities, c("au", "not_br", "not_aw"))}
-  
   return(paste(ethnicities, collapse = "; "))
 }
 
@@ -325,10 +326,11 @@ get_revised_nhpi_response <- function(response) {
 svy_data_other_nhpi_recode <- svy_data_clean_br %>%
   mutate(
     revised_nhpi_response = map_chr(br_clean, get_revised_nhpi_response),
-    
+    #print('revised_nhpi_response', revised_nhpi_response),
     # Mark the respondent's correct race(s) based on revised_nhpi_response
     across(all_of(setdiff(raceColumnList, c("br"))),  
-           ~ ifelse(str_detect(revised_nhpi_response, cur_column()), 1, .)),
+           #Adding \\b around cur_column ensures that we're looking for an exact string match
+           ~ ifelse(str_detect(revised_nhpi_response, paste0("\\b", cur_column(), "\\b")), 1, .)),
     # If revised_nhpi_response contains "not_br", the respondent actually marked 
     # "Other NHPI" incorrectly. Therefore, unmark "Other NHPI" in the survey data.  
     br = ifelse(grepl("not_br", revised_nhpi_response, ignore.case = TRUE), NA, br),
@@ -337,7 +339,9 @@ svy_data_other_nhpi_recode <- svy_data_clean_br %>%
     # "NHPI" incorrectly. Therefore, unmark "NHPI" in the survey data.
     aw  = ifelse(grepl("not_aw", revised_nhpi_response, ignore.case = TRUE), NA, aw)
   )
+print(svy_data_other_nhpi_recode)
 ```
+
 
 Creating columns to represent the race of each respondent. 
 ```{r}
@@ -461,13 +465,56 @@ svy_data_final <- svy_data_final %>%
       if (!is.na(bg) && bg == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bg"]);
       if (!is.na(bh) && bh == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bh"]);
       if (!is.na(bi) && bi == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bi"]);
-      if (!is.na(isCambodian) && isCambodian == 1) ethnicities <- c(ethnicities, "Cambodian");
+      if (!is.na(isCambodian) && isCambodian == 1) {ethnicities <- c(ethnicities, "Cambodian")}
     }
     # Combine the non-empty ethnicities into a single string
     paste(ethnicities, collapse = "; ")
   }) %>%
   ungroup()
 
+# Clean up bh_clean in order to add other Asian ethnicities to detailed_asian
+svy_data_final <- svy_data_final %>%
+  mutate(
+    # Only apply transformations if bh_clean is not NA
+    bh_clean = ifelse(
+      is.na(bh_clean), 
+      bh_clean,  # Keep as NA if it is NA
+      bh_clean %>%
+        # Remove specific ethnicities from bh_clean (case insensitive)
+        str_remove_all(regex("cambodian|khmer|filipino|chinese", ignore_case = TRUE)) %>%
+        
+        # Replace / with ; and ensure consistent spacing
+        str_replace_all("/", "; ") %>%
+        
+        # Convert entire string to lowercase first
+        str_to_lower() %>%
+        
+        # Capitalize the first letter of each word
+        str_to_title() %>%
+        
+        # Replace "Bangladesh" with "Bangladeshi"
+        str_replace_all(regex("\\bBangladesh\\b", ignore_case = TRUE), "Bangladeshi") %>%
+        
+        # Remove leading/trailing whitespace
+        str_trim(side = "both") %>%
+        
+        # Remove any leading semicolon with optional whitespace
+        str_remove("^;\\s*") %>%
+        
+        # Ensure no extra space around semicolons
+        str_replace_all("(\\w+)\\s*;\\s*(\\w+)", "\\1; \\2")
+    )
+  ) %>%
+  mutate(
+    # Concatenate detailed_asian and bh_clean only if bh_clean is not NA or empty
+    detailed_asian = ifelse(
+      !is.na(bh_clean) & bh_clean != "",
+      # Concatenate detailed_asian and bh_clean only if detailed_asian is not NA or empty. Set detailed_asian to bh_clean if detailed_asian is NA or empty
+      ifelse(!is.na(detailed_asian) & detailed_asian != "", paste0(detailed_asian, "; ", bh_clean), bh_clean),  
+      detailed_asian  # Keep original detailed_asian if bh_clean is NA or empty
+    )
+  ) %>%
+  ungroup()
 ```
 
 Create the detailed_nhpi column in svy_data, which lists the NHPI ethnic 
@@ -506,12 +553,12 @@ final_df<-svy_data_final%>%
 # Write table with metadata
 table_name <- "race_ethnicity_data"
 schema <- "youth_thriving"
-indicator <- "A person-level table specifying the race and ethnicity of each respondent"
+indicator <- "A person-level table specifying the race and ethnicity of each respondent "
 source <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_race_ethnicity_data.docx
 Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/R/recoding_race.Rmd"
 table_comment <- paste0(indicator, source)
 dbWriteTable(con, c(schema, table_name), final_df,
-             overwrite = FALSE, row.names = FALSE)
+             overwrite = TRUE, row.names = FALSE)
 
 # Comment on table and columns
 column_names <- colnames(final_df) # Get column names
