@@ -37,7 +37,17 @@ con <- connect_to_db("bold_vision")
 
 svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 where response_type = 'mc'")
 
-df_merged_per_race <- dbGetQuery(con, "SELECT * FROM youth_thriving.response_analysis_per_race")
+df_merged_per_race <- dbGetQuery(con, "SELECT * FROM youth_thriving.response_analysis_per_race") 
+
+df_merged_per_race <- dbGetQuery(con, "SELECT * FROM youth_thriving.response_analysis_per_race") %>%
+  mutate(race_labels = if_else(race == 'latinx', 'Latine',
+                              if_else(race == 'nh_aian', 'American Indian & Alaskan Native',
+                                      if_else(race == 'nh_black', 'Black',
+                                              ifelse(race == 'nh_white', 'White',
+                                                     if_else(race == 'nh_asian', 'Asian',
+                                                              if_else(race == 'nh_swana', 'Southwest Asian & North African',
+                                                                      if_else(race == 'nh_twoormor', 'Multiracial', 
+                                                                              if_else(race == 'nh_nhpi', 'Native Hawaiian & Pacific Islander' ,'NA')))))))))
  
 
 ```
@@ -52,15 +62,15 @@ df <- svy_dd%>%filter(response_domain=="Strong Minds" & variable_name=="Positive
 unique_vars <- unique(df$variable) # create a list of questions/variables to analyze
 
 # Factor options
-true_factors<-c("Never True","Sometimes True","Often True","Always True","Don't wish to answer") # most commonly used factor here
+true_factors<-c("Never true","Sometimes true","Often true","Always true","Don't wish to answer") # most commonly used factor here
 
 
 for (i in unique_vars) {   df<-df_merged_per_race%>%filter(variable==i)%>%filter(rate_cv<40)
 my_height <- 0.95 # height and width of ggplot
 my_width <- 0.95
-df$response_labels <- factor(x=df$response_labels, levels = true_factors) # factor levels to order plot by
+df$response <- factor(x=df$response, levels = true_factors) # factor levels to order plot by
 # plot styling
-visual<-ggplot(data = df, aes(x = response_labels, y = race_labels,fill=rate))+
+visual<-ggplot(data = df, aes(x = response, y = race,fill=rate))+
   geom_tile(height=my_height, width=my_width, color="white",lwd = 1.5,
             linetype = 1)+
   geom_text(aes(label=round(rate,1)),size=3)+
@@ -77,6 +87,72 @@ visual<-ggplot(data = df, aes(x = response_labels, y = race_labels,fill=rate))+
         axis.text.x=element_text(size=10),
         axis.text.y=element_text(size=10))
 print(visual)}
+
+#### NEXT CATEOGORY 
+df <- svy_dd%>%filter(response_domain=="Strong Minds" & variable_name=="Growth Mindset") # filter dictionary just for questions of interest
+
+unique_vars <- unique(df$variable) # create a list of questions/variables to analyze
+
+# Factor options
+true_factors<-c("Never true","Sometimes true","Often true","Always true","Don't wish to answer") # most commonly used factor here
+
+
+for (i in unique_vars) {   df<-df_merged_per_race%>%filter(variable==i)%>%filter(rate_cv<40)
+my_height <- 0.95 # height and width of ggplot
+my_width <- 0.95
+df$response <- factor(x=df$response, levels = true_factors) # factor levels to order plot by
+# plot styling
+visual<-ggplot(data = df, aes(x = response, y = race,fill=rate))+
+  geom_tile(height=my_height, width=my_width, color="white",lwd = 1.5,
+            linetype = 1)+
+  geom_text(aes(label=round(rate,1)),size=3)+
+  scale_fill_gradient(low="#f9de8d", high="#EF4A66",name="Weighted Percent")+
+  scale_y_discrete(labels=function(x)str_wrap(x,width=20),)+
+  scale_x_discrete(labels=function(y)str_wrap(y,width=5))+
+  labs(title=paste0(str_wrap(df$question,width=60), " ", str_wrap(df$sub_question,width=60)),
+       x="",
+       y="")+
+  # coord_fixed()+
+  theme_bw()+
+  theme(plot.title=element_text(size=10),
+        legend.title=element_text(size=9),
+        axis.text.x=element_text(size=10),
+        axis.text.y=element_text(size=10))
+print(visual)}
+
+#### NEXT CATEOGORY 
+df <- svy_dd%>%filter(response_domain=="Strong Minds" & variable_name=="Psychological Distress") # filter dictionary just for questions of interest
+
+unique_vars <- unique(df$variable) # create a list of questions/variables to analyze
+
+# Factor options
+true_factors<-c("Never true","Sometimes true","Often true","Always true","Don't wish to answer") # most commonly used factor here
+
+
+for (i in unique_vars) {   df<-df_merged_per_race%>%filter(variable==i)%>%filter(rate_cv<40)
+my_height <- 0.95 # height and width of ggplot
+my_width <- 0.95
+df$response <- factor(x=df$response, levels = true_factors) # factor levels to order plot by
+# plot styling
+visual<-ggplot(data = df, aes(x = response, y = race,fill=rate))+
+  geom_tile(height=my_height, width=my_width, color="white",lwd = 1.5,
+            linetype = 1)+
+  geom_text(aes(label=round(rate,1)),size=3)+
+  scale_fill_gradient(low="#f9de8d", high="#EF4A66",name="Weighted Percent")+
+  scale_y_discrete(labels=function(x)str_wrap(x,width=20),)+
+  scale_x_discrete(labels=function(y)str_wrap(y,width=5))+
+  labs(title=paste0(str_wrap(df$question,width=60), " ", str_wrap(df$sub_question,width=60)),
+       x="",
+       y="")+
+  # coord_fixed()+
+  theme_bw()+
+  theme(plot.title=element_text(size=10),
+        legend.title=element_text(size=9),
+        axis.text.x=element_text(size=10),
+        axis.text.y=element_text(size=10))
+print(visual)}
+
+```
 
 ```
 
