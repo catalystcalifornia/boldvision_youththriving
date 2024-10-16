@@ -129,16 +129,34 @@ Create functions to recode race responses accordingly for Q3, Q4, and Q5
 ```{r}
 # Define a function get_revised_response to recode the respondent's write-in 
 # race(s) to racial categories already listed in the survey.
-# American Indian and Alaska Native -> AR
-# Black or African American -> AS
-# Indigenous from Mexico, Central America, or South America -> AT
-# Latinx/Latino/a/Hispanic -> AU
-# Asian or Asian American -> AV
-# Native Hawaiian and Pacific Islander -> AW
-# South West Asian and North African -> AX
-# White -> AY
-# Don't Wish to Answer -> AZ
-# Other Race -> BA
+# AR	American Indian and Alaska Native
+# AS	Black or African American
+# AT	Indigenous from Mexico, Central America, or South America 
+# AU	Latinx/Latino/a/Hispanic 
+# AV	Asian or Asian American
+# AW	Native Hawaiian and Pacific Islander 
+# AX	South West Asian and North African 
+# AY	White 
+# AZ	Don't Wish to Answer
+# BA	Other Race
+# BB	Chinese
+# BC	Asian Indian
+# BD	Filipino
+# BE	Korean
+# BF	Vietnamese
+# BG	Japanese 
+# BH	Other
+# BI	Don't Wish to Answer 
+# BJ	Samoan
+# BK	Togan
+# BL	Chamarron
+# BM	Marshallese
+# BN	Fijan
+# BO	Māori
+# BP	PNG
+# BQ	Chuukese
+# BR	Other
+# BS	Don't Wish to Answer
 
 get_revised_response <- function(response) {
   response <- unlist(response)
