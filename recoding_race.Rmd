@@ -211,8 +211,11 @@ get_revised_response <- function(response) {
   if (grepl("^mixed white$", response, ignore.case = TRUE))
   {races <- append(races, list("ay", "ba"))}
 
-  if (grepl("^null$|^mixed$|^mixed race$|^multiracial$|^mixed/multiracial$|^Belizean$|^two or more$", response, ignore.case = TRUE))
+  if (grepl("^mixed$|^mixed race$|^multiracial$|^mixed/multiracial$|^Belizean$|^two or more$", response, ignore.case = TRUE))
   {races <- append(races, list("ba"))}
+  
+  if (grepl("^null$", response, ignore.case = TRUE))
+  {races <- append(races, list("not_ba"))}
 
   if (grepl("^belizean black$", response, ignore.case = TRUE))
   {races <- append(races, list("ba", "as"))}
@@ -295,14 +298,22 @@ svy_data_revised <- svy_data_clean %>%
     # If revised_response doesn't contain ba, the respondent actually marked 
     # "Other race" incorrectly. Therefore, unmark "Other race" in the survey data.      
     ba = case_when(
-      grepl("^not_ba$", revised_response) ~ NA,
-      grepl("^ba$", revised_response) ~ ba)) %>%
+      grepl("\\bnot_ba\\b", revised_response) ~ NA,
+      grepl("\\bba\\b", revised_response) ~ ba)) %>%
   ungroup() %>%
   mutate(  
     # Mark the respondent's correct race(s) based on revised_response
     across(all_of(setdiff(raceColumnList, "ba")),  
            ~ ifelse(grepl(cur_column(), revised_response), 1, .))
   ) 
+
+
+# qa check
+qa_revised_other <- svy_data %>%
+  select(response_id, raceColumnList) %>%
+  left_join(select(svy_data_revised, response_id, raceColumnList, ba_clean, revised_response), by=c("response_id")) %>%
+  select(order(colnames(.))) %>%
+  select(response_id, revised_response, ba_clean, everything())
 
 ```
 
