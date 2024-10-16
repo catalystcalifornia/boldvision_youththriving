@@ -48,9 +48,50 @@ svy_dd <- svy_dd  %>%
 
 ```
 
-Get unique responses of respondents who picked "Other" and provided a write-in.
+Clean up responses where survey skip logic failed (e.g., If respondents didn't identify as Asian in Q3, force the response to Q4 to be NA.; same for NHPI and Q5)
+Also clean all write-in columns for race questions (ba, bh, br) and create an _original col for QA purposes
 ```{r}
-# unique_other_race_responses <- svy_data %>%
+# Correct skip logic failures across Q3, Q4, and Q5 
+svy_data_clean <- svy_data %>%
+  # clean Q4 columns (Asian) to remove folks where av = NA
+  mutate(across(c(bb, bc, bd, be, bf, bg, bh, bi), 
+                ~ case_when(is.na(av) ~ NA,
+                            !is.na(av) ~ .))) %>%
+  # clean Q5 columns (NHPI) to remove folks where aw = NA
+  mutate(across(c(bj, bk, bl, bm, bn, bo, bp, bq, br, bs), 
+                ~ case_when(is.na(aw) ~ NA,
+                            !is.na(aw) ~ .)))
+  
+
+# Clean up write-in columns
+svy_data_clean <- svy_data_clean %>%
+  mutate(ba_original = ba, 
+         ba_clean = gsub("[Other race. Please write in:] ", "", ba, fixed=TRUE),
+         bh_original = bh, 
+         bh_clean = gsub("[Other. Please write in:] ", "", bh, fixed=TRUE),
+         br_original = br, # for QA purposes since ba will be overwritten/corrected later in script
+         br_clean = gsub("[Other. Please write in:] ", "", br, fixed=TRUE)) %>% # remove common piece of write-in string to simplify regex conditions later on
+  
+  mutate(ba_clean = tolower(ba_clean),
+         bh_clean = tolower(bh_clean),
+         br_clean = tolower(br_clean)) %>% # make all write-ins lowercase to help find distinct values
+  mutate(ba_clean = gsub("and|\\/", ",", ba_clean)) %>% # replace "and" and "/" with "," to get a common delimiter (only needed for ba)
+  mutate(ba_clean = gsub("\\s*,\\s*",",", ba_clean),
+         bh_clean = gsub("\\s*,\\s*",",", bh_clean),
+         br_clean = gsub("\\s*,\\s*",",", br_clean)) %>% # clean white space for accurate regex conditions (e.g., ^ or $)
+  rowwise() %>%
+  mutate(ba_clean = list(as.list(strsplit(ba_clean, ",")[[1]]))) %>% # create a list of race/eth identities from write-in responses
+  ungroup() 
+
+# QA check to make sure string manipulation is working
+qa_clean <- svy_data_clean %>%
+  select(response_id, ba, ba_original, ba_clean, bh, bh_original, bh_clean, br, br_original, br_clean, everything())
+
+```
+
+Get unique responses of respondents who picked "Other", "Other Asian", and "Other NHPI" and provided a write-in response.
+```{r}
+# unique_other_race_responses <- svy_data_clean %>%
 #   select(response_id, ba) %>%
 #   filter(!is.na(ba)) %>%  # Optional: Filter out NA values if needed
 #   mutate(ba_lower = tolower(ba)) %>%  # Convert ba to lowercase
@@ -61,22 +102,35 @@ Get unique responses of respondents who picked "Other" and provided a write-in.
 #   gsub("-", "", .)
 # 
 # write.csv(unique_other_race_responses, file = paste0("race recode/", file_name), row.names = FALSE)
+# 
+# unique_other_asian_responses <- svy_data_clean %>%
+#   filter(!is.na(bh_clean))  %>% # Optional: Filter out NA values if needed
+#   select(response_id, bh_clean) %>%
+#   mutate(bh_lower = tolower(bh_clean)) %>%  # Convert bh to lowercase
+#   distinct(bh_lower, .keep_all = TRUE) %>%  # Get unique bh values, keeping the first corresponding response_id
+#   #select(bh_clean, response_id) %>%
+#   arrange(bh_clean)
+# 
+# file_name <- paste0("unique_other_asian_responses_", Sys.Date(),".csv") %>%
+#   gsub("-", "", .)
+# 
+# write.csv(unique_other_asian_responses, file = paste0("race recode/", file_name), row.names = FALSE)
+# 
+# unique_other_nhpi_responses <- svy_data_clean %>%
+#   select(response_id, br_clean) %>%
+#   filter(!is.na(br_clean)) %>%  # Optional: Filter out NA values if needed
+#   mutate(br_lower = tolower(br_clean)) %>%  # Convert bh to lowercase
+#   distinct(br_lower, .keep_all = TRUE) %>%  # Get unique bh values, keeping the first corresponding response_id
+#   select(br_clean, response_id) %>% # Select original columns to keep
+#   arrange(br_clean)
+# 
+# file_name <- paste0("unique_other_nhpi_responses_", Sys.Date(),".csv") %>%
+#   gsub("-", "", .)
+# 
+# write.csv(unique_other_nhpi_responses, file = paste0("race recode/", file_name), row.names = FALSE)
 ```
 
-Clean ba column
-```{r}
-svy_data_clean <- svy_data %>%
-  mutate(ba_original = ba, # for QA purposes since ba will be overwritten/corrected later in script
-         ba_clean = gsub("[Other race. Please write in:] ", "", ba, fixed=TRUE)) %>% # remove common piece of write-in string to simplify regex conditions later on
-  mutate(ba_clean = tolower(ba_clean)) %>% # make all write-ins lowercase to help find distinct values
-  mutate(ba_clean = gsub("and|\\/", ",", ba_clean)) %>% # replace "and" and "/" with "," to get a common delimiter 
-  mutate(ba_clean = gsub("\\s*,\\s*",",", ba_clean)) %>% # clean white space for accurate regex conditions (e.g., ^ or $)
-  rowwise() %>%
-  mutate(ba_clean = list(as.list(strsplit(ba_clean, ",")[[1]]))) %>% # create a list of race/eth identities from write-in responses
-  ungroup() 
-```
-
-Recode respondents who selected "Other Race" accordingly.
+Create functions to recode race responses accordingly
 ```{r}
 # Define a function get_revised_response to recode the respondent's write-in 
 # race(s) to racial categories already listed in the survey.
@@ -132,64 +186,7 @@ get_revised_response <- function(response) {
   return(races)
 }
 
-# Extract the race of respondents who marked "Other race", 
-# stored in the column revised_response.
-svy_data_revised <- svy_data_clean %>%
-  rowwise() %>%
-  mutate(
-    # Extract the revised response and correct ba if needed
-    revised_response = list(unlist(map(ba_clean, get_revised_response))),
-    # If revised_response doesn't contain ba, the respondent actually marked 
-    # "Other race" incorrectly. Therefore, unmark "Other race" in the survey data.      
-    ba = ifelse("ba" %in% revised_response, ba, NA)
-    ) %>%
-  ungroup() %>%
-  mutate(  
-    # Mark the respondent's correct race(s) based on revised_response
-    across(all_of(setdiff(raceColumnList, "ba")),  
-           ~ ifelse(grepl(cur_column(), revised_response), 1, .))
-  ) 
 
-```
-
-Check and clean bh (Q4, Other Asian write-in response). If respondents didn't identify as Asian in Q3, force the response to Q4 to be NA.
-```{r}
-other_asian_responses <- svy_data_revised %>%
-  filter(!is.na(bh)) # Optional: Filter out NA values if needed
-
-# based on some of the distinct responses it seems like folks shouldn't have 
-# been directed to the Q4. used the check below to confirm that although Asian (av)  
-# was not selected in Q3, respondents have write-ins for Q4 (bh)
-# 65 out of the 80 responses with write-ins selected Asian in Q3
-qa_check <- other_asian_responses %>%
-  select(response_id, av, aw, bh, bb:bg, bi, everything())
-
-# clean bh column to remove folks where av = NA
-svy_data_clean_bh <- svy_data_revised %>%
-  mutate(bh_original = bh, # for QA purposes since ba will be overwritten/corrected later in script
-         bh_clean = ifelse(av==1, bh, NA)) %>%
-  # remove common piece of write-in string to simplify regex conditions later on
-  mutate(bh_clean = gsub("[Other. Please write in:] ", "", bh_clean, fixed=TRUE))
-```
-
-Get unique responses of respondents who picked "Other Asian".
-```{r}
-unique_other_asian_responses <- svy_data_clean_bh %>%
-  filter(!is.na(bh_clean))  %>% # Optional: Filter out NA values if needed
-  select(response_id, bh_clean) %>%
-  mutate(bh_lower = tolower(bh_clean)) %>%  # Convert bh to lowercase
-  distinct(bh_lower, .keep_all = TRUE) %>%  # Get unique bh values, keeping the first corresponding response_id
-  #select(bh_clean, response_id) %>%
-  arrange(bh_clean)
-
-# file_name <- paste0("unique_other_asian_responses_", Sys.Date(),".csv") %>%
-#   gsub("-", "", .)
-# 
-# write.csv(unique_other_asian_responses, file = paste0("race recode/", file_name), row.names = FALSE)
-```
-
-Recode respondents who selected "Other Asian" accordingly.
-```{r}
 # Define a function get_revised_asian_response to recode the respondent's write-in 
 # race(s) to racial categories already listed in the survey.
 get_revised_asian_response <- function(response) {
@@ -228,6 +225,57 @@ get_revised_asian_response <- function(response) {
   
 }
 
+
+# Define a function get_revised_nhpi_response to recode the respondent's write-in 
+# race(s) to racial categories already listed in the survey.
+get_revised_nhpi_response <- function(response) {
+  #If the respondent didn't mark "Other NHPI", leave the function now.
+  if (is.na(response)) return('') 
+  
+  # Initialize an empty vector. This represents the respondent's write-in response.
+  ethnicities <- list() 
+  
+  if (grepl("^Filipino$", response, ignore.case = TRUE)) 
+  {ethnicities <- append(ethnicities, c("bd", "isSoutheastAsian"))}
+  
+  if (grepl("^Onieda$|^Shoshone Native American$", response, ignore.case = TRUE)) 
+  {ethnicities <- append(ethnicities, c("ar", "not_br", "not_aw"))}
+  
+  if (grepl("^Panamanian$", response, ignore.case = TRUE)) 
+  {ethnicities <- append(ethnicities, c("au", "not_br", "not_aw"))}
+  
+  return(paste(ethnicities, collapse = "; "))
+}
+
+```
+
+Recode respondents who selected "Other Race" accordingly.
+```{r}
+# Extract the race of respondents who marked "Other race", 
+# stored in the column revised_response.
+svy_data_revised <- svy_data_clean %>%
+  rowwise() %>%
+  mutate(
+    # Extract the revised response and correct ba if needed
+    revised_response = list(unlist(map(ba_clean, get_revised_response))),
+    # If revised_response doesn't contain ba, the respondent actually marked 
+    # "Other race" incorrectly. Therefore, unmark "Other race" in the survey data.      
+    ba = ifelse("ba" %in% revised_response, ba, NA)
+    ) %>%
+  ungroup() %>%
+  mutate(  
+    # Mark the respondent's correct race(s) based on revised_response
+    across(all_of(setdiff(raceColumnList, "ba")),  
+           ~ ifelse(grepl(cur_column(), revised_response), 1, .))
+  ) 
+
+```
+
+
+Recode respondents who selected "Other Asian" accordingly.
+```{r}
+
+
 # Extract the race of respondents who marked "Other Asian", 
 # stored in the column revised_asian_response.
 svy_data_other_asian_recode <- svy_data_clean_bh %>%
@@ -236,7 +284,7 @@ svy_data_other_asian_recode <- svy_data_clean_bh %>%
     
     # Mark the respondent's correct race(s) based on revised_asian_response. Adding \\b around cur_column ensures that we're looking for an exact string match
     across(all_of(setdiff(raceColumnList, c("bh"))),  
-           ~ ifelse(str_detect(revised_asian_response, paste0("\\b", cur_column(), "\\b")), 1, .)),
+           ~ ifelse(str_detect(revised_asian_response, paste0("^", cur_column(), "$")), 1, .)),
     
     # If revised_asian_response contains "not_bh", the respondent actually marked 
     # "Other Asian" incorrectly. Therefore, unmark "Other race" in the survey data.  
@@ -260,66 +308,9 @@ svy_data_other_asian_recode <- svy_data_other_asian_recode %>%
 
 ```
 
-Check and clean br (NHPI/Other write-in responses for Survey Question 5)
-```{r}
-other_nhpi_responses <- svy_data_other_asian_recode %>%
-  filter(!is.na(br)) # Optional: Filter out NA values if needed
-
-# based on some of the distinct responses it seems like folks shouldn't have 
-# been directed to Q5. used the check below to confirm that although NHPI (aw)  
-# was not selected in Q3, respondents have write-ins for Q5 (br)
-# only 12 of 46 responses with write-ins selected NHPI in Q3
-qa_check <- other_nhpi_responses %>%
-  select(response_id, aw, br, bj:bq, bs, everything())
-
-# clean bh column to remove folks where av = NA
-svy_data_clean_br <- svy_data_other_asian_recode %>%
-  mutate(br_original = br, # for QA purposes since ba will be overwritten/corrected later in script
-         br_clean = ifelse(aw==1, br, NA)) %>%
-  # remove common piece of write-in string to simplify regex conditions later on
-  mutate(br_clean = gsub("[Other. Please write in:] ", "", 
-                                  br_clean, fixed=TRUE))
-```
-
-Get unique responses of respondents who picked "Other NHPI".
-```{r}
-# unique_other_nhpi_responses <- svy_data_clean_br %>%
-#   select(response_id, br_clean) %>%
-#   filter(!is.na(br_clean)) %>%  # Optional: Filter out NA values if needed
-#   mutate(br_lower = tolower(br_clean)) %>%  # Convert bh to lowercase
-#   distinct(br_lower, .keep_all = TRUE) %>%  # Get unique bh values, keeping the first corresponding response_id
-#   select(br_clean, response_id) %>% # Select original columns to keep
-#   arrange(br_clean)
-# 
-# file_name <- paste0("unique_other_nhpi_responses_", Sys.Date(),".csv") %>%
-#   gsub("-", "", .)
-# 
-# write.csv(unique_other_nhpi_responses, file = paste0("race recode/", file_name), row.names = FALSE)
-```
 
 Recode respondents who selected "Other NHPI" accordingly.
 ```{r}
-# Define a function get_revised_nhpi_response to recode the respondent's write-in 
-# race(s) to racial categories already listed in the survey.
-
-
-get_revised_nhpi_response <- function(response) {
-  #If the respondent didn't mark "Other NHPI", leave the function now.
-  if (is.na(response)) return('') 
-  
-  # Initialize an empty vector. This represents the respondent's write-in response.
-  ethnicities <- list() 
-  
-  if (grepl("^Filipino$", response, ignore.case = TRUE)) 
-  {ethnicities <- append(ethnicities, c("bd", "isSoutheastAsian"))}
-  
-  if (grepl("^Onieda$|^Shoshone Native American$", response, ignore.case = TRUE)) 
-  {ethnicities <- append(ethnicities, c("ar", "not_br", "not_aw"))}
-  
-  if (grepl("^Panamanian$", response, ignore.case = TRUE)) 
-  {ethnicities <- append(ethnicities, c("au", "not_br", "not_aw"))}
-  return(paste(ethnicities, collapse = "; "))
-}
 
 # Extract the race of respondents who marked "Other NHPI", 
 # stored in the column revised_nhpi_response.
@@ -330,7 +321,7 @@ svy_data_other_nhpi_recode <- svy_data_clean_br %>%
     # Mark the respondent's correct race(s) based on revised_nhpi_response
     across(all_of(setdiff(raceColumnList, c("br"))),  
            #Adding \\b around cur_column ensures that we're looking for an exact string match
-           ~ ifelse(str_detect(revised_nhpi_response, paste0("\\b", cur_column(), "\\b")), 1, .)),
+           ~ ifelse(str_detect(revised_nhpi_response, paste0("^", cur_column(), "$")), 1, .)),
     # If revised_nhpi_response contains "not_br", the respondent actually marked 
     # "Other NHPI" incorrectly. Therefore, unmark "Other NHPI" in the survey data.  
     br = ifelse(grepl("not_br", revised_nhpi_response, ignore.case = TRUE), NA, br),
@@ -359,6 +350,9 @@ svy_data_final <- svy_data_other_nhpi_recode %>%
     # If respondents pick "Other race", they write in a response.
     race_other = case_when(is.na(ba) ~ 0, ba != "" ~ 1),
   )
+
+# Quick check on counts
+sum(svy_data_final$race_black, na.rm=TRUE)
 ```
 
 Creating the nh_race column in svy_data, which is "latinx" if the respondent is 
@@ -387,6 +381,9 @@ svy_data_final <- svy_data_final %>%
   ) %>%
   ungroup() %>%
   select(-race_sum)  # Remove the helper column if not needed
+
+# Quick check on counts
+table(svy_data_final$nh_race)
 
 ```
 
