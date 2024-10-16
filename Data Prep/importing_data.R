@@ -89,42 +89,16 @@ acs_race_pop_weights <- dbGetQuery(conn=con_bv, statement="SELECT * FROM youth_t
   mutate(pop_rate = pop_count/sum(pop_count))
 
 # read in race recode values for final race sample counts
-race_recode <- dbGetQuery(conn=con_bv, statement="SELECT response_id, nh_race FROM youth_thriving.race_ethnicity_data;") %>%
-  mutate(nh_race = as.character(nh_race)) %>%
-  mutate(nh_race = replace_na(nh_race, "NA"))
+race_recode <- dbGetQuery(conn=con_bv, statement="SELECT response_id, acs_race FROM youth_thriving.race_ethnicity_data;") %>%
+  mutate(acs_race = as.character(acs_race)) %>%
 
 race_recode_counts <- race_recode %>%
-  select(nh_race) %>%
+  select(acs_race) %>%
   table(., useNA = "ifany") %>%
   as.data.frame() 
 
-
-# race sample groups (and definitions) used to create race_dict:
-# latino/Hispanic - alone or in combination - 1877
-# nh_white/White alone (includes SWANA alone) - 226 (195 + 31)
-# nh_black/Black or African American alone - 554
-# nh_asian/Asian alone - 388
-# nh_aian/AIAN alone (includes indigenous alone) - 67 (63 + 4)
-# nh_pacisl/Native Hawaiian and Other Pacific Islander alone - 23
-# nh_other/Other - none selected/NA, don't wish to answer alone, other alone - 192
-# nh_twoormor - includes nh_twoormore (150)
-race_dict <-c("do_not_wish" = "nh_other", 
-              "latinx" = "latino", 
-              "nh_aian" = "nh_aian", 
-              "nh_asian" = "nh_asian", 
-              "nh_black" = "nh_black", 
-              "nh_indigenous" = "nh_aian", # per Census methods
-              "nh_nhpi" = "nh_pacisl", 
-              "nh_other" = "nh_other", 
-              "nh_swana" = "nh_white", # per Census methods
-              "nh_twoormor" = "nh_twoormor", # per Census categories
-              "nh_white" = "nh_white", 
-              "NA" = "nh_other")
-
 acs_race_sample_weights <- race_recode_counts %>%
-  rename(race = nh_race) %>%
-  mutate(race = str_replace_all(string = race,
-                                pattern = race_dict)) %>%
+  rename(race = acs_race) %>%
   group_by(race) %>%
   summarise(Freq = sum(Freq)) %>%
   ungroup() %>%
@@ -136,15 +110,11 @@ race_weights <- acs_race_pop_weights %>%
   mutate(
     weights = pop_rate/sample_rate,
     weighted_count = sample_count * weights,
-    weighted_rate = weighted_count / sum(sample_count)
-  )
+    weighted_rate = weighted_count / sum(sample_count))
 
-# add a temporary acs_race column, fill with race_dict values (against nh_race col) then add race_weight col
+# add race_weight col
 ys_data_racewts <- ys_data_agewts %>%
-  left_join(select(race_recode, response_id, nh_race)) %>%
-  
-  mutate(acs_race = str_replace_all(string = nh_race,
-                                    pattern = race_dict)) %>%
+  left_join(select(race_recode, response_id, acs_race)) %>%
   left_join(select(race_weights, race, weights), by=c("acs_race"="race")) %>%
   rename(race_wt = weights)
 
@@ -223,19 +193,19 @@ write.csv(ys_data_finalwts, file = "./Data Prep/ys_data_finalwts.csv", row.names
 
 # remove _wt cols, etc 
 ys_data_finalwts <- ys_data_finalwts %>%
-  select(-c(age_wt, nh_race, acs_race, race_wt, sex_wt, spa_wt))
+  select(-c(age_wt, acs_race, race_wt, sex_wt, spa_wt))
 
-# # export survey data table and comments
+## export survey data table and comments
 # dbWriteTable(con_bv, c('youth_thriving', 'raw_survey_data'), ys_data_finalwts,
 #                           overwrite = FALSE, row.names = FALSE)
 # 
-# dbSendQuery(con_bv, "COMMENT ON TABLE youth_thriving.raw_survey_data IS 
-#             'The following dataset are responses from the Youth Thriving Survey conducted by Bold Vision in 2024. The data dictionary explaining each variable is here: youth_thriving.bvys_datadictionary_2024 . 
-#             Steps explaining data cleaning can be found here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Updated - 09252024\\BVYTSPopulationWeighting_DataCleaning.pdf 
-#             Original Dataset is here: a)	W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\09252024\\BVYTSWeightSummary_Database.xlsx 
+# dbSendQuery(con_bv, "COMMENT ON TABLE youth_thriving.raw_survey_data IS
+#             'The following dataset are responses from the Youth Thriving Survey conducted by Bold Vision in 2024. The data dictionary explaining each variable is here: youth_thriving.bvys_datadictionary_2024 .
+#             Steps explaining data cleaning can be found here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Updated - 09252024\\BVYTSPopulationWeighting_DataCleaning.pdf
+#             Original Dataset is here: a)	W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\09252024\\BVYTSWeightSummary_Database.xlsx
 #             The process for cleaning and uploading the data is explained in the QA Documentation here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_dataimport_datadictionary.docx
 #             Script for cleaning data and recalculating sample weights can be found here Data Prep/importing_data.R'")
-# 
+
 
 ####Step 3: Read in data dictionary and send to database comments ####
 
