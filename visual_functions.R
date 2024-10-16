@@ -192,7 +192,7 @@ fx_single_barchart <- function(question_number_i, sub_question_i, #these are the
 
 
 
-#### Step 6: Function- GROUPED Horizontal Bar Chart by Subgroup (RACE/ETHNICITY) ####
+#### Step 6: Function- STACKED Horizontal Bar Chart by Subgroup (RACE/ETHNICITY) ####
 
 fx_stacked_barchart <- function(question_number_i, sub_question_i, #these are the inputs, i stands for insert/input of the variable of interest we want to look at
                                 response_label_1, response_label_2, response_label_3, #insert the responses we want to capture data for, up to 3
