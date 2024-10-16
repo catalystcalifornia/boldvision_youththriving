@@ -304,7 +304,7 @@ svy_data_revised <- svy_data_clean %>%
   mutate(  
     # Mark the respondent's correct race(s) based on revised_response
     across(all_of(setdiff(raceColumnList, "ba")),  
-           ~ ifelse(grepl(paste("\\b", cur_column(), "\\b"), revised_response), 1, .))) 
+           ~ ifelse(str_detect(revised_response, paste0("\\b", cur_column(), "\\b")), 1, .)))
 
 
 # qa check
@@ -315,7 +315,6 @@ qa_revised_other <- svy_data_clean %>%
   select(response_id, revised_response, ba_clean, everything())
 
 ```
-
 
 Recode respondents who selected "Other Asian" accordingly.
 ```{r}
@@ -335,7 +334,7 @@ svy_data_revised_other_asian <- svy_data_revised %>%
   mutate(  
     # Mark the respondent's correct race(s) based on revised_response
     across(all_of(setdiff(raceColumnList, "bh")),  
-           ~ ifelse(grepl(paste0("\\b", cur_column(), "\\b"), revised_asian_response), 1, .))) %>%
+          ~ ifelse(str_detect(revised_asian_response, paste0("\\b", cur_column(), "\\b")), 1, .))) %>%
   # Respondents who already identified as Vietnamese or Filipino (without write-in)
   mutate(isSoutheastAsian = 
            case_when(
@@ -364,7 +363,6 @@ qa_revised_other_asian <- svy_data_clean %>%
 
 ```
 
-
 Recode respondents who selected "Other NHPI" accordingly.
 ```{r}
 
@@ -389,7 +387,7 @@ svy_data_revised_other_nhpi <- svy_data_revised_other_asian %>%
   mutate(  
     # Mark the respondent's correct race(s) based on revised_response
     across(all_of(setdiff(raceColumnList, "br")),  
-           ~ ifelse(grepl(paste0("\\b", cur_column(), "\\b"), revised_nhpi_response), 1, .))) 
+           ~ ifelse(str_detect(revised_nhpi_response, paste0("\\b", cur_column(), "\\b")), 1, .)))
  
 
 # qa check
@@ -411,7 +409,7 @@ qa_revised_other_nhpi <- svy_data_clean %>%
 
 Creating columns to represent the race of each respondent. 
 ```{r}
-svy_data_final <- svy_data_other_nhpi_recode %>%
+svy_data_final <- svy_data_revised_other_nhpi %>%
   mutate(
     race_aian = case_when(is.na(ar) ~ 0, ar == 1 ~ 1),
     race_black = case_when(is.na(as) ~ 0, as == 1 ~ 1),  
@@ -427,7 +425,7 @@ svy_data_final <- svy_data_other_nhpi_recode %>%
   )
 
 # Quick check on counts
-sum(svy_data_final$race_black, na.rm=TRUE)
+sum(svy_data_final$race_black, na.rm=TRUE) #663
 
 ```
 
@@ -494,6 +492,13 @@ table(svy_data_final$acs_race)
 
 # latino     nh_aian    nh_asian    nh_black    nh_other   nh_pacisl nh_twoormor    nh_white 
 #   1877          67         355         551         192          23         154         225 
+
+# add qa check 
+qa_check_black <- svy_data_clean %>%
+  filter(as == 1) %>%
+  select(response_id, as, ba_original, ba_clean, bh_original, bh_clean, br_original, br_clean) %>%
+  left_join(svy_data_final, by=c("response_id")) %>%
+  select(response_id, as.x, as.y, ba_original.x, ba_clean.x, bh_original.x, bh_clean.x, br_original.x, br_clean.x, nh_race, acs_race, everything())
 
 ```
 
