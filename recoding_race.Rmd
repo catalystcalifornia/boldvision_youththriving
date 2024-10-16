@@ -339,10 +339,7 @@ svy_data_revised_other_asian <- svy_data_revised %>%
   mutate(  
     # Mark the respondent's correct race(s) based on revised_response
     across(all_of(setdiff(raceColumnList, "bh")),  
-           ~ ifelse(grepl(cur_column(), revised_response), 1, .)))
-
-
-svy_data_other_asian_recode <- svy_data_other_asian_recode %>%
+           ~ ifelse(grepl(cur_column(), revised_asian_response), 1, .))) %>%
   # Respondents who already identified as Vietnamese or Filipino (without write-in)
   mutate(isSoutheastAsian = 
            case_when(
@@ -356,6 +353,18 @@ svy_data_other_asian_recode <- svy_data_other_asian_recode %>%
              bc == 1 ~ 1, # Asian Indian,
              .default = isSouthAsian))
 
+# qa check
+qa_revised_other_asian <- svy_data %>%
+  select(response_id, raceColumnList) %>%
+  left_join(select(svy_data_revised_other_asian, response_id, raceColumnList, 
+                   bh_clean, revised_asian_response, isCambodian, isSouthAsian, 
+                   isSoutheastAsian,), by=c("response_id")) %>%
+  select(order(colnames(.))) %>%
+  select(response_id, revised_asian_response, bh_clean, 
+         isCambodian.x, isCambodian.y, 
+         isSouthAsian.x, isSouthAsian.y, 
+         isSoutheastAsian.x, isSoutheastAsian.y, 
+         starts_with("b"), everything())
 ```
 
 
