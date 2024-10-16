@@ -60,10 +60,7 @@ svy_data_clean <- svy_data %>%
   # clean Q5 columns (NHPI) to remove folks where aw = NA
   mutate(across(c(bj, bk, bl, bm, bn, bo, bp, bq, br, bs), 
                 ~ case_when(is.na(aw) ~ NA,
-                            !is.na(aw) ~ .)))
-  
-# Clean up write-in columns
-svy_data_clean <- svy_data_clean %>%
+                            !is.na(aw) ~ .))) %>%
   mutate(ba_original = ba, 
          ba_clean = gsub("[Other race. Please write in:] ", "", ba, fixed=TRUE),
          bh_original = bh, 
@@ -307,12 +304,11 @@ svy_data_revised <- svy_data_clean %>%
   mutate(  
     # Mark the respondent's correct race(s) based on revised_response
     across(all_of(setdiff(raceColumnList, "ba")),  
-           ~ ifelse(grepl(cur_column(), revised_response), 1, .))
-  ) 
+           ~ ifelse(grepl(paste("\\b", cur_column(), "\\b"), revised_response), 1, .))) 
 
 
 # qa check
-qa_revised_other <- svy_data %>%
+qa_revised_other <- svy_data_clean %>%
   select(response_id, raceColumnList) %>%
   left_join(select(svy_data_revised, response_id, raceColumnList, ba_clean, revised_response), by=c("response_id")) %>%
   select(order(colnames(.))) %>%
@@ -339,7 +335,7 @@ svy_data_revised_other_asian <- svy_data_revised %>%
   mutate(  
     # Mark the respondent's correct race(s) based on revised_response
     across(all_of(setdiff(raceColumnList, "bh")),  
-           ~ ifelse(grepl(cur_column(), revised_asian_response), 1, .))) %>%
+           ~ ifelse(grepl(paste0("\\b", cur_column(), "\\b"), revised_asian_response), 1, .))) %>%
   # Respondents who already identified as Vietnamese or Filipino (without write-in)
   mutate(isSoutheastAsian = 
            case_when(
@@ -354,7 +350,7 @@ svy_data_revised_other_asian <- svy_data_revised %>%
              .default = isSouthAsian))
 
 # qa check
-qa_revised_other_asian <- svy_data %>%
+qa_revised_other_asian <- svy_data_clean %>%
   select(response_id, raceColumnList) %>%
   left_join(select(svy_data_revised_other_asian, response_id, raceColumnList, 
                    bh_clean, revised_asian_response, isCambodian, isSouthAsian, 
@@ -365,6 +361,7 @@ qa_revised_other_asian <- svy_data %>%
          isSouthAsian.x, isSouthAsian.y, 
          isSoutheastAsian.x, isSoutheastAsian.y, 
          starts_with("b"), everything())
+
 ```
 
 
@@ -373,23 +370,42 @@ Recode respondents who selected "Other NHPI" accordingly.
 
 # Extract the race of respondents who marked "Other NHPI", 
 # stored in the column revised_nhpi_response.
-svy_data_other_nhpi_recode <- svy_data_clean_br %>%
+svy_data_revised_other_nhpi <- svy_data_revised_other_asian %>%
+  rowwise() %>%
   mutate(
+    # Extract the revised response and correct br if needed
     revised_nhpi_response = map_chr(br_clean, get_revised_nhpi_response),
-    #print('revised_nhpi_response', revised_nhpi_response),
-    # Mark the respondent's correct race(s) based on revised_nhpi_response
-    across(all_of(setdiff(raceColumnList, c("br"))),  
-           #Adding \\b around cur_column ensures that we're looking for an exact string match
-           ~ ifelse(str_detect(revised_nhpi_response, paste0("^", cur_column(), "$")), 1, .)),
-    # If revised_nhpi_response contains "not_br", the respondent actually marked 
-    # "Other NHPI" incorrectly. Therefore, unmark "Other NHPI" in the survey data.  
-    br = ifelse(grepl("not_br", revised_nhpi_response, ignore.case = TRUE), NA, br),
+    
+    # If revised_nhpi_response doesn't contain br, the respondent actually marked 
+    # "Other NHPI" incorrectly. Therefore, unmark br in the survey data.      
+    br = case_when(
+      grepl("\\bnot_br\\b", revised_nhpi_response) ~ NA,
+      grepl("\\bbr\\b", revised_nhpi_response) ~ br),
     
     # If revised_nhpi_response contains "not_aw", the respondent actually marked 
     # "NHPI" incorrectly. Therefore, unmark "NHPI" in the survey data.
-    aw  = ifelse(grepl("not_aw", revised_nhpi_response, ignore.case = TRUE), NA, aw)
-  )
-print(svy_data_other_nhpi_recode)
+    aw  = ifelse(grepl("not_aw", revised_nhpi_response, ignore.case = TRUE), NA, aw)) %>%
+  ungroup() %>%
+  mutate(  
+    # Mark the respondent's correct race(s) based on revised_response
+    across(all_of(setdiff(raceColumnList, "br")),  
+           ~ ifelse(grepl(paste0("\\b", cur_column(), "\\b"), revised_nhpi_response), 1, .))) 
+ 
+
+# qa check
+qa_revised_other_nhpi <- svy_data_clean %>%
+  select(response_id, raceColumnList) %>%
+  left_join(select(svy_data_revised_other_nhpi, response_id, raceColumnList, 
+                   br_clean, revised_nhpi_response, isCambodian, isSouthAsian, 
+                   isSoutheastAsian,), by=c("response_id")) %>%
+  select(order(colnames(.))) %>%
+  select(response_id, revised_nhpi_response, br_clean, br.x, br.y,
+         as.x, as.y,
+         isCambodian.x, isCambodian.y, 
+         isSouthAsian.x, isSouthAsian.y, 
+         isSoutheastAsian.x, isSoutheastAsian.y, 
+         starts_with("b"), everything()) 
+
 ```
 
 
@@ -412,6 +428,7 @@ svy_data_final <- svy_data_other_nhpi_recode %>%
 
 # Quick check on counts
 sum(svy_data_final$race_black, na.rm=TRUE)
+
 ```
 
 Creating the nh_race column in svy_data, which is "latinx" if the respondent is 
