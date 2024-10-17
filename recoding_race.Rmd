@@ -37,9 +37,9 @@ raceColumnList <- c("ar", "as", "at", "au", "av", "aw", "ax", "ay", "az",
                     "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", 
                     "bs","isSouthAsian","isSoutheastAsian","isCambodian")
 
-svy_dd <- dbGetQuery(con, "SELECT variable, response_1 
+qa <- dbGetQuery(con, "SELECT *
                      FROM youth_thriving.bvys_datadictionary_2024")
-
+qa<-qa%>%filter(response_domain=='Demographics' & variable_name %in% c('Race','Race Asian Subgroup','Race NHPI Subgroup'))%>%filter(variable!="race")
 # Filter svy_dd to contain the race/ethnicity column names, alongside with 
 # the string description of race/ethnicity. It's helpful to view svy_dd to
 # quickly decipher the meaning of each column during QA.
@@ -78,6 +78,12 @@ svy_data_clean <- svy_data %>%
 # QA check to make sure string manipulation is working
 qa_clean <- svy_data_clean %>%
   select(response_id, ba, ba_original, ba_clean, bh, bh_original, bh_clean, br, br_original, br_clean, everything())
+
+qa_asian<-svy_data_clean %>%
+ select(response_id,av,bb, bc, bd, be, bf, bg, bh, bi)
+
+qa_nhpi<-svy_data_clean %>%
+ select(response_id,aw,bj, bk, bl, bm, bn, bo, bp, bq, br, bs)
 
 ```
 
@@ -164,7 +170,7 @@ get_revised_response <- function(response) {
   {races <- append(races, list("ba", "as", "at"))}
   
   if (grepl("^jamaican/ native american$", response, ignore.case = TRUE)) 
-  {races <- append(races, list("as", "at", "not_ba"))}
+  {races <- append(races, list("as", "ar", "not_ba"))}
   
   if (grepl("^black,white and filipino$", response, ignore.case = TRUE)) 
   {races <- append(races, list("as", "ay", "av", "bd", "not_ba"))}
@@ -191,7 +197,7 @@ get_revised_response <- function(response) {
     {races <- append(races, list("av", "bc", "isSouthAsian", "not_ba"))}
   
   if(grepl("^South Asian$|^Sri Lankan$", response, ignore.case=TRUE)) 
-    {races <- append(races, list("av", "isSouthAsian", "not_ba"))}
+    {races <- append(races, list("av", "isSouthAsian", "not_ba"))} # question not this one, mark also bh
   
   if(grepl("^Japanese$", response, ignore.case=TRUE)) 
     {races <- append(races, list("av", "bg", "not_ba"))}
@@ -256,7 +262,7 @@ get_revised_asian_response <- function(response) {
   {ethnicities <- append(ethnicities, c("bd", "isSoutheastAsian", "not_bh"))}
   
   if (grepl("^Southwest Asian$", response, ignore.case = TRUE))
-  {ethnicities <- append(ethnicities, c("ax", "not_bh"))}
+  {ethnicities <- append(ethnicities, c("ax", "not_bh"))} # unmark asian here
   
   return(paste(ethnicities, collapse = "; "))
   
@@ -443,7 +449,7 @@ svy_data_final <- svy_data_final %>%
       race_sum > 1 ~ 'nh_twoormor',            # If more than one race is selected
       (race_aian_indigenous == 1 & race_sum == 1) ~ 'nh_aian',   # If American Indian/Alaska Native
       (race_black == 1 & race_sum == 1) ~ 'nh_black',            # If Black/African American
-      (race_indigenous == 1 & race_sum == 1) ~ 'nh_aian',  # If Indigenous
+      (race_indigenous == 1 & race_sum == 1) ~ 'nh_aian',  # If Indigenous # don't think this line is needed?
       (race_asian == 1 & race_sum == 1) ~ 'nh_asian',            # If Asian
       (race_nhpi == 1 & race_sum == 1) ~ 'nh_nhpi',              # If Native Hawaiian/Pacific Islander
       (race_swana == 1 & race_sum == 1) ~ 'nh_swana',            # If SWANA (Southwest Asian/North African)
@@ -490,6 +496,7 @@ svy_data_final <- svy_data_final %>%
 # Quick check on counts
 table(svy_data_final$acs_race)
 
+# update here
 # latino     nh_aian    nh_asian    nh_black    nh_other   nh_pacisl nh_twoormor    nh_white 
 #   1877          67         355         551         192          23         154         225 
 
@@ -618,6 +625,9 @@ svy_data_final <- svy_data_final %>%
     paste(ethnicities, collapse = "; ")
   }) %>%
   ungroup()
+
+qa<-svy_data_final%>%select(response_id,ar:ba,nh_race,acs_race,detailed_race)
+qa_asian<-svy_data_final%>%select(response_id,av,bb:bh,nh_race,acs_race,detailed_asian)
 ```
 
 Export final data frame as relational table.

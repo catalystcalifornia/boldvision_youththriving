@@ -90,7 +90,7 @@ acs_race_pop_weights <- dbGetQuery(conn=con_bv, statement="SELECT * FROM youth_t
 
 # read in race recode values for final race sample counts
 race_recode <- dbGetQuery(conn=con_bv, statement="SELECT response_id, acs_race FROM youth_thriving.race_ethnicity_data;") %>%
-  mutate(acs_race = as.character(acs_race)) %>%
+  mutate(acs_race = as.character(acs_race))
 
 race_recode_counts <- race_recode %>%
   select(acs_race) %>%
