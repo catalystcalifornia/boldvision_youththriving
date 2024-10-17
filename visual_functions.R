@@ -81,8 +81,8 @@ fx_grouped_barchart <- function(question_number_i, sub_question_i, #these are th
   
   df_filter <- data_per_race %>% filter(question_number == question_number_i, 
                                         sub_question == sub_question_i, 
-                                        response == response_label_1 | response == response_label_2 | response == response_label_3,
-                                        rate_cv<40)
+                                        response == response_label_1 | response == response_label_2 | response == response_label_3
+                                )
   
   
   df_visual <- ggplot(df_filter, aes(x = rate, y = reorder(race_labels, rate), fill = response)) +
@@ -137,8 +137,8 @@ fx_single_barchart <- function(question_number_i, sub_question_i, #these are the
   
   df_filter <- data_per_race %>% filter(question_number == question_number_i, 
                                         sub_question ==  sub_question_i, 
-                                        response == response_label_1 | response == response_label_2 | response == response_label_3,
-                                        rate_cv<40) %>%
+                                        response == response_label_1 | response == response_label_2 | response == response_label_3
+                                        ) %>%
     group_by(race_labels, question, sub_question, response_domain, question_number, variable) %>%
     summarise(total_count = sum(count),
               total_rate = sum(rate))
@@ -203,8 +203,8 @@ fx_stacked_barchart <- function(question_number_i, sub_question_i, #these are th
   
   df_filter <- data_per_race %>% filter(question_number == question_number_i, 
                                         sub_question == sub_question_i, 
-                                        response == response_label_1 | response == response_label_2 | response == response_label_3,
-                                        rate_cv<40)
+                                        response == response_label_1 | response == response_label_2 | response == response_label_3
+                                        )
   
   
   df_visual <- ggplot(df_filter, aes(x = rate, y = reorder(race_labels, rate), fill = response)) +
