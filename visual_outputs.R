@@ -50,3 +50,8 @@ fx_single_barchart_freq(domain_pgname = 'cultural_identity', #name of domain as 
                         title_text = 'Over half of youth report the importance of their cultural identity to feeling good about who they are', x_axis_text = '' #insert text on graph that is customized
 )
 
+
+fx_single_barchart_freq(domain_pgname = 'positive_identity', #name of domain as it is in the pgadmine table// for example, "strong_minds"
+                        variable_i = 'cn', #these are the inputs, i stands for insert/input of the variable of interest we want to look at
+                        title_text = 'About 75% of youth believe they are capable of most things often or always', x_axis_text = '' #insert text on graph that is customized
+)
