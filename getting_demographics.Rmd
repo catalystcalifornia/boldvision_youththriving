@@ -61,11 +61,14 @@ race_demographics_df <- race_ethnicity_data %>%
 
 # Calculate the frequencies and percentages of detailed Asian ethnicities.
 ```{r}
-asian_ethnicity_demographics_df <- race_ethnicity_data %>%
-  filter(!is.na(detailed_asian) & detailed_asian!="") %>%  # Remove rows where detailed_asian is NA
+asian_aoic_total <- nrow(race_ethnicity_data%>%filter(race_asian==1))
+
+# includes NA or where people did not respond to detailed asian question
+asian_ethnicity_demographics_df_revised <- race_ethnicity_data %>%
+ filter(race_asian==1)%>% # all asian alone or in combination people
   count(detailed_asian) %>%  # Count occurrences of each unique value in the column
   rename(count = n) %>%
-  mutate(variable_name = 'Asian detailed ethnicity', percentage = count/sum(count)*100) %>%
+  mutate(variable_name = 'Asian detailed ethnicity', percentage = count/asian_aoic_total*100) %>%
   arrange(desc(percentage)) %>%  # Arrange by percentage in descending order
   select(variable_name, everything())
 ```
@@ -250,16 +253,28 @@ df_long<-df %>%
 ```
 
 ```{r}
+# system involvement out of all youth
+
+# total percentage every system involved
+system_involved_yes<-svy_data %>% 
+  count(q24)%>%
+  rename(count = n) %>%
+  mutate(variable_name = 'Ever system involved', percentage = count/total_respondents*100,
+         variable="At any point system involved (q24)")%>%
+  filter(q24==1)%>%
+  select(variable_name, variable,everything(), -q24)
+
+# system involved by type
 # vars contains the column names and response values of a question domain (e.g. race)
 vars<-svy_dd %>% 
-  filter(variable_name=='System Involvement') %>% 
+  filter(variable_name=='System Involvement' & response_type=='tf') %>% # system involvement questions that were true false but not ones that were multiple choice - yes, no, don't know, etc.
   select(variable,response_1)
 
 df <- svy_data %>%
   select(all_of(vars$variable)) %>%  # Select all of the race columns in the raw data
   mutate(across(where(is.character), ~ ifelse(!is.na(.), 1, 0))) %>% # Convert specific non-numeric values
   summarise(across(where(is.numeric), ~ sum(.x, na.rm = TRUE))) %>% # Sum up numeric columns, ignoring NA
-  mutate(variable_name = 'System Involvement')
+  mutate(variable_name = 'System Involvement Type')
 
 system_involved_demographics_df<-df %>% 
   pivot_longer(!variable_name,names_to='variable',values_to='count') %>%
@@ -269,44 +284,38 @@ system_involved_demographics_df<-df %>%
 ```
 
 ```{r}
+# system involvement out of system involved youth
+system_involved_total<- nrow(svy_data %>% filter(q24 == 1))
+
 # Step 1: Filter respondents who answered "Yes" (1) to Q24
-system_involved_data <- svy_data %>% filter(q24 == 1)
+system_involved_data<- svy_data %>% filter(q24 == 1)
 
-# Step 3: Summarise the frequency and percentage for each item in Q24a
-system_involved_demographics_df <- system_involved_data %>%
-  summarise(
-    system_involved_count = nrow(system_involved_data), # Calculate total number of system involved respondents
-    system_involved_pct = round(100 * system_involved_count / total_respondents, 1),
-    
-    foster_care_count = sum(ga, na.rm = TRUE),
-    foster_care_pct = round(100 * foster_care_count / total_respondents, 1),
-    
-    lived_with_relatives_count = sum(gb, na.rm = TRUE),
-    lived_with_relatives_pct = round(100 * lived_with_relatives_count / total_respondents, 1),
-    
-    juvenile_hall_count = sum(gc, na.rm = TRUE),
-    juvenile_hall_pct = round(100 * juvenile_hall_count / total_respondents, 1),
-    
-    group_home_count = sum(gd, na.rm = TRUE),
-    group_home_pct = round(100 * group_home_count / total_respondents, 1),
-    
-    jail_prison_count = sum(ge, na.rm = TRUE),
-    jail_prison_pct = round(100 * jail_prison_count / total_respondents, 1),
-    
-    system_involved_dont_wish_to_answer_count = sum(gf, na.rm = TRUE),
-    system_involved_dont_wish_to_answer_pct = round(100 * system_involved_dont_wish_to_answer_count / total_respondents, 1),
-    
-    system_involved_other_count = sum(!is.na(gg) & gg != ""),  # Count non-empty "Other" responses
-    system_involved_other_pct = round(100 * system_involved_other_count / total_respondents, 1)
-  )
+df <- system_involved_data  %>%
+  select(all_of(vars$variable)) %>%  # Select all of the race columns in the raw data
+  mutate(across(where(is.character), ~ ifelse(!is.na(.), 1, 0))) %>% # Convert specific non-numeric values
+  summarise(across(where(is.numeric), ~ sum(.x, na.rm = TRUE))) %>% # Sum up numeric columns, ignoring NA
+  mutate(variable_name = 'System Involvement Type')
 
-# Step 4: View the results
-print(system_involved_demographics_df)
+system_involved_demographics_df_2<-df %>% 
+  pivot_longer(!variable_name,names_to='variable',values_to='count') %>%
+  left_join(vars, by="variable") %>% 
+  mutate(percentage = count/system_involved_total * 100) %>%
+  select(variable_name, variable, response_1, count, percentage)
+
 
 ```
 # Calculate frequencies and percentages of law enforcement involvement.
 # Q25. At any point, have you ever been detained AND/OR arrested by law enforcement in any capactiy?
 ```{r}
+# total percentage arrested ever
+arrested_yes<-svy_data %>% 
+  count(q25)%>%
+  rename(count = n) %>%
+  mutate(variable_name = 'Law Enforcement Involvement', percentage = count/total_respondents*100,
+         variable="Ever been detained or arrested (q25)")%>%
+  filter(q25==1)%>%
+  select(variable_name, variable,everything(), -q25)
+
 arrested_demographics_df <- svy_data %>%
   summarise(
     arrested_yes_count = sum(q25 == 1, na.rm = TRUE),  # Count of "Yes" responses
@@ -346,6 +355,16 @@ print(school_discipline_demographics_df)
 # Q27: Do any of the following apply to you: Temporary Protected Status, Asylum Status, Refugee Status, Differed Action for Childhood Arrivals (DACA), Non-Citizen Resident?
 
 ```{r}
+# total percentage impacted by immigration systems-temporary status or undocumented
+immigration_yes<-svy_data %>% 
+  count(q27)%>%
+  rename(count = n) %>%
+  mutate(variable_name = 'Immigration-system impacted', percentage = count/total_respondents*100,
+         variable="Temporary Protected Status, Asylum Status, Refugee Status, DACA, Non-Citizen Resident (q27)")%>%
+  filter(q27==1)%>%
+  select(variable_name, variable,everything(), -q27)
+
+
 immigration_demographics_df <- svy_data %>%
   summarise(
     immigrant_yes_count = sum(q27 == 1, na.rm = TRUE),
@@ -368,6 +387,15 @@ print(immigration_demographics_df)
 # Calculate the frequencies and percentages of unhoused. 
 # Q28. In the past year, was there ever a time when you were homeless or had to stay in any of the following places: A shelter or emergency housing, garage, transitional housing program, motel or hotel, a car, a park, campground, another public place, trailer, motor home, temporarily in the home of a friend, family or another person?
 ```{r}
+# total percentage unhoused in past year
+unhoused_yes<-svy_data %>% 
+  count(q28)%>%
+  rename(count = n) %>%
+  mutate(variable_name = 'Housing Status', percentage = count/total_respondents*100,
+         variable="Unhoused in the past year (q28)")%>%
+  filter(q28==1)%>%
+  select(variable_name, variable,everything(), -q28)
+
 unhoused_demographics_df <- svy_data %>%
   summarise(
     unhoused_yes_count = sum(q28 == 1, na.rm = TRUE),
@@ -382,6 +410,7 @@ unhoused_demographics_df <- svy_data %>%
     unhoused_dont_wish_to_answer_count = sum(q28 == 4, na.rm = TRUE),
     unhoused_dont_wish_to_answer_pct = round(100 * unhoused_dont_wish_to_answer_count / total_respondents, 1)
   )
+
 print(unhoused_demographics_df)
 ```
 
