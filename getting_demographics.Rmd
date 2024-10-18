@@ -24,237 +24,163 @@ con <- connect_to_db("bold_vision")
 
 source("W:\\RDA Team\\R\\Github\\RDA Functions\\main\\RDA-Functions\\Utility_Functions.R")
 
+# Pull in the data dictionary
+svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024")
+
 # Pull in the raw survey data 
 svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
 
 # Pull in table of respondents with recoded race/ethnicity
 race_ethnicity_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.race_ethnicity_data")
+
+total_respondents <- nrow(svy_data)
 ```
 
 # Calculate the frequencies and percentages of each race category.
 ```{r}
-total_respondents <- nrow(svy_data)
 race_demographics_df <- race_ethnicity_data %>%
-  summarise(
-    race_aian_count = sum(race_aian),
-    race_aian_pct = round(100 * sum(race_aian) / total_responses, 1),
-    
-    race_black_count = sum(race_black),
-    race_black_pct = round(100 * sum(race_black) / total_responses, 1),
-    
-    race_indigenous_count = sum(race_indigenous),
-    race_indigenous_pct = round(100 * sum(race_indigenous) / total_responses, 1),
-    
-    race_latinx_count = sum(race_latinx),
-    race_latinx_pct = round(100 * sum(race_latinx) / total_responses, 1),
-    
-    race_asian_count = sum(race_asian),
-    race_asian_pct = round(100 * sum(race_asian) / total_responses, 1),
-    
-    race_nhpi_count = sum(race_nhpi),
-    race_nhpi_pct = round(100 * sum(race_nhpi) / total_responses, 1),
-    
-    race_swana_count = sum(race_swana),
-    race_swana_pct = round(100 * sum(race_swana) / total_responses, 1),
-    
-    race_white_count = sum(race_white),
-    race_white_pct = round(100 * sum(race_white) / total_responses, 1),
-    
-    race_dwta_count = sum(race_dwta),
-    race_dwta_pct = round(100 * sum(race_dwta) / total_responses, 1),
-    
-    race_other_count = sum(race_other),
-    race_other_pct = round(100 * sum(race_other) / total_responses, 1))
-
-print(race_demographics_df)
+  count(nh_race) %>%  # Count occurrences of each unique value the the column
+  rename(count = n) %>%
+  mutate(variable_name = 'Non-Hispanic race', percentage = count/total_respondents*100) %>%
+  select(variable_name, everything())
 ```
 
 # Calculate the frequencies and percentages of regional Asian categories (i.e. South Asian, Southeast Asian). Percentages are based on the total count of Asian Americans being the denominator.
+# TODO: Pivot to long
 ```{r}
-total_asian <- race_demographics_df$race_asian_count
-
-asian_regional_demographics_df <- race_ethnicity_data %>%
-  summarise(
-    southeast_asian_count = sum(isSoutheastAsian),
-    southeast_asian_pct = round((100 * southeast_asian_count / total_asian), 1),
-    south_asian_count = sum(isSouthAsian),
-    south_asian_pct = round((100 * south_asian_count / total_asian), 1)
-  )
-
-print(asian_regional_demographics_df)
+# total_asian <- race_demographics_df$race_asian_count
+# 
+# asian_regional_demographics_df <- race_ethnicity_data %>%
+#   summarise(
+#     southeast_asian_count = sum(isSoutheastAsian),
+#     southeast_asian_pct = round((100 * southeast_asian_count / total_asian), 1),
+#     south_asian_count = sum(isSouthAsian),
+#     south_asian_pct = round((100 * south_asian_count / total_asian), 1)
+#   )
 ```
 
-# Calculate the frequencies and percentages of detailed Asian ethnicities. Percentages are based on the total count of Asian Americans being the denominator. The sum of all percentages do not add up to 100 because some Asian ethnicities are not included (e.g. Thai, Pakistani).
+# Calculate the frequencies and percentages of detailed Asian ethnicities.
 ```{r}
-# Step 1: Create a column for the number of ethnicities listed by counting semicolons
-asian_ethnicity_data <- race_ethnicity_data %>%
-  filter(detailed_asian != "") %>%  # Remove any empty entries
-  mutate(num_ethnicities = str_count(detailed_asian, ";") + 1) %>% # Count number of ethnicities
-  select(detailed_asian, num_ethnicities)
-
-# Step 2: Split ethnicities into separate rows but retain fractional counts
-asian_ethnicity_fractions <- asian_ethnicity_data %>%
-  separate_rows(detailed_asian, sep = "; ") %>%  # Split by semicolon
-  group_by(detailed_asian) %>% # Group by each Asian ethnicity
-  summarise(asian_ethnic_count = round(sum(1 / num_ethnicities), 1))  # Sum fractions
-
-# Step 3: Calculate percentages
-asian_ethnicity_demographics_df <- asian_ethnicity_fractions %>%
-  mutate(asian_pop_pct = round(100 * asian_ethnic_count / total_asian, 1))  # Calculate percentage
-
-# View the results
-print(asian_ethnicity_demographics_df)
+asian_ethnicity_demographics_df <- race_ethnicity_data %>%
+  filter(!is.na(detailed_asian) & detailed_asian!="") %>%  # Remove rows where detailed_asian is NA
+  count(detailed_asian) %>%  # Count occurrences of each unique value in the column
+  rename(count = n) %>%
+  mutate(variable_name = 'Asian detailed ethnicity', percentage = count/sum(count)*100) %>%
+  arrange(desc(percentage)) %>%  # Arrange by percentage in descending order
+  select(variable_name, everything())
 ```
 
-# Calculate the frequencies and percentages of detailed NHPI ethnicities. The sum of all percentages do not add up to 100 because some NHPI ethnicities are not included (e.g. Filipino).
+# Calculate the frequencies and percentages of detailed NHPI ethnicities. 
+# TODO: Edit detailed_nhpi column in recording_race.Rmd so that it adds the "Other NHPI" ethnicities as well - similar to the edits made to the detailed_asian column
 ```{r}
-total_nhpi <- race_demographics_df$race_nhpi_count
+# nhpi_ethnicity_demographics_df <- race_ethnicity_data %>%
+#   filter(!is.na(detailed_nhpi) & detailed_nhpi!="") %>%  
+#   count(detailed_nhpi) %>%  # Count occurrences of each unique value in the column
+#   rename(count = n) %>%
+#   mutate(variable_name = 'NHPI detailed ethnicity', percentage = count/sum(count)*100) %>%
+#   arrange(desc(percentage)) %>%  # Arrange by percentage in descending order
+#   select(variable_name, everything())
+```
 
-# Step 1: Create a column for the number of ethnicities listed by counting semicolons
-nhpi_ethnicity_data <- race_ethnicity_data %>%
-  filter(detailed_nhpi != "") %>%  # Remove any empty entries
-  mutate(num_ethnicities = str_count(detailed_nhpi, ";") + 1) %>% # Count number of ethnicities
-  select(detailed_nhpi, num_ethnicities)
-
-# Step 2: Split ethnicities into separate rows but retain fractional counts
-nhpi_ethnicity_fractions <- nhpi_ethnicity_data %>%
-  separate_rows(detailed_nhpi, sep = "; ") %>%  # Split by semicolon
-  group_by(detailed_nhpi) %>% # Group by each NHPI ethnicity
-  summarise(nhpi_ethnic_count = round(sum(1 / num_ethnicities), 1))  # Sum fractions
-
-# Step 3: Calculate percentages
-nhpi_ethnicity_demographics_df <- nhpi_ethnicity_fractions %>%
-  mutate(nhpi_pop_pct = round(100 * nhpi_ethnic_count / total_nhpi, 1))  # Calculate percentage
-
-# View the results
-print(nhpi_ethnicity_demographics_df)
+```{r}
+# total_nhpi <- race_demographics_df$race_nhpi_count
+# 
+# # Step 1: Create a column for the number of ethnicities listed by counting semicolons
+# nhpi_ethnicity_data <- race_ethnicity_data %>%
+#   filter(detailed_nhpi != "") %>%  # Remove any empty entries
+#   mutate(num_ethnicities = str_count(detailed_nhpi, ";") + 1) %>% # Count number of ethnicities
+#   select(detailed_nhpi, num_ethnicities)
+# 
+# # Step 2: Split ethnicities into separate rows but retain fractional counts
+# nhpi_ethnicity_fractions <- nhpi_ethnicity_data %>%
+#   separate_rows(detailed_nhpi, sep = "; ") %>%  # Split by semicolon
+#   group_by(detailed_nhpi) %>% # Group by each NHPI ethnicity
+#   summarise(nhpi_ethnic_count = round(sum(1 / num_ethnicities), 1))  # Sum fractions
+# 
+# # Step 3: Calculate percentages
+# nhpi_ethnicity_demographics_df <- nhpi_ethnicity_fractions %>%
+#   mutate(nhpi_pop_pct = round(100 * nhpi_ethnic_count / total_nhpi, 1))  # Calculate percentage
+# 
+# # View the results
+# print(nhpi_ethnicity_demographics_df)
 ```
 
 ```{r}
 # Bind the data frames into one long data frame
-race_demographics <- bind_rows(
-  race_demographics_df,
-  asian_regional_demographics_df,
-  asian_ethnicity_demographics_df,
-  nhpi_ethnicity_demographics_df
-)
-
-# View the combined data frame
-print(race_demographics)
+# race_demographics <- bind_rows(
+#   race_demographics_df,
+#   asian_regional_demographics_df,
+#   asian_ethnicity_demographics_df,
+#   nhpi_ethnicity_demographics_df
+# )
+# 
+# # View the combined data frame
+# print(race_demographics)
 ```
 
 # Calculate the frequencies and percentages of gender identities.
 ```{r}
-# Summarise the frequency and percentage for each gender identity
-gender_demographics_df <- svy_data %>%
-  summarise(
-    girl_woman_count = sum(fc, na.rm = TRUE),
-    girl_woman_pct = round(100 * girl_woman_count / total_respondents, 1),
-    
-    boy_man_count = sum(fd, na.rm = TRUE),
-    boy_man_pct = round(100 * boy_man_count / total_respondents, 1),
-    
-    trans_count = sum(fe, na.rm = TRUE),
-    trans_pct = round(100 * trans_count / total_respondents, 1),
-    
-    genderfluid_count = sum(ff, na.rm = TRUE),
-    genderfluid_pct = round(100 * genderfluid_count / total_respondents, 1),
-    
-    two_spirit_count = sum(fg, na.rm = TRUE),
-    two_spirit_pct = round(100 * two_spirit_count / total_respondents, 1),
-    
-    nonbinary_genderqueer_count = sum(fh, na.rm = TRUE),
-    nonbinary_genderqueer_pct = round(100 * nonbinary_genderqueer_count / total_respondents, 1),
-    
-    gender_questioning_count = sum(fi, na.rm = TRUE),
-    gender_questioning_pct = round(100 * gender_questioning_count / total_respondents, 1),
-    
-    no_gender_identity_count = sum(fj, na.rm = TRUE),
-    no_gender_identity_pct = round(100 * no_gender_identity_count / total_respondents, 1),
-    
-    gender_dont_wish_to_answer_count = sum(fk, na.rm = TRUE),
-    gender_dont_wish_to_answer_pct = round(100 * gender_dont_wish_to_answer_count / total_respondents, 1),
-    
-    gender_something_else_count = sum(!is.na(fl) & fl != ""),  # Count non-empty "Something Else" responses
-    gender_something_else_pct = round(100 * gender_something_else_count / total_respondents, 1)
-  )
+# vars contains the column names and response values of a question domain (e.g. race)
+vars<-svy_dd %>% 
+  filter(variable_name=='Gender') %>% 
+  select(variable,response_1)
 
-# View the results
-print(gender_demographics_df)
+df <- svy_data %>%
+  select(all_of(vars$variable)) %>%  # Select all of the question domain's columns in the raw data
+  mutate(across(where(is.character), ~ ifelse(!is.na(.), 1, 0))) %>% # Convert non-numeric values to 0/1
+  summarise(across(where(is.numeric), ~ sum(.x, na.rm = TRUE))) %>% # Sum up numeric columns, ignoring NA
+  mutate(variable_name = 'Gender')
 
+gender_demographics_df<-df %>% 
+  pivot_longer(!variable_name,names_to='variable',values_to='count') %>%
+  left_join(vars, by="variable") %>% 
+  mutate(percentage = count/total_respondents * 100) %>%
+  select(variable_name, variable, response_1, count, percentage)
 ```
+
 # Calculate the frequencies and percentages of sexualities.
 ```{r}
-sexuality_demographics_df <- svy_data %>%
-  summarise(
-    straight_count = sum(fo, na.rm = TRUE),
-    straight_pct = round(100 * straight_count / total_respondents, 1),
-    
-    gay_count = sum(fp, na.rm = TRUE),
-    gay_pct = round(100 * gay_count / total_respondents, 1),
-    
-    lesbian_count = sum(fq, na.rm = TRUE),
-    lesbian_pct = round(100 * lesbian_count / total_respondents, 1),
-    
-    bisexual_count = sum(fr, na.rm = TRUE),
-    bisexual_pct = round(100 * bisexual_count / total_respondents, 1),
-    
-    queer_count = sum(fs, na.rm = TRUE),
-    queer_pct = round(100 * queer_count / total_respondents, 1),
-    
-    asexual_count = sum(ft, na.rm = TRUE),
-    asexual_pct = round(100 * asexual_count / total_respondents, 1),
-    
-    sexuality_questioning_count = sum(fu, na.rm = TRUE),
-    sexuality_questioning_pct = round(100 * sexuality_questioning_count / total_respondents, 1),
-    
-    sexuality_dont_know_question_count = sum(fv, na.rm = TRUE),
-    sexuality_dont_know_question_pct = round(100 * sexuality_dont_know_question_count / total_respondents, 1),
-    
-    sexuality_dont_wish_to_answer_count = sum(fw, na.rm = TRUE),
-    sexuality_dont_wish_to_answer_pct = round(100 * sexuality_dont_wish_to_answer_count / total_respondents, 1),
-    
-    sexuality_something_else_count = sum(!is.na(fx) & fx != ""),  # Count non-empty "Something Else" responses
-    sexuality_something_else_pct = round(100 * sexuality_something_else_count / total_respondents, 1)
-  )
+# vars contains the column names and response values of a question domain (e.g. race)
+vars<-svy_dd %>% 
+  filter(variable_name=='Sexual Orientation') %>% 
+  select(variable,response_1)
 
-# Step 4: View the results
-print(sexuality_demographics_df)
-```
-```{r}
-# Bind the data frames into one long data frame
-gender_sexuality_demographics <- bind_rows(
-  gender_demographics_df,
-  sexuality_demographics_df
-)
+df <- svy_data %>%
+  select(all_of(vars$variable)) %>%  # Select all of the question domain's columns in the raw data
+  mutate(across(where(is.character), ~ ifelse(!is.na(.), 1, 0))) %>% # Convert non-numeric values to 0/1
+  summarise(across(where(is.numeric), ~ sum(.x, na.rm = TRUE))) %>% # Sum up numeric columns, ignoring NA
+  mutate(variable_name = 'Sexual Orientation')
 
-# View the combined data frame
-print(gender_sexuality_demographics)
+sexuality_demographics_df<-df %>% 
+  pivot_longer(!variable_name,names_to='variable',values_to='count') %>%
+  left_join(vars, by="variable") %>% 
+  mutate(percentage = count/total_respondents * 100) %>%
+  select(variable_name, variable, response_1, count, percentage)
 ```
 
 # Calculate frequencies and percentages for school type enrollment.
 ```{r}
-education_demographics_df <- svy_data %>%
-  summarise(
-    middle_school_count = sum(ca, na.rm = TRUE),
-    middle_school_pct = round(100 * middle_school_count / total_respondents, 1),
-    
-    high_school_count = sum(cb, na.rm = TRUE),
-    high_school_pct = round(100 * high_school_count / total_respondents, 1),
-    
-    vocational_trade_school_count = sum(cc, na.rm = TRUE),
-    vocational_trade_school_pct = round(100 * vocational_trade_school_count / total_respondents, 1),
-    
-    community_college_count = sum(cd, na.rm = TRUE),
-    community_college_pct = round(100 * community_college_count / total_respondents, 1),
-    
-    four_year_college_count = sum(ce, na.rm = TRUE),
-    four_year_college_pct = round(100 * four_year_college_count / total_respondents, 1),
-    
-    education_dont_wish_to_answer_count = sum(cf, na.rm = TRUE),
-    education_dont_wish_to_answer_pct = round(100 * education_dont_wish_to_answer_count / total_respondents, 1)
-  )
-print(education_demographics_df)
+# education_demographics_df <- svy_data %>%
+#   summarise(
+#     middle_school_count = sum(ca, na.rm = TRUE),
+#     middle_school_pct = round(100 * middle_school_count / total_respondents, 1),
+#     
+#     high_school_count = sum(cb, na.rm = TRUE),
+#     high_school_pct = round(100 * high_school_count / total_respondents, 1),
+#     
+#     vocational_trade_school_count = sum(cc, na.rm = TRUE),
+#     vocational_trade_school_pct = round(100 * vocational_trade_school_count / total_respondents, 1),
+#     
+#     community_college_count = sum(cd, na.rm = TRUE),
+#     community_college_pct = round(100 * community_college_count / total_respondents, 1),
+#     
+#     four_year_college_count = sum(ce, na.rm = TRUE),
+#     four_year_college_pct = round(100 * four_year_college_count / total_respondents, 1),
+#     
+#     education_dont_wish_to_answer_count = sum(cf, na.rm = TRUE),
+#     education_dont_wish_to_answer_pct = round(100 * education_dont_wish_to_answer_count / total_respondents, 1)
+#   )
+# print(education_demographics_df)
 ```
 
 # Calculate frequencies and percentages of employment status.
@@ -289,18 +215,59 @@ employment_demographics_df <- as.data.frame(NA)
 ```
 
 ```{r}
-# Bind the data frames into one long data frame
-education_employment_demographics <- bind_rows(
-  education_demographics_df,
-  employment_demographics_df # This is empty right now, awaiting response from survey people
-)
-
-# View the combined data frame
-print(education_employment_demographics)
+# # Bind the data frames into one long data frame
+# education_employment_demographics <- bind_rows(
+#   education_demographics_df,
+#   employment_demographics_df # This is empty right now, awaiting response from survey people
+# )
+# 
+# # View the combined data frame
+# print(education_employment_demographics)
 ```
 
 # Calculate the frequencies and percentages of system involvement.
 # Q24. At any point have you: Lived in foster care, spent time in juvenile hall or probation camp, spent time in jail or prison, lived in a group home or residential program, or lived with relatives who were responsible for you legally? 
+
+# template
+```{r}
+# vars contains the column names and response values of a question domain (e.g. race)
+vars<-svy_dd %>% 
+  filter(variable_name=='Race') %>% 
+  select(variable,response_1)
+
+df <- svy_data %>%
+  select(all_of(vars$variable)) %>%  # Select all of the race columns in the raw data
+  mutate(across(where(is.character), ~ ifelse(!is.na(.), 1, 0))) %>% # Convert specific non-numeric values
+  summarise(across(where(is.numeric), ~ sum(.x, na.rm = TRUE))) %>% # Sum up numeric columns, ignoring NA
+  mutate(variable_name = 'Race')
+
+df_long<-df %>% 
+  pivot_longer(!variable_name,names_to='variable',values_to='count') %>%
+  left_join(vars, by="variable") %>% 
+  filter(variable != 'race') %>%
+  mutate(percentage = count/total_respondents * 100) %>%
+  select(variable_name, variable, response_1, count, percentage)
+```
+
+```{r}
+# vars contains the column names and response values of a question domain (e.g. race)
+vars<-svy_dd %>% 
+  filter(variable_name=='System Involvement') %>% 
+  select(variable,response_1)
+
+df <- svy_data %>%
+  select(all_of(vars$variable)) %>%  # Select all of the race columns in the raw data
+  mutate(across(where(is.character), ~ ifelse(!is.na(.), 1, 0))) %>% # Convert specific non-numeric values
+  summarise(across(where(is.numeric), ~ sum(.x, na.rm = TRUE))) %>% # Sum up numeric columns, ignoring NA
+  mutate(variable_name = 'System Involvement')
+
+system_involved_demographics_df<-df %>% 
+  pivot_longer(!variable_name,names_to='variable',values_to='count') %>%
+  left_join(vars, by="variable") %>% 
+  mutate(percentage = count/total_respondents * 100) %>%
+  select(variable_name, variable, response_1, count, percentage)
+```
+
 ```{r}
 # Step 1: Filter respondents who answered "Yes" (1) to Q24
 system_involved_data <- svy_data %>% filter(q24 == 1)
@@ -436,35 +403,54 @@ print(system_involvement_demographics)
 
 # Export race_demographics dataframe as a table with comments
 ```{r}
-# Write table race_demographics with metadata
+# Write table race_demographics_df with metadata
 schema <- "youth_thriving"
 table_name <- "race_demographics"
-indicator <- "Frequencies and percentages of race and ethnicity groups"
+indicator <- "Frequencies and percentages of non-Hispanic race categories"
 source <- "script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/getting_demographics.Rmd"
 qa_filepath <- "W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_getting_demographics"
 table_comment <- paste0(indicator, source)
-dbWriteTable(con, c(schema, table_name), race_demographics,
+dbWriteTable(con, c(schema, table_name), race_demographics_df,
              overwrite = TRUE, row.names = FALSE)
 
-# Add metadata for race_demographics
-column_names <- colnames(race_demographics) # Get column names
+# Add metadata for race_demographics_df
+column_names <- colnames(race_demographics_df) # Get column names
 column_comments <- c(
-  'The columns called race_[insert race]_count give the number of respondents who identified with the specified race',
-  'The columns called race_[insert race]_pct give the percentage of respondents who identified with the specified race',
-  rep(NA, 18),
-  'Count of Southeast Asian respondents',
-  'Percentage of Southeast Asian respondents with the denominator being count of Asian American respondents',
-  'Count of South Asian respondents',
-  'Percentage of South Asian respondents with the denominator being count of Asian American respondents',
-  'The major Asian ethnicities represented in the survey',
-  'Count of each major Asian ethnicity. The count is not a whole number because we count ethnically mixed Asians as fractions of their ethnic identities',
-  'Percentage of each major Asian ethnicity with the denominator being count of Asian American respondents',
-  'The major NHPI ethnicities represented in the survey',
-  'Count of each major NHPI ethnicity. The count is not a whole number because we count ethnically mixed NHPIs as fractions of their ethnic identities',
-  'Percentage of each major NHPI ethnicity with the denominator being count of NHPI respondents')
+  'This table uses non-Hispanic race categories',
+  'This column has all of the non-Hispanic race categories',
+  'Denotes the number of respondents with the corresponding racial identity',
+  'Denotes the percentage of respondents with the corresponding racial identity')
 
 add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
 ```
+# Export asian_ethnicity_demographics_df dataframe as a table with comments
+```{r}
+# Write table asian_ethnicity_demographics_df with metadata
+schema <- "youth_thriving"
+table_name <- "asian_ethnicity_demographics"
+indicator <- "Frequencies and percentages of detailed Asian ethnicity categories"
+source <- "script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/getting_demographics.Rmd"
+qa_filepath <- "W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_getting_demographics"
+table_comment <- paste0(indicator, source)
+dbWriteTable(con, c(schema, table_name), asian_ethnicity_demographics_df,
+             overwrite = TRUE, row.names = FALSE)
+
+# Add metadata for asian_ethnicity_demographics_df
+column_names <- colnames(asian_ethnicity_demographics_df) # Get column names
+column_comments <- c(
+  'This table uses detailed Asian ethnic categories',
+  'This column has all of the Asian ethnic categories',
+  'Denotes the number of respondents with the corresponding ethnic identity',
+  'Denotes the percentage of respondents with the corresponding ethnic identity')
+
+add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
+```
+```{r}
+library(usethis) 
+
+pr_merge_main() 
+```
+
 # Export gender_sexuality_demographics dataframe as a table with comments
 ```{r}
 # Write table gender_sexuality_demographics with metadata
