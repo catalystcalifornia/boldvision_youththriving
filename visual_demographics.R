@@ -111,7 +111,8 @@ ggsave(plot=viz_dem_race,
        units = c("in"),  width = 10, height = 5.5)
 
 
-df_dem_asian_sub <- dbGetQuery(con, "SELECT * FROM youth_thriving.asian_ethnicity_demographics")
+df_dem_asian_sub <- dbGetQuery(con, "SELECT * FROM youth_thriving.asian_ethnicity_demographics") %>%
+  filter(percentage > 1)
 
 
 viz_dem_asian <- ggplot(df_dem_asian_sub, aes(x = percentage, y = reorder(detailed_asian, percentage), width = 0.8)) +
@@ -119,7 +120,7 @@ viz_dem_asian <- ggplot(df_dem_asian_sub, aes(x = percentage, y = reorder(detail
   scale_y_discrete(labels = function(detailed_asian) str_wrap(detailed_asian, width = 30)) +
   # bar labels
   geom_text(data = df_dem_asian_sub,
-            aes(label = paste0(round(percentage, digits = 2), "%")),
+            aes(label = paste0(round(percentage, digits = 1), "%")),
             size = 3,
             stat="identity", colour = "black",
             position = position_dodge(width = 1), 
@@ -148,4 +149,4 @@ viz_dem_asian <- ggplot(df_dem_asian_sub, aes(x = percentage, y = reorder(detail
 ggsave(plot=viz_dem_asian, 
        file=paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", "Demographics", "/",
                    "race_asian_sub_barchart", ".svg"),
-       units = c("in"),  width = 10.2, height = 6)
+       units = c("in"),  width = 10, height = 5.5)
