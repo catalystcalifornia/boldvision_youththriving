@@ -249,7 +249,7 @@ fx_stacked_barchart <- function(question_number_i, sub_question_i, #these are th
 }
 
 
-#### Step 7: Function- SINGLE Horizontal Bar Chart by Question/FREQUENCIES ####
+#### Step 7: Function- SINGLE VERTICAL Bar Chart by Question/FREQUENCIES ####
 
 fx_single_barchart_freq <- function(domain_pgname, #name of domain as it is in the pgadmine table// for example, "strong_minds"
                                     variable_i, #these are the inputs, i stands for insert/input of the variable of interest we want to look at

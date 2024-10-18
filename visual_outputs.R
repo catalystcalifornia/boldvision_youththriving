@@ -49,3 +49,4 @@ fx_single_barchart_freq(domain_pgname = 'cultural_identity', #name of domain as 
                         variable_i = 'dz', #these are the inputs, i stands for insert/input of the variable of interest we want to look at
                         title_text = 'Over half of youth report the importance of their cultural identity to feeling good about who they are', x_axis_text = '' #insert text on graph that is customized
 )
+
