@@ -301,6 +301,19 @@ gender_sexuality_data %>% count(cishet_lgbtqia)
 gender_sexuality_data %>% count(lgbtqia_white_bipoc) 
 ```
 
+## How many respondents chose multiple genders, sexualities?
+```{r}
+# 86 respondents chose more than 1 gender.
+gender_sexuality_data %>%
+  mutate(non_na_count = rowSums(!is.na(across(c(fc, fd, fe, ff, fg, fh, fj, fl))))) %>%
+  summarize(rows_with_more_than_one = sum(non_na_count > 1))
+
+# 84 respondents chose more than 1 sexuality.
+gender_sexuality_data %>%
+  mutate(non_na_count = rowSums(!is.na(across(c(fo,fp,fq,fr,fs,ft,fx))))) %>%
+  summarize(rows_with_more_than_one = sum(non_na_count > 1))
+```
+
 
 ## Export final data frame as relational table.
 ```{r}
