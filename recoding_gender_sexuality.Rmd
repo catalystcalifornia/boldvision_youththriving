@@ -18,12 +18,10 @@ con <- connect_to_db("bold_vision")
 svy_data <- dbGetQuery(con, "
   SELECT response_id, 
     fc,fd,fe,ff,fg,fh,fi,fj,fk,fl,q22,fo,fp,fq,fr,fs,ft,fu,fv,fw,fx
-  FROM youth_thriving.raw_survey_data
-")
+  FROM youth_thriving.raw_survey_data")
 
 race_data <-dbGetQuery(con, "SELECT response_id, nh_race FROM youth_thriving.race_ethnicity_data")
 ```
-
 ## Clean all write-in responses for gender and sexuality questions (fl, fx). 
 ## Add columns fl_original, fl_clean, fx_original, fx_clean to svy_data
 ```{r}
@@ -84,7 +82,7 @@ get_revised_gender_response <- function(response) {
 ## Define a function get_revised_sexuality_response to recode the respondent's clean
 ## write-in sexualities(s) to sexuality categories already listed in the survey. 
 ## Another purpose to this recoding is so that we can add "Something Else" to the 
-## LGBTQIA+ category in column cishet_LGBTQIA.
+## LGBQA and LGBTQIA+ categories.
 ```{r}
 get_revised_sexuality_response <- function(response) {
   #If the respondent didn't mark "Something else", leave the function now.
@@ -226,7 +224,26 @@ gender_sexuality_data <- gender_sexuality_data %>%
   ) 
 ```
 
-## 5.	Cisgender heterosexual vs LGBTQIA+ 
+## 5.	Straight vs LGBQA
+a.	Possible values will be 0 = Straight/heterosexual, 1 = LGBQA, NA = everyone else
+```{r}
+# Create the straight_lgbqa column
+gender_sexuality_data <- gender_sexuality_data %>%
+  mutate(
+    straight_lgbqa = case_when(
+        (!is.na(fp) & fp == 1) |                        # Gay
+        (!is.na(fq) & fq == 1) |                        # Lesbian 
+        (!is.na(fr) & fr == 1) |                        # Bisexual
+        (!is.na(fs) & fs == 1) |                        # Queer 
+        (!is.na(ft) & ft == 1) |                        # Asexual 
+        !is.na(fx) ~ 1,          # Something else. All responses above are LGBQA.
+      !is.na(fo) & fo == 1 ~ 0,  # Straight
+      TRUE ~ NA_integer_  # Everyone else as NA
+    )
+  )
+```
+
+## 6.	Cisgender heterosexual vs LGBTQIA+ 
 a.	Possible values will be 0 = cisgender heterosexual, 1 = LGBTQIA+, NA = everyone else
 ```{r}
 # Create the cishet_lgbtqia column
@@ -246,7 +263,7 @@ gender_sexuality_data <- gender_sexuality_data %>%
   )
 ```
 
-## 6.	LGBTQIA+ white vs LGBTQIA+ BIPOC
+## 7.	LGBTQIA+ white vs LGBTQIA+ BIPOC
 a.	Possible values will be 0 = LGBTQIA+ white, 1 = LGBTQIA+ BIPOC, NA = everyone else
 ```{r}
 # Possible values of nh_race
@@ -269,12 +286,67 @@ gender_sexuality_data <- gender_sexuality_data %>%
   )
 ```
 
+## Get frequencies
 ```{r}
-# Get frequencies
+# Gender 
 gender_sexuality_data %>% count(cisgender_mf)
 gender_sexuality_data %>% count(cisgender_tgnc)
 gender_sexuality_data %>% count(cis_trans_gnc)
 gender_sexuality_data %>% count(cis_mf_trans_gnc)
+# Sexuality
+gender_sexuality_data %>% count(straight_lgbqa) 
+# Gender and Sexuality
 gender_sexuality_data %>% count(cishet_lgbtqia)
+# Race, Gender, and Sexuality
 gender_sexuality_data %>% count(lgbtqia_white_bipoc) 
+```
+
+
+## Export final data frame as relational table.
+```{r}
+# Get relevant columns from gender_sexuality_data to put into a table in the database
+final_df<-gender_sexuality_data%>%
+  select(response_id, cisgender_mf, cisgender_tgnc, cis_trans_gnc, 
+         cis_mf_trans_gnc, straight_lgbqa, cishet_lgbtqia, lgbtqia_white_bipoc) 
+
+# Write table with metadata
+table_name <- "gender_sexuality_data"
+schema <- "youth_thriving"
+indicator <- "A person-level table specifying gender and sexuality identities. "
+source <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_gender_sexuality_data.docx
+Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/recoding_gender_sexuality.Rmd"
+table_comment <- paste0(indicator, source)
+dbWriteTable(con, c(schema, table_name), final_df,
+             overwrite = TRUE, row.names = FALSE)
+
+# Comment on table and columns
+column_names <- colnames(final_df) # Get column names
+column_comments <- c(
+  "A unique, numeric ID for each respondent",
+  "0/1: Cisgender male vs cisgender female",
+  "0/1: Cisgender vs TGNC (transgender, gender non-conforming)",
+  "Categorical: Cisgender, gender non-conforming, transgender",
+  "Categorical: Cisgender male, cisgender female, transgender, gender non-conforming",
+  "0/1: Straight vs LGBQA",
+  "0/1: Cisgender heterosexual vs LGBTQIA+",
+  "0/1: LGBTQIA+ white vs LGBTQIA+ BIPOC"
+)
+
+add_table_comments <- function(con, schema, table_name, indicator, source, column_names, column_comments) {
+  comments <- character()
+  comments <- c(comments, paste0("
+    COMMENT ON TABLE ", schema, ".", table_name, " IS '", table_comment, "';"))
+  for (i in seq_along(column_names)) {
+    comment <- paste0("
+      COMMENT ON COLUMN ", schema, ".", table_name, '."', column_names[i], '" IS \'', column_comments[i], "';
+      ")
+    comments <- c(comments, comment)
+  }
+  sql_commands <- paste(comments, collapse = "")
+  dbSendQuery(con, sql_commands)
+}
+
+add_table_comments(con, schema, table_name, indicator, source, column_names, column_comments)
+
+dbDisconnect(con)
 ```
