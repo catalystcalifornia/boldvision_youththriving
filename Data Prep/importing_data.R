@@ -255,39 +255,40 @@ data_dictionary[data_dictionary=="Often True"]<-"Often true"
 data_dictionary[data_dictionary=="Always True"]<-"Always true"
 
 # Export data dictionary table and comments
-# dbWriteTable(con_bv, c('youth_thriving', 'bvys_datadictionary_2024'), data_dictionary,
-#              overwrite = FALSE, row.names = FALSE)
-
-# dbSendQuery(con_bv, "COMMENT ON TABLE youth_thriving.bvys_datadictionary_2024 IS 'The following data dictionary aims to decode the data for the Bold Visin Youth Thriving Survey Data for 2024. QA Documentation here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_dataimport_datadictionary.docx'")
-# 
-# 
-# dbSendQuery(con_bv, "COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.variable IS 'refers to the column label or variable in the survey data';
-#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.question IS 'the question that this variable refers to';
-#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.sub_question IS 'the subquestion that this variable refers to';
-#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.variable_category IS 'the categories the data collector identified in their codebook';
-#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.variable_name IS 'a more explanatory name of what the variable aims to measure';
-#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_domain IS 'the survey domain this variable refers to';
-#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_type IS 'the type of question this is so oe: open ended, mc: multiple choice, tf: true or false, fun: fun questions used to break up survey';
-#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_1 IS 'what the response is if the variable has a 1 coded for the data. True and False questions will also show an actual response too. So there is no 0 which is just not true but for 1, we coded what is true for the respondent';
-#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_2 IS 'what the response is if the variable has a 2 coded for the data.';
-#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_3 IS 'what the response is if the variable has a 3 coded for the data.';
-#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_4 IS 'what the response is if the variable has a 4 coded for the data.';
-#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_5 IS 'what the response is if the variable has a 5 coded for the data.';
-#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_6 IS 'what the response is if the variable has a 6 coded for the data.';
-#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_7 IS 'what the response is if the variable has a 7 coded for the data.';
-#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_8 IS 'what the response is if the variable has a 8 coded for the data.';
-#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_9 IS 'what the response is if the variable has a 9 coded for the data.';
-#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_10 IS 'what the response is if the variable has a 10 coded for the data.';
-#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_11 IS 'what the response is if the variable has a 11 coded for the data.';
-#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_12 IS 'what the response is if the variable has a 12 coded for the data.';
-#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.notes IS 'any important notes like what variables were just for the weights and whether skip logic was applied';
-#                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.likert IS 'notes if a Likert scale was used and how many points/options given (e.g., 5pt_scale, 4pt_scale, etc.)';
-#             ")
-# 
-# # add primary key for editing in database
-# dbSendQuery(con_bv, "ALTER TABLE youth_thriving.bvys_datadictionary_2024 ADD PRIMARY KEY (primary_key)");
-# 
-# dbDisconnect(con_bv)
+ # dbWriteTable(con_bv, c('youth_thriving', 'bvys_datadictionary_2024'), data_dictionary,
+ #              overwrite = FALSE, row.names = FALSE)
+ # 
+ # dbSendQuery(con_bv, "COMMENT ON TABLE youth_thriving.bvys_datadictionary_2024 IS 'The following data dictionary aims to decode the data for the Bold Visin Youth Thriving Survey Data for 2024. QA Documentation here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_dataimport_datadictionary.docx'")
+ # 
+ # 
+ # dbSendQuery(con_bv, "COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.variable IS 'refers to the column label or variable in the survey data';
+ #                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.question IS 'the question that this variable refers to';
+ #                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.sub_question IS 'the subquestion that this variable refers to';
+ #                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.variable_category IS 'the categories the data collector identified in their codebook';
+ #                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.variable_name IS 'a more explanatory name of what the variable aims to measure';
+ #                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_domain IS 'the survey domain this variable refers to';
+ #                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_type IS 'the type of question this is so oe: open ended, mc: multiple choice, tf: true or false, fun: fun questions used to break up survey';
+ #                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_1 IS 'what the response is if the variable has a 1 coded for the data. True and False questions will also show an actual response too. So there is no 0 which is just not true but for 1, we coded what is true for the respondent';
+ #                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_2 IS 'what the response is if the variable has a 2 coded for the data.';
+ #                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_3 IS 'what the response is if the variable has a 3 coded for the data.';
+ #                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_4 IS 'what the response is if the variable has a 4 coded for the data.';
+ #                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_5 IS 'what the response is if the variable has a 5 coded for the data.';
+ #                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_6 IS 'what the response is if the variable has a 6 coded for the data.';
+ #                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_7 IS 'what the response is if the variable has a 7 coded for the data.';
+ #                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_8 IS 'what the response is if the variable has a 8 coded for the data.';
+ #                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_9 IS 'what the response is if the variable has a 9 coded for the data.';
+ #                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_10 IS 'what the response is if the variable has a 10 coded for the data.';
+ #                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_11 IS 'what the response is if the variable has a 11 coded for the data.';
+ #                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.response_12 IS 'what the response is if the variable has a 12 coded for the data.';
+ #                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.notes IS 'any important notes like what variables were just for the weights and whether skip logic was applied';
+ #                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.likert IS 'notes if a Likert scale was used and how many points/options given (e.g., 5pt_scale, 4pt_scale, etc.)';
+ #                      COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.likert_type IS 'notes what type of likert scale is used (e.g., yes_scale, freq_scale, etc.)';
+ #             ")
+ # 
+ # # add primary key for editing in database
+ # dbSendQuery(con_bv, "ALTER TABLE youth_thriving.bvys_datadictionary_2024 ADD PRIMARY KEY (primary_key)");
+ # 
+ # dbDisconnect(con_bv)
 
 # QA check: survey columns are equal to data dictionary variables
 survey_colnames <- sort(colnames(ys_data_finalwts))
