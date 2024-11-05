@@ -191,7 +191,7 @@ ys_data_finalwts <- ys_data_spawts %>%
   )
 
 # save to csv for QA
-write.csv(ys_data_finalwts, file = "./Data Prep/ys_data_finalwts.csv", row.names=FALSE, fileEncoding = "UTF-8")
+# write.csv(ys_data_finalwts, file = "./Data Prep/Survey Weighting/ys_data_finalwts.csv", row.names=FALSE, fileEncoding = "UTF-8")
 
 ####Step 4: Export survey data to postgres ####
 
