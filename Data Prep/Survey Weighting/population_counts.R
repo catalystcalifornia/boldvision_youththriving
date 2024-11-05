@@ -178,7 +178,7 @@ spa_counts <- spa_counts_step1 %>%
   filter(!is.na(variable))%>%
   select(geoid, name, weighting_group, everything())
 
-## Add in race populations (already QAed)
+# Add in race populations (already QAed) -----
 race_counts <- dbGetQuery(con, "SELECT geoid, race, count, rate FROM youth_thriving.acs_pums_race_pop_15_24") %>%
   rename(variable=race,
          percent=rate) %>%
