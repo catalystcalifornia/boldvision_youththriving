@@ -81,17 +81,18 @@ ys_data_agewts <- ys_data %>%
 acs_population_races <- c("latino", "nh_white", "nh_black", "nh_asian", "nh_aian",
                           "nh_pacisl", "nh_twoormor", "nh_other")
 
-acs_race_pop_weights <- dbGetQuery(conn=con_bv, statement="SELECT * FROM youth_thriving.acs_pums_race_pop_15_24;") %>%
-  filter(race %in% acs_population_races) %>%
-  select(geoid, race, count, rate) %>%
-  group_by(race) %>%
+acs_race_pop_weights <- acs_pop_weights %>%
+  filter(weighting_group=='Race') %>%
+  filter(variable %in% acs_population_races) %>%
+  select(geoid, variable, count, percent) %>%
+  group_by(variable) %>%
   summarise(pop_count = sum(count)) %>%
   ungroup() %>%
   mutate(pop_rate = pop_count/sum(pop_count))
 
 # read in race recode values for final race sample counts
 race_recode <- dbGetQuery(conn=con_bv, statement="SELECT response_id, acs_race FROM youth_thriving.race_ethnicity_data;") %>%
-  mutate(acs_race = as.character(acs_race)) %>%
+  mutate(acs_race = as.character(acs_race))
 
 race_recode_counts <- race_recode %>%
   select(acs_race) %>%
@@ -107,7 +108,7 @@ acs_race_sample_weights <- race_recode_counts %>%
   mutate(sample_rate = sample_count/sum(sample_count))
 
 race_weights <- acs_race_pop_weights %>%
-  left_join(acs_race_sample_weights) %>%
+  left_join(acs_race_sample_weights, by=c("variable"="race")) %>%
   mutate(
     weights = pop_rate/sample_rate,
     weighted_count = sample_count * weights,
@@ -116,7 +117,7 @@ race_weights <- acs_race_pop_weights %>%
 # add race_weight col
 ys_data_racewts <- ys_data_agewts %>%
   left_join(select(race_recode, response_id, acs_race)) %>%
-  left_join(select(race_weights, race, weights), by=c("acs_race"="race")) %>%
+  left_join(select(race_weights, variable, weights), by=c("acs_race"="variable")) %>%
   rename(race_wt = weights)
 
 ##### 3. add sex_wt col to survey data ----
