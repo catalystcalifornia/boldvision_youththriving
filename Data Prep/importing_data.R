@@ -199,14 +199,14 @@ write.csv(ys_data_finalwts, file = "./Data Prep/ys_data_finalwts.csv", row.names
 ys_data_finalwts <- ys_data_finalwts %>%
   select(-c(age_wt, acs_race, race_wt, sex_wt, spa_wt))
 
-## export survey data table and comments
+# # export survey data table and comments
 # dbWriteTable(con_bv, c('youth_thriving', 'raw_survey_data'), ys_data_finalwts,
 #                           overwrite = FALSE, row.names = FALSE)
-# 
+
 # dbSendQuery(con_bv, "COMMENT ON TABLE youth_thriving.raw_survey_data IS
 #             'The following dataset are responses from the Youth Thriving Survey conducted by Bold Vision in 2024. The data dictionary explaining each variable is here: youth_thriving.bvys_datadictionary_2024 .
 #             Steps explaining data cleaning can be found here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Updated - 09252024\\BVYTSPopulationWeighting_DataCleaning.pdf
-#             Original Dataset is here: a)	W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\09252024\\BVYTSWeightSummary_Database.xlsx
+#             Original Dataset is here: a)	W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Updated - 09252024\\BVYTSWeightSummary_Database.xlsx
 #             The process for cleaning and uploading the data is explained in the QA Documentation here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_dataimport_datadictionary.docx
 #             Script for cleaning data and recalculating sample weights can be found here Data Prep/importing_data.R'")
 
