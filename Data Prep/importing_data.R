@@ -210,6 +210,7 @@ ys_data_finalwts <- ys_data_finalwts %>%
 #             The process for cleaning and uploading the data is explained in the QA Documentation here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_dataimport_datadictionary.docx
 #             Script for cleaning data and recalculating sample weights can be found here Data Prep/importing_data.R'")
 
+# Survey data update date in postgres 11-5-24
 
 ####Step 5: Read in data dictionary and send to database comments ####
 
@@ -258,11 +259,11 @@ data_dictionary[data_dictionary=="Sometimes True"]<-"Sometimes true"
 data_dictionary[data_dictionary=="Often True"]<-"Often true"
 data_dictionary[data_dictionary=="Always True"]<-"Always true"
 
-# Export data dictionary table and comments
- # dbWriteTable(con_bv, c('youth_thriving', 'bvys_datadictionary_2024'), data_dictionary,
- #              overwrite = FALSE, row.names = FALSE)
- # 
- # dbSendQuery(con_bv, "COMMENT ON TABLE youth_thriving.bvys_datadictionary_2024 IS 'The following data dictionary aims to decode the data for the Bold Visin Youth Thriving Survey Data for 2024. QA Documentation here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_dataimport_datadictionary.docx'")
+# # Export data dictionary table and comments
+#  dbWriteTable(con_bv, c('youth_thriving', 'bvys_datadictionary_2024'), data_dictionary,
+#               overwrite = FALSE, row.names = FALSE)
+
+ # dbSendQuery(con_bv, "COMMENT ON TABLE youth_thriving.bvys_datadictionary_2024 IS 'The following data dictionary aims to decode the data for the Bold Vision Youth Thriving Survey Data for 2024. QA Documentation here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_dataimport_datadictionary.docx'")
  # 
  # 
  # dbSendQuery(con_bv, "COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.variable IS 'refers to the column label or variable in the survey data';
@@ -302,3 +303,4 @@ identical(survey_colnames, datadict_variables)
 setdiff(survey_colnames, datadict_variables) 
 
 
+# Data dictionary update date in postgres 11-5-24
