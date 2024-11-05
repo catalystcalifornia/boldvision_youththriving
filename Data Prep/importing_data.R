@@ -1,4 +1,5 @@
-#Importing Data to PGAMIN Database 
+# Importing Data and Data Dictionary to PGAMIN Database 
+## Script imports and cleans data & data dictionary, including re-calculating weights, adding new columns for likert scales, and improving consistency in variable values in data dictionary
 
 
 ####Step 1: Set Up ####
@@ -191,6 +192,8 @@ ys_data_finalwts <- ys_data_spawts %>%
 # save to csv for QA
 write.csv(ys_data_finalwts, file = "./Data Prep/ys_data_finalwts.csv", row.names=FALSE, fileEncoding = "UTF-8")
 
+####Step 4: Export survey data to postgres ####
+
 # remove _wt cols, etc 
 ys_data_finalwts <- ys_data_finalwts %>%
   select(-c(age_wt, acs_race, race_wt, sex_wt, spa_wt))
@@ -207,7 +210,7 @@ ys_data_finalwts <- ys_data_finalwts %>%
 #             Script for cleaning data and recalculating sample weights can be found here Data Prep/importing_data.R'")
 
 
-####Step 3: Read in data dictionary and send to database comments ####
+####Step 5: Read in data dictionary and send to database comments ####
 
 data_dictionary <- read_excel("W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\bvys_datadictionary_2024.xlsx")
 
