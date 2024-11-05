@@ -178,13 +178,14 @@ spa_counts <- spa_counts_step1 %>%
   filter(!is.na(variable))%>%
   select(geoid, name, weighting_group, everything())
 
-## Add in race populations (already QAed)
+# Add in race populations (already QAed) -----
 race_counts <- dbGetQuery(con, "SELECT geoid, race, count, rate FROM youth_thriving.acs_pums_race_pop_15_24") %>%
   rename(variable=race,
          percent=rate) %>%
   mutate(name = "Los Angeles County",
-         weighting_group = "Race")
-
+         weighting_group = "Race",
+         percent=percent/100) %>% # adjust percentage to match other tables
+  filter(!variable %in% c('aian', 'pacisl','swana')) # only keep categories used in weighting
 
 # Bind together population counts ----
 df <- rbind(age_counts, sex_counts, spa_counts, race_counts)
@@ -200,7 +201,7 @@ df %>%
 table_name <- "acs_weighting_population_counts"
 schema <- 'youth_thriving'
 
-indicator <- "Age, sex, and SPA counts for use in survey weighting based on 5-year ACS data for LA County 2018-2022 subject table S0101"
+indicator <- "Age, sex, SPA, and race counts for use in survey weighting based on 5-year ACS data for LA County 2018-2022 subject table S0101 and DP05 for race"
 source <- "See QA doc for details: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_acs_weights_population_counts.docx
 Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/EMG/boldvision_youththriving/Survey Weighting/population_counts.R"
 table_comment <- paste0(indicator, source)
@@ -209,19 +210,19 @@ table_comment <- paste0(indicator, source)
 # dbWriteTable(con, c(schema, table_name),df,
 #              overwrite = FALSE, row.names = FALSE)
 
-# comment on table and columns
-column_names <- colnames(df) # get column names
-
-column_comments <- c(
-  "GEOID or object ID--mostly LA County with IDs for SPAs for SPA level weighting",
-  "name of county or SPA",
-  "Weighting level-age, sex, SPA, or race",
-  "Category or variable for that weighting level",
-  "Total estimated count of target youth population in category or variable",
-  "Percent of target youth population in category or variable out of youth population for that weighting group"
-)
-
-add_table_comments(con, schema, table_name, indicator, source, column_names, column_comments)
+# # comment on table and columns
+# column_names <- colnames(df) # get column names
+# 
+# column_comments <- c(
+#   "GEOID or object ID--mostly LA County with IDs for SPAs for SPA level weighting",
+#   "name of county or SPA",
+#   "Weighting level-age, sex, SPA, or race",
+#   "Category or variable for that weighting level",
+#   "Total estimated count of target youth population in category or variable",
+#   "Percent of target youth population in category or variable out of youth population for that weighting group"
+# )
+# 
+# add_table_comments(con, schema, table_name, indicator, source, column_names, column_comments)
 
 #disconnect
 dbDisconnect(con)

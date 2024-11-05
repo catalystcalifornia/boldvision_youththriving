@@ -1,4 +1,5 @@
-#Importing Data to PGAMIN Database 
+# Importing Data and Data Dictionary to PGAMIN Database 
+## Script imports and cleans data & data dictionary, including re-calculating weights, adding new columns for likert scales, and improving consistency in variable values in data dictionary
 
 
 ####Step 1: Set Up ####
@@ -80,17 +81,18 @@ ys_data_agewts <- ys_data %>%
 acs_population_races <- c("latino", "nh_white", "nh_black", "nh_asian", "nh_aian",
                           "nh_pacisl", "nh_twoormor", "nh_other")
 
-acs_race_pop_weights <- dbGetQuery(conn=con_bv, statement="SELECT * FROM youth_thriving.acs_pums_race_pop_15_24;") %>%
-  filter(race %in% acs_population_races) %>%
-  select(geoid, race, count, rate) %>%
-  group_by(race) %>%
+acs_race_pop_weights <- acs_pop_weights %>%
+  filter(weighting_group=='Race') %>%
+  filter(variable %in% acs_population_races) %>%
+  select(geoid, variable, count, percent) %>%
+  group_by(variable) %>%
   summarise(pop_count = sum(count)) %>%
   ungroup() %>%
   mutate(pop_rate = pop_count/sum(pop_count))
 
 # read in race recode values for final race sample counts
 race_recode <- dbGetQuery(conn=con_bv, statement="SELECT response_id, acs_race FROM youth_thriving.race_ethnicity_data;") %>%
-  mutate(acs_race = as.character(acs_race)) %>%
+  mutate(acs_race = as.character(acs_race))
 
 race_recode_counts <- race_recode %>%
   select(acs_race) %>%
@@ -106,7 +108,7 @@ acs_race_sample_weights <- race_recode_counts %>%
   mutate(sample_rate = sample_count/sum(sample_count))
 
 race_weights <- acs_race_pop_weights %>%
-  left_join(acs_race_sample_weights) %>%
+  left_join(acs_race_sample_weights, by=c("variable"="race")) %>%
   mutate(
     weights = pop_rate/sample_rate,
     weighted_count = sample_count * weights,
@@ -115,7 +117,7 @@ race_weights <- acs_race_pop_weights %>%
 # add race_weight col
 ys_data_racewts <- ys_data_agewts %>%
   left_join(select(race_recode, response_id, acs_race)) %>%
-  left_join(select(race_weights, race, weights), by=c("acs_race"="race")) %>%
+  left_join(select(race_weights, variable, weights), by=c("acs_race"="variable")) %>%
   rename(race_wt = weights)
 
 ##### 3. add sex_wt col to survey data ----
@@ -189,25 +191,28 @@ ys_data_finalwts <- ys_data_spawts %>%
   )
 
 # save to csv for QA
-write.csv(ys_data_finalwts, file = "./Data Prep/ys_data_finalwts.csv", row.names=FALSE, fileEncoding = "UTF-8")
+# write.csv(ys_data_finalwts, file = "./Data Prep/Survey Weighting/ys_data_finalwts.csv", row.names=FALSE, fileEncoding = "UTF-8")
+
+####Step 4: Export survey data to postgres ####
 
 # remove _wt cols, etc 
 ys_data_finalwts <- ys_data_finalwts %>%
   select(-c(age_wt, acs_race, race_wt, sex_wt, spa_wt))
 
-## export survey data table and comments
+# # export survey data table and comments
 # dbWriteTable(con_bv, c('youth_thriving', 'raw_survey_data'), ys_data_finalwts,
 #                           overwrite = FALSE, row.names = FALSE)
-# 
+
 # dbSendQuery(con_bv, "COMMENT ON TABLE youth_thriving.raw_survey_data IS
 #             'The following dataset are responses from the Youth Thriving Survey conducted by Bold Vision in 2024. The data dictionary explaining each variable is here: youth_thriving.bvys_datadictionary_2024 .
 #             Steps explaining data cleaning can be found here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Updated - 09252024\\BVYTSPopulationWeighting_DataCleaning.pdf
-#             Original Dataset is here: a)	W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\09252024\\BVYTSWeightSummary_Database.xlsx
+#             Original Dataset is here: a)	W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Updated - 09252024\\BVYTSWeightSummary_Database.xlsx
 #             The process for cleaning and uploading the data is explained in the QA Documentation here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_dataimport_datadictionary.docx
 #             Script for cleaning data and recalculating sample weights can be found here Data Prep/importing_data.R'")
 
+# Survey data update date in postgres 11-5-24
 
-####Step 3: Read in data dictionary and send to database comments ####
+####Step 5: Read in data dictionary and send to database comments ####
 
 data_dictionary <- read_excel("W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\bvys_datadictionary_2024.xlsx")
 
@@ -254,11 +259,11 @@ data_dictionary[data_dictionary=="Sometimes True"]<-"Sometimes true"
 data_dictionary[data_dictionary=="Often True"]<-"Often true"
 data_dictionary[data_dictionary=="Always True"]<-"Always true"
 
-# Export data dictionary table and comments
- # dbWriteTable(con_bv, c('youth_thriving', 'bvys_datadictionary_2024'), data_dictionary,
- #              overwrite = FALSE, row.names = FALSE)
- # 
- # dbSendQuery(con_bv, "COMMENT ON TABLE youth_thriving.bvys_datadictionary_2024 IS 'The following data dictionary aims to decode the data for the Bold Visin Youth Thriving Survey Data for 2024. QA Documentation here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_dataimport_datadictionary.docx'")
+# # Export data dictionary table and comments
+#  dbWriteTable(con_bv, c('youth_thriving', 'bvys_datadictionary_2024'), data_dictionary,
+#               overwrite = FALSE, row.names = FALSE)
+
+ # dbSendQuery(con_bv, "COMMENT ON TABLE youth_thriving.bvys_datadictionary_2024 IS 'The following data dictionary aims to decode the data for the Bold Vision Youth Thriving Survey Data for 2024. QA Documentation here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_dataimport_datadictionary.docx'")
  # 
  # 
  # dbSendQuery(con_bv, "COMMENT ON COLUMN youth_thriving.bvys_datadictionary_2024.variable IS 'refers to the column label or variable in the survey data';
@@ -298,3 +303,4 @@ identical(survey_colnames, datadict_variables)
 setdiff(survey_colnames, datadict_variables) 
 
 
+# Data dictionary update date in postgres 11-5-24
