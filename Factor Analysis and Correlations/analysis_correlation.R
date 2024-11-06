@@ -114,7 +114,7 @@ assign(paste0("df_sc_", i), df_subcomponents)
 
 #### Step 3: Create a datatable averaging variable scores for each respondent and BY COMPONENT ####
 
-#note that subcomponent is coded as response_domain in the data dictionary
+#note that component is coded as response_domain in the data dictionary
 unique_components <- unique(svy_dd$response_domain)
 
 for (i in unique_components) { 
