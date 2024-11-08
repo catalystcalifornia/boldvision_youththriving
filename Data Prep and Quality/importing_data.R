@@ -208,7 +208,7 @@ ys_data_finalwts <- ys_data_finalwts %>%
 #             Steps explaining data cleaning can be found here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Updated - 09252024\\BVYTSPopulationWeighting_DataCleaning.pdf
 #             Original Dataset is here: a)	W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Updated - 09252024\\BVYTSWeightSummary_Database.xlsx
 #             The process for cleaning and uploading the data is explained in the QA Documentation here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_dataimport_datadictionary.docx
-#             Script for cleaning data and recalculating sample weights can be found here Data Prep/importing_data.R'")
+#             Script for cleaning data and recalculating sample weights can be found here Data Prep and Quality/importing_data.R'")
 
 # Survey data update date in postgres 11-5-24
 
