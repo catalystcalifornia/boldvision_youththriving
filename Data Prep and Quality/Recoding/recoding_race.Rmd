@@ -286,7 +286,7 @@ get_revised_asian_response <- function(response) {
   {ethnicities <- append(ethnicities, c("bd", "isSoutheastAsian", "not_bh"))}
   
   if (grepl("^Southwest Asian$", response, ignore.case = TRUE))
-  {ethnicities <- append(ethnicities, c("ax", "not_bh"))}
+  {ethnicities <- append(ethnicities, c("ax", "not_bh", "not_av"))}
   
   return(paste(ethnicities, collapse = "; "))
   
@@ -367,7 +367,10 @@ svy_data_revised_other_asian <- svy_data_revised %>%
     bh = case_when(
       grepl("\\bnot_bh\\b", revised_asian_response) ~ NA,
       grepl("\\bbh\\b", revised_asian_response) ~ bh,
-      .default = bh)) %>%
+      .default = bh),
+    av = case_when(
+      grepl("\\bnot_av\\b", revised_asian_response) ~ NA,
+      .default = av)) %>%
   ungroup() %>%
   mutate(  
     # Mark the respondent's correct race(s) based on revised_response
