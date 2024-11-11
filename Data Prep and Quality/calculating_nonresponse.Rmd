@@ -339,4 +339,79 @@ add_table_comments(con, schema, table_name, indicator, source, column_names, col
 dbDisconnect(con)
 ```
 
+```{r}
+
+# q10b check
+qa<-svy_data%>%filter(q10==2)
+
+#100% response rate no NAs, need to update table in postgres which says 25.2% response rate
+table(qa$q10b,useNA='always')
+
+# q7check
+qa<-svy_data%>%filter(bw==1 | bv==1) # need to update variables used to calculate response
+
+vars<-svy_dd%>%filter(question_number==7)%>%select(variable)
+
+check<-qa%>%
+ select(all_of(vars$variable)) %>%  # Select all of the question domain's columns in the raw data
+  mutate(across(where(is.character), ~ ifelse(!is.na(.), 1, 0))) %>% # Convert non-numeric values to 0/1
+  rowwise%>%
+ mutate(selected=sum(c_across(), na.rm = TRUE)) 
+
+table(check$selected,useNA='always')
+# 18 for nonresponse out of 1969 observations # doesn't check out
+
+
+# q5 check
+qa<-svy_data%>%filter(aw==1)
+
+vars<-svy_dd%>%filter(question_number==5)%>%select(variable)
+
+check<-qa%>%
+ select(all_of(vars$variable)) %>%  # Select all of the question domain's columns in the raw data
+  mutate(across(where(is.character), ~ ifelse(!is.na(.), 1, 0))) %>% # Convert non-numeric values to 0/1
+  rowwise%>%
+ mutate(selected=sum(c_across(), na.rm = TRUE)) 
+
+table(check$selected,useNA='always')
+# 6 for nonresponse out of 43 observations
+6/43 # checks out
+
+# check for other skip responses
+skip_logic<-svy_dd%>%filter(notes=='only_asked_subset')
+
+#q6
+vars<-svy_dd%>%filter(question_number==6)%>%select(variable)
+
+check<-svy_data%>%
+ select(all_of(vars$variable)) %>%  # Select all of the question domain's columns in the raw data
+  mutate(across(where(is.character), ~ ifelse(!is.na(.), 1, 0))) %>% # Convert non-numeric values to 0/1
+  rowwise%>%
+ mutate(selected=sum(c_across(), na.rm = TRUE)) 
+
+table(check$selected,useNA='always')
+# #192 out of 3444
+# 192/3444
+# 5.6% nonresponse # checks out
+
+#q9 cy
+table(svy_data$cy,useNA='always')
+# # 1 NA
+# 1/3444 # checks out but don't round in table
+
+# check response counts by respondent
+# need to adjust denominator for each respondent by question they were asked
+nonresponse_by_respondent_df$questions_asked=rowSums(!is.na(nonresponse_by_respondent_df[-1]))
+
+nonresp_by_respondent_check <- nonresponse_by_respondent_df %>%
+  mutate(
+      nonresponse_count = rowSums(select(., -response_id), na.rm = TRUE), # na.rm=TRUE skips the NA values to calculate the sums
+
+      nonresponse_rate = (nonresponse_count / num_questions) * 100,
+      nonresponse_rate_check=(nonresponse_count / questions_asked) * 100,
+      response_count = num_questions - nonresponse_count,
+      response_rate = 100 - nonresponse_rate)  %>%
+   relocate(c(nonresponse_count, nonresponse_rate, nonresponse_rate_check, response_count, response_rate), .after = response_id)
+
+```
 
