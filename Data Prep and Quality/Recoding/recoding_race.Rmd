@@ -142,34 +142,37 @@ Create functions to recode race responses accordingly for Q3, Q4, and Q5
 ```{r}
 # Define a function get_revised_response to recode the respondent's write-in 
 # race(s) to racial categories already listed in the survey.
-# AR	American Indian and Alaska Native
-# AS	Black or African American
-# AT	Indigenous from Mexico, Central America, or South America 
-# AU	Latinx/Latino/a/Hispanic 
-# AV	Asian or Asian American
-# AW	Native Hawaiian and Pacific Islander 
-# AX	South West Asian and North African 
-# AY	White 
-# AZ	Don't Wish to Answer
-# BA	Other Race
-# BB	Chinese
-# BC	Asian Indian
-# BD	Filipino
-# BE	Korean
-# BF	Vietnamese
-# BG	Japanese 
-# BH	Other
-# BI	Don't Wish to Answer 
-# BJ	Samoan
-# BK	Togan
-# BL	Chamarron
-# BM	Marshallese
-# BN	Fijan
-# BO	Māori
-# BP	PNG
-# BQ	Chuukese
-# BR	Other
-# BS	Don't Wish to Answer
+# Q3:
+## AR	American Indian and Alaska Native
+## AS	Black or African American
+## AT	Indigenous from Mexico, Central America, or South America 
+## AU	Latinx/Latino/a/Hispanic 
+## AV	Asian or Asian American
+## AW	Native Hawaiian and Pacific Islander 
+## AX	South West Asian and North African 
+## AY	White 
+## AZ	Don't Wish to Answer
+## BA	Other Race
+# Q4:
+## BB	Chinese
+## BC	Asian Indian
+## BD	Filipino
+## BE	Korean
+## BF	Vietnamese
+## BG	Japanese 
+## BH	Other (Asian)
+## BI	Don't Wish to Answer 
+# Q5:
+## BJ	Samoan
+## BK	Togan
+## BL	Chamarron
+## BM	Marshallese
+## BN	Fijan
+## BO	Māori
+## BP	PNG
+## BQ	Chuukese
+## BR	Other (NHPI)
+## BS	Don't Wish to Answer
 
 get_revised_response <- function(response) {
   response <- unlist(response)
@@ -186,7 +189,7 @@ get_revised_response <- function(response) {
   {races <- append(races, list("ba", "as", "at"))}
   
   if (grepl("^jamaican/ native american$", response, ignore.case = TRUE)) 
-  {races <- append(races, list("as", "at", "not_ba"))}
+  {races <- append(races, list("as", "ar", "not_ba"))}
   
   if (grepl("^black,white and filipino$", response, ignore.case = TRUE)) 
   {races <- append(races, list("as", "ay", "av", "bd", "not_ba"))}
@@ -216,7 +219,7 @@ get_revised_response <- function(response) {
   {races <- append(races, list("av", "bc", "isSouthAsian", "not_ba"))}
   
   if(grepl("^South Asian$|^Sri Lankan$", response, ignore.case=TRUE)) 
-  {races <- append(races, list("av", "isSouthAsian", "not_ba"))}
+  {races <- append(races, list("av", "isSouthAsian", "not_ba", "bh"))}
   
   if(grepl("^Japanese$", response, ignore.case=TRUE)) 
   {races <- append(races, list("av", "bg", "not_ba"))}
@@ -331,12 +334,17 @@ svy_data_revised <- svy_data_clean %>%
   mutate(  
     # Mark the respondent's correct race(s) based on revised_response
     across(all_of(setdiff(raceColumnList, "ba")),  
-           ~ ifelse(str_detect(revised_response, paste0("\\b", cur_column(), "\\b")), 1, .)))
-
+           ~ ifelse(str_detect(revised_response, paste0("\\b", cur_column(), "\\b")), 1, .))) %>%
+  mutate(
+    bh = case_when((bh==1 & is.na(bh_clean)) ~ ba_clean,
+                   (bh==1 & !is.na(bh_clean)) ~ paste(bh_clean, ba_clean, sep=", "),
+                   (br==1 & is.na(br_clean)) ~ ba_clean,
+                   (br==1 & !is.na(br_clean)) ~ paste(br_clean, ba_clean, sep=", "),
+                   .default = bh))
 
 # qa check
 qa_revised_other <- svy_data_clean %>%
-  select(response_id, raceColumnList) %>%
+  select(response_id, all_of(raceColumnList)) %>%
   left_join(
     select(svy_data_revised, response_id, raceColumnList, ba_clean, revised_response), 
     by=c("response_id")) %>%
@@ -358,7 +366,8 @@ svy_data_revised_other_asian <- svy_data_revised %>%
     # "Other race" incorrectly. Therefore, unmark "Other race" in the survey data.      
     bh = case_when(
       grepl("\\bnot_bh\\b", revised_asian_response) ~ NA,
-      grepl("\\bbh\\b", revised_asian_response) ~ bh)) %>%
+      grepl("\\bbh\\b", revised_asian_response) ~ bh,
+      .default = bh)) %>%
   ungroup() %>%
   mutate(  
     # Mark the respondent's correct race(s) based on revised_response
