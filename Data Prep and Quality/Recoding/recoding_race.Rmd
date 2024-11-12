@@ -307,13 +307,16 @@ get_revised_nhpi_response <- function(response) {
   ethnicities <- list() 
   
   if (grepl("^Filipino$", response, ignore.case = TRUE)) 
-  {ethnicities <- append(ethnicities, c("bd", "isSoutheastAsian", "br"))}
+  {ethnicities <- append(ethnicities, c("aw", "bd", "isSoutheastAsian", "br"))}
   
   if (grepl("^Onieda$|^Shoshone Native American$", response, ignore.case = TRUE)) 
   {ethnicities <- append(ethnicities, c("ar", "not_br", "not_aw"))}
   
   if (grepl("^Panamanian$", response, ignore.case = TRUE)) 
   {ethnicities <- append(ethnicities, c("au", "not_br", "not_aw"))}
+  
+  if (grepl("^Polynesian$|^Pohnpeian$|^K<U+2206>ÍvÖnaka$", response, ignore.case = TRUE)) 
+  {ethnicities <- append(ethnicities, c("aw", "br"))}
   
   return(paste(ethnicities, collapse = "; "))
 }
@@ -372,6 +375,8 @@ svy_data_revised_other_asian <- svy_data_revised %>%
       grepl("\\bnot_bh\\b", revised_asian_response) ~ NA,
       grepl("\\bbh\\b", revised_asian_response) ~ bh,
       .default = bh),
+    # If "Other race" marked incorrectly, replace bh_clean with NA
+    bh_clean = ifelse(grepl("\\bnot_bh\\b", revised_asian_response)==TRUE, NA, bh_clean),
     av = case_when(
       grepl("\\bnot_av\\b", revised_asian_response) ~ NA,
       .default = av)) %>%
@@ -424,6 +429,8 @@ svy_data_revised_other_nhpi <- svy_data_revised_other_asian %>%
     br = case_when(
       grepl("\\bnot_br\\b", revised_nhpi_response) ~ NA,
       grepl("\\bbr\\b", revised_nhpi_response) ~ br),
+    # If "Other race" marked incorrectly, replace bh_clean with NA
+    br_clean = ifelse(grepl("\\bnot_br\\b", revised_nhpi_response)==TRUE, NA, br_clean),
     
     # If revised_nhpi_response contains "not_aw", the respondent actually marked 
     # "NHPI" incorrectly. Therefore, unmark "NHPI" in the survey data.
@@ -584,12 +591,12 @@ svy_data_detailed_asian <- svy_data_detailed %>%
   mutate(bh = as.numeric(ifelse(!is.na(bh), 1, bh))) %>%
   rowwise() %>%
   mutate(
-    matching_cols = list({
+    matching_asian_cols = list({
       vals <- across(all_of(asianDetailedList))  
       names(vals)[!is.na(vals) & vals == 1]}),
-    datadict_values = list(
-      svy_dd$response_1[svy_dd$variable %in% matching_cols]),
-    detailed_asian = paste(datadict_values, collapse = "; ")) %>%
+    svydd_asian_vals = list(
+      svy_dd$response_1[svy_dd$variable %in% matching_asian_cols]),
+    detailed_asian = paste(svydd_asian_vals, collapse = "; ")) %>%
   ungroup()
 
 
@@ -616,6 +623,9 @@ svy_data_detailed_asian <- svy_data_detailed_asian %>%
         # Replace "Bangladesh" with "Bangladeshi"
         str_replace_all(regex("\\bBangladesh\\b", ignore_case = TRUE), "Bangladeshi") %>%
         
+        # Replace "Laos" with "Laotian"
+        str_replace_all(regex("\\bLaos\\b", ignore_case = TRUE), "Laotian") %>%
+        
         # Remove leading/trailing whitespace
         str_trim(side = "both") %>%
         
@@ -633,31 +643,77 @@ svy_data_detailed_asian <- svy_data_detailed_asian %>%
       # Otherwise (bh_clean is empty or NA), keep detailed_asian as is
       .default = detailed_asian)) %>%
   ungroup()
+
 ```
 
 Create the detailed_nhpi column in svy_data, which lists the NHPI ethnic 
 composition of each NHPI respondent.
 ```{r}
-svy_data_final <- svy_data_final %>%
+nhpiDetailedList <- c("bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs")
+
+svy_data_detailed_nhpi <- svy_data_detailed_asian %>%
   rowwise() %>%
-  mutate(detailed_nhpi = {
-    ethnicities <- c()  # Initialize an empty vector
-    if (race_nhpi == 1) {
-      if (!is.na(bj) && bj == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bj"])
-      if (!is.na(bk) && bk == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bk"])
-      if (!is.na(bl) && bl == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bl"])
-      if (!is.na(bm) && bm == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bm"]);
-      if (!is.na(bn) && bn == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bn"]);
-      if (!is.na(bo) && bo == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bo"]);
-      if (!is.na(bp) && bp == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bp"]);
-      if (!is.na(bq) && bq == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bq"]);
-      if (!is.na(br) && br == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "br"]);
-      if (!is.na(bs) && bs == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bs"]);
-    }
-    # Combine the non-empty ethnicities into a single string
-    paste(ethnicities, collapse = "; ")
-  }) %>%
+  mutate(br = as.numeric(ifelse(!is.na(br), 1, br))) %>%
+  rowwise() %>%
+  mutate(
+    matching_nhpi_cols = list({
+      vals <- across(all_of(nhpiDetailedList))  
+      names(vals)[!is.na(vals) & vals == 1]}),
+    svydd_nhpi_vals = list(
+      svy_dd$response_1[svy_dd$variable %in% matching_nhpi_cols]),
+    detailed_nhpi = paste(svydd_nhpi_vals, collapse = "; ")) %>%
   ungroup()
+
+# Clean up br_clean in order to add other NHPI ethnicities to detailed_nhpi
+svy_data_detailed_nhpi <- svy_data_detailed_nhpi %>%
+  mutate(
+    # Only apply transformations if bh_clean is not NA
+    br_clean = ifelse(is.na(br_clean), br_clean,  # Keep as NA if it is NA
+      br_clean %>%
+        # Replace / with ; and ensure consistent spacing
+        str_replace_all("/", "; ") %>%
+        
+        # Convert entire string to lowercase first
+        str_to_lower() %>%
+        
+        # Capitalize the first letter of each word
+        str_to_title() %>%
+        
+        # Remove leading/trailing whitespace
+        str_trim(side = "both") %>%
+        
+        # Remove any leading semicolon with optional whitespace
+        str_remove("^;\\s*") %>%
+        
+        # Ensure no extra space around semicolons
+        str_replace_all("(\\w+)\\s*;\\s*(\\w+)", "\\1; \\2"))) %>%
+  mutate(
+    detailed_nhpi = case_when(
+      # Concatenate detailed_nhpi and br_clean only if both are not NA or empty
+      ((!is.na(br_clean) & br_clean != "") & (!is.na(detailed_nhpi) & detailed_nhpi != "")) ~ paste0(detailed_nhpi, "; ", br_clean),
+      # Set detailed_nhpi to br_clean if detailed_nhpi is NA or empty
+      ((is.na(detailed_nhpi) | detailed_nhpi == "") & (!is.na(br_clean) & br_clean != "")) ~ br_clean,
+      # Otherwise (br_clean is empty or NA), keep detailed_nhpi as is
+      .default = detailed_nhpi)) %>%
+  ungroup()
+
+```
+
+One last QA check
+```{r}
+qa <- svy_data_detailed_nhpi %>%
+  select(response_id,
+         "ar", "as", "at", "au", "av", "aw", "ax", "ay", "az", "ba", 
+         ba_original, ba_clean, revised_response, detailed_race,
+         "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi",
+         "isSouthAsian","isSoutheastAsian","isCambodian",
+         bh_original, bh_clean, revised_asian_response,
+         matching_asian_cols, detailed_asian,
+         "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", 
+         br_original, br_clean, revised_nhpi_response, matching_nhpi_cols, detailed_nhpi)
+
+
+svy_data_final <- svy_data_detailed_nhpi 
 ```
 
 Export final data frame as relational table.
