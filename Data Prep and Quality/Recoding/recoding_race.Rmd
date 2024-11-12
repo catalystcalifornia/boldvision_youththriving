@@ -345,11 +345,11 @@ svy_data_revised <- svy_data_clean %>%
   mutate(
     # If ba write-in is relevant to bh_/br_ write-ins then combine write-ins
     # should only be needed for bh (re: Sri Lankan, South Asian)
-    bh = case_when((bh==1 & is.na(bh_clean)) ~ ba_clean,
-                   (bh==1 & !is.na(bh_clean)) ~ paste(bh_clean, ba_clean, sep=", "),
-                   (br==1 & is.na(br_clean)) ~ ba_clean,
+    bh_clean = case_when((bh==1 & is.na(bh_clean)) ~ ba_clean,
+                         (bh==1 & !is.na(bh_clean)) ~ paste(bh_clean, ba_clean, sep="; "),
+                         (br==1 & is.na(br_clean)) ~ ba_clean,
                    (br==1 & !is.na(br_clean)) ~ paste(br_clean, ba_clean, sep=", "),
-                   .default = bh))
+                   .default = bh_clean))
 
 # qa check
 qa_revised_other <- svy_data_clean %>%
