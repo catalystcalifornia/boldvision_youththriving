@@ -721,10 +721,12 @@ Export final data frame as relational table.
 ```{r}
 # Get relevant columns from svy_data to put into a table in the database
 final_df <- svy_data_final %>%
-  select(response_id, nh_race, acs_race, race_aian_indigenous, race_aian, 
+  select(response_id, all_of(raceColumnList),
+         nh_race, acs_race, race_aian_indigenous, race_aian, 
          race_black, race_indigenous, race_latinx, race_asian, race_nhpi, 
          race_swana, race_white, race_dwta, race_other, detailed_race,
-         isSouthAsian, isSoutheastAsian, detailed_asian, isCambodian, detailed_nhpi)
+         detailed_asian, detailed_nhpi, ba_original, ba_clean, bh_original, 
+         bh_clean, br_original, br_clean)
 
 # Write table with metadata
 table_name <- "race_ethnicity_data"
@@ -732,7 +734,7 @@ schema <- "youth_thriving"
 indicator <- "A person-level table specifying the race and ethnicity of each respondent "
 source <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_race_ethnicity_data.docx
 Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/R/recoding_race.Rmd"
-table_comment <- paste0(indicator, source)
+table_comment <- paste0("Last updated: ", Sys.Date(), ". ", indicator, source)
 dbWriteTable(con, c(schema, table_name), final_df,
              overwrite = TRUE, row.names = FALSE)
 
@@ -740,6 +742,37 @@ dbWriteTable(con, c(schema, table_name), final_df,
 column_names <- colnames(final_df) # Get column names
 column_comments <- c(
   "A unique, numeric ID for each respondent",
+  "1 flags respondents that selected or were recoded as American Indian and Alaska Native",
+  "1 flags respondents that selected or were recoded as Black or African American",
+  "1 flags respondents that selected or were recoded as Indigenous from Mexico, Central America, or South America",
+  "1 flags respondents that selected or were recoded as Latinx/Latino/a/Hispanic",
+  "1 flags respondents that selected or were recoded as Asian or Asian American",
+  "1 flags respondents that selected or were recoded as Native Hawaiian and Pacific Islander",
+  "1 flags respondents that selected or were recoded as Other Race",
+  "1 flags respondents that selected or were recoded as Chinese",
+  "1 flags respondents that selected or were recoded as Asian Indian",
+  "1 flags respondents that selected or were recoded as Filipino",
+  "1 flags respondents that selected or were recoded as Korean",
+  "1 flags respondents that selected or were recoded as Vietnamese",
+  "1 flags respondents that selected or were recoded as Japanese",
+  "1 flags respondents that selected or were recoded as Other (Asian identity)",
+  "1 flags respondents that selected or were recoded as Do Not Wish to Answer (Asian identity)",
+  "1 flags respondents that selected or were recoded as Samoan",
+  "1 flags respondents that selected or were recoded as Togan",
+  "1 flags respondents that selected or were recoded as Chamarron",
+  "1 flags respondents that selected or were recoded as Marshallese",
+  "1 flags respondents that selected or were recoded as Fijan",
+  "1 flags respondents that selected or were recoded as Maori",
+  "1 flags respondents that selected or were recoded as PNG",
+  "1 flags respondents that selected or were recoded as Chuukese",
+  "1 flags respondents that selected or were recoded as Other (NHPI identity)",
+  "1 flags respondents that selected or were recoded as Do Not Wish to Answer (NHPI identity)",
+  "0/1 flag for whether the respondent is South Asian",
+  "0/1 flag for whether the respondent is Southeast Asian",  
+  "0/1 flag for whether the respondent is Cambodian (CC-Added Asian identity, not include in Other (Asian identity)",
+  "1 flags respondents that selected or were recoded as White",
+  "1 flags respondents that selected or were recoded as Do Not Wish to Answer",
+  "1 flags respondents that selected or were recoded as South West Asian and North African",
   "A string for whether the respondent is latinx, nh_twoormor, nh_aian_indigenous, nh_asian, nh_nhpi, nh_swana, nh_white, do_not_wish, nh_other",
   "A string the uses acs race labels: latino, nh_aian (incl. indigenous), nh_asian, nh_black, nh_other (incl. do not wish, NA, other), nh_pacisl (nh_nhpi), nh_twoormor, nh_white (incl. nh_swana)",
   "0/1 flag for whether the respondent is AIAN or indigenous from Mexico, Central America, or South America",
@@ -750,15 +783,18 @@ column_comments <- c(
   "0/1 flag for whether the respondent is Asian or Asian American",
   "0/1 flag for whether the respondent is Native Hawaiian and Pacific Islander",
   "0/1 flag for whether the respondent is South West Asian and North African",
-  "0/1 flag for whether the respondent is white",
+  "0/1 flag for whether the respondent is White",
   "0/1 flag for whether the respondent did not wish to answer what their race is",
   "0/1 flag for whether the respondent is of another race not previously mentioned",
   "A string that lists the racial composition of each respondent. The column does not list the specific ethnic origins of each respondent",
-  "0/1 flag for whether the respondent is South Asian",
-  "0/1 flag for whether the respondent is Southeast Asian",  
   "A string that lists the Asian ethnic composition of each Asian/Asian American respondent",
-  "0/1 flag for whether the respondent is Cambodian", 
-  "A string that lists the NHPI ethnic composition of each NHPI respondent"
+  "A string that lists the NHPI ethnic composition of each NHPI respondent",
+  "The original response by the respondent if they included another racial identity",
+  "The cleaned response used to recode identities and create detailed_race column",
+  "The original response by the respondent if they included another Asian identity",
+  "The cleaned response used to recode identities and create detailed_asian column",
+  "The original response by the respondent if they included another NHPI identity",
+  "The cleaned response used to recode identities and create detailed_nhpi column"
 )
 
 add_table_comments <- function(con, schema, table_name, indicator, source, column_names, column_comments) {
