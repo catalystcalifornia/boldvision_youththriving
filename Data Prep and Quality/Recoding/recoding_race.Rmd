@@ -343,6 +343,8 @@ svy_data_revised <- svy_data_clean %>%
     across(all_of(setdiff(raceColumnList, "ba")),  
            ~ ifelse(str_detect(revised_response, paste0("\\b", cur_column(), "\\b")), 1, .))) %>%
   mutate(
+    # If ba write-in is relevant to bh_/br_ write-ins then combine write-ins
+    # should only be needed for bh (re: Sri Lankan, South Asian)
     bh = case_when((bh==1 & is.na(bh_clean)) ~ ba_clean,
                    (bh==1 & !is.na(bh_clean)) ~ paste(bh_clean, ba_clean, sep=", "),
                    (br==1 & is.na(br_clean)) ~ ba_clean,
@@ -585,7 +587,6 @@ svy_data_detailed <- svy_data_recode_final %>%
 Create the detailed_asian column in svy_data, which lists the Asian ethnic 
 composition of each Asian/Asian American respondent.
 ```{r}
-
 asianDetailedList <- c("bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "isCambodian")
 svy_data_detailed_asian <- svy_data_detailed %>%
   mutate(bh = as.numeric(ifelse(!is.na(bh), 1, bh))) %>%
