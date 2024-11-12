@@ -594,14 +594,14 @@ svy_data_detailed_asian <- svy_data_detailed %>%
 
 
 # Clean up bh_clean in order to add other Asian ethnicities to detailed_asian
-svy_data_final <- svy_data_final %>%
+svy_data_detailed_asian <- svy_data_detailed_asian %>%
   mutate(
     # Only apply transformations if bh_clean is not NA
     bh_clean = ifelse(
       is.na(bh_clean), 
       bh_clean,  # Keep as NA if it is NA
       bh_clean %>%
-        # Remove specific ethnicities from bh_clean (case insensitive)
+        # Remove specific recoded ethnicities from bh_clean (case insensitive)
         str_remove_all(regex("cambodian|khmer|filipino|chinese", ignore_case = TRUE)) %>%
         
         # Replace / with ; and ensure consistent spacing
@@ -623,17 +623,15 @@ svy_data_final <- svy_data_final %>%
         str_remove("^;\\s*") %>%
         
         # Ensure no extra space around semicolons
-        str_replace_all("(\\w+)\\s*;\\s*(\\w+)", "\\1; \\2")
-    )) %>%
+        str_replace_all("(\\w+)\\s*;\\s*(\\w+)", "\\1; \\2"))) %>%
   mutate(
-    # Concatenate detailed_asian and bh_clean only if bh_clean is not NA or empty
-    detailed_asian = ifelse(
-      !is.na(bh_clean) & bh_clean != "",
-      # Concatenate detailed_asian and bh_clean only if detailed_asian is not NA or empty. 
+    detailed_asian = case_when(
+      # Concatenate detailed_asian and bh_clean only if both are not NA or empty
+      ((!is.na(bh_clean) & bh_clean != "") & (!is.na(detailed_asian) & detailed_asian != "")) ~ paste0(detailed_asian, "; ", bh_clean),
       # Set detailed_asian to bh_clean if detailed_asian is NA or empty
-      ifelse(!is.na(detailed_asian) & detailed_asian != "", paste0(detailed_asian, "; ", bh_clean), bh_clean),  
-      detailed_asian  # Keep original detailed_asian if bh_clean is NA or empty
-    )) %>%
+      ((is.na(detailed_asian) | detailed_asian == "") & (!is.na(bh_clean) & bh_clean != "")) ~ bh_clean,
+      # Otherwise (bh_clean is empty or NA), keep detailed_asian as is
+      .default = detailed_asian)) %>%
   ungroup()
 ```
 
