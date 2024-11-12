@@ -346,7 +346,7 @@ svy_data_revised <- svy_data_clean %>%
 qa_revised_other <- svy_data_clean %>%
   select(response_id, all_of(raceColumnList)) %>%
   left_join(
-    select(svy_data_revised, response_id, raceColumnList, ba_clean, revised_response), 
+    select(svy_data_revised, response_id, all_of(raceColumnList), ba_clean, revised_response), 
     by=c("response_id")) %>%
   select(order(colnames(.))) %>%
   select(response_id, revised_response, ba_clean, everything())
@@ -391,8 +391,8 @@ svy_data_revised_other_asian <- svy_data_revised %>%
 
 # qa check
 qa_revised_other_asian <- svy_data_clean %>%
-  select(response_id, raceColumnList) %>%
-  left_join(select(svy_data_revised_other_asian, response_id, raceColumnList, 
+  select(response_id, all_of(raceColumnList)) %>%
+  left_join(select(svy_data_revised_other_asian, response_id, all_of(raceColumnList), 
                    bh_clean, revised_asian_response, isCambodian, isSouthAsian, 
                    isSoutheastAsian,), by=c("response_id")) %>%
   select(order(colnames(.))) %>%
@@ -433,8 +433,8 @@ svy_data_revised_other_nhpi <- svy_data_revised_other_asian %>%
 
 # qa check
 qa_revised_other_nhpi <- svy_data_clean %>%
-  select(response_id, raceColumnList) %>%
-  left_join(select(svy_data_revised_other_nhpi, response_id, raceColumnList, 
+  select(response_id, all_of(raceColumnList)) %>%
+  left_join(select(svy_data_revised_other_nhpi, response_id, all_of(raceColumnList), 
                    br_clean, revised_nhpi_response, isCambodian, isSouthAsian, 
                    isSoutheastAsian,), by=c("response_id")) %>%
   select(order(colnames(.))) %>%
@@ -450,7 +450,8 @@ qa_revised_other_nhpi <- svy_data_clean %>%
 
 Creating columns to represent the race of each respondent. 
 ```{r}
-svy_data_final <- svy_data_revised_other_nhpi %>%
+# Step 1: Recode according to original survey categories 
+svy_data_recode_final <- svy_data_revised_other_nhpi %>%
   mutate(
     race_aian = case_when(is.na(ar) ~ 0, ar == 1 ~ 1),
     race_black = case_when(is.na(as) ~ 0, as == 1 ~ 1),  
@@ -466,15 +467,13 @@ svy_data_final <- svy_data_revised_other_nhpi %>%
   )
 
 # Quick check on counts
-sum(svy_data_final$race_black, na.rm=TRUE) #663
+sum(svy_data_recode_final$race_black, na.rm=TRUE) #663
 
-```
 
-Creating the nh_race column in svy_data, which is "latinx" if the respondent is 
-Latinx. If the respondent identified as 2 or more races, the column is "nh_twoormore." 
-If the respondent identified as a single race, the column is "nh_[insert chosen race]".
-```{r}
-svy_data_final <- svy_data_final %>%
+# Step 2: Create nh_race column, which is "latinx" if the respondent is 
+# Latinx. If respondent identified as 2 or more races, the column is "nh_twoormore." 
+# If respondent identified as a single race, the column is "nh_[insert chosen race]".
+svy_data_recode_final <- svy_data_recode_final %>%
   rowwise() %>%
   mutate(
     race_aian_indigenous = ifelse((race_aian==1 | race_indigenous==1), 1, 0),
@@ -485,7 +484,6 @@ svy_data_final <- svy_data_final %>%
       race_sum > 1 ~ 'nh_twoormor',                              # If more than one race is selected
       (race_aian_indigenous == 1 & race_sum == 1) ~ 'nh_aian',   # If American Indian/Alaska Native
       (race_black == 1 & race_sum == 1) ~ 'nh_black',            # If Black/African American
-      (race_indigenous == 1 & race_sum == 1) ~ 'nh_aian',        # If Indigenous
       (race_asian == 1 & race_sum == 1) ~ 'nh_asian',            # If Asian
       (race_nhpi == 1 & race_sum == 1) ~ 'nh_nhpi',              # If Native Hawaiian/Pacific Islander
       (race_swana == 1 & race_sum == 1) ~ 'nh_swana',            # If SWANA (Southwest Asian/North African)
@@ -498,18 +496,16 @@ svy_data_final <- svy_data_final %>%
   select(-race_sum)  # Remove the helper column if not needed
 
 # Quick check on counts
-table(svy_data_final$nh_race)
+table(svy_data_recode_final$nh_race)
 
-```
 
-Creating acs_race column in svy_data, which is "latino" if the respondent is 
-Latinx. Single races are: nh_aian (includes aian and indigenous), nh_asian,
-nh_black, nh_nhpi, nh_white (includes white and swana per census methods) and 
-nh_other (includes other, don't wish to answer, and NA). 
-If the respondent identified as 2 or more races, the label is "nh_twoormor."
-Note: labels are meant to match values in youth_thriving.acs_pums_race_pop_15_24 table. 
-```{r}
-svy_data_final <- svy_data_final %>%
+# Step 3: Create acs_race column, which is "latino" if respondent is Latinx. 
+# Single races are: nh_aian (includes aian and indigenous), nh_asian,
+# nh_black, nh_nhpi, nh_white (includes white and swana per census methods) and 
+# nh_other (includes other, don't wish to answer, and NA). 
+# If respondent identified as 2 or more races, the label is "nh_twoormor."
+# Note: labels should match values in youth_thriving.acs_pums_race_pop_15_24 table. 
+svy_data_recode_final <- svy_data_recode_final %>%
   rowwise() %>%
   mutate(
     acs_race = case_when(
@@ -528,7 +524,7 @@ svy_data_final <- svy_data_final %>%
   ungroup()
 
 # Quick check on counts
-table(svy_data_final$acs_race)
+table(svy_data_recode_final$acs_race)
 
 # latino     nh_aian    nh_asian    nh_black    nh_other   nh_pacisl nh_twoormor    nh_white 
 #   1877          67         355         551         192          23         154         225 
@@ -540,7 +536,7 @@ qa_check_black <- svy_data_clean %>%
          ba_original, ba_clean, 
          bh_original, bh_clean, 
          br_original, br_clean) %>%
-  left_join(svy_data_final, by=c("response_id")) %>%
+  left_join(svy_data_recode_final, by=c("response_id")) %>%
   select(response_id, 
          as.x, as.y, 
          ba_original.x, ba_clean.x, 
@@ -555,7 +551,7 @@ Create the detailed_race column in svy_data, which lists the racial
 composition of each respondent. The column does not list the respondent's 
 specific ethnic origins.
 ```{r}
-svy_data_final <- svy_data_final %>%
+svy_data_detailed <- svy_data_recode_final %>%
   rowwise() %>%
   mutate(detailed_race = {
     races <- c()  # Initialize an empty vector
@@ -578,25 +574,23 @@ svy_data_final <- svy_data_final %>%
 Create the detailed_asian column in svy_data, which lists the Asian ethnic 
 composition of each Asian/Asian American respondent.
 ```{r}
-svy_data_final <- svy_data_final %>%
+
+asianDetailedList <- c("bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "isCambodian")
+svy_data_detailed_asian <- svy_data_detailed %>%
+  mutate(bh = as.numeric(ifelse(!is.na(bh), 1, bh))) %>%
   rowwise() %>%
-  mutate(detailed_asian = {
-    ethnicities <- c()  # Initialize an empty vector
-    if (race_asian == 1) {
-      if (!is.na(bb) && bb == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bb"])
-      if (!is.na(bc) && bc == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bc"])
-      if (!is.na(bd) && bd == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bd"])
-      if (!is.na(be) && be == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "be"]);
-      if (!is.na(bf) && bf == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bf"]);
-      if (!is.na(bg) && bg == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bg"]);
-      if (!is.na(bh) && bh == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bh"]);
-      if (!is.na(bi) && bi == 1) ethnicities <- c(ethnicities, svy_dd$response_1[svy_dd$variable == "bi"]);
-      if (!is.na(isCambodian) && isCambodian == 1) {ethnicities <- c(ethnicities, "Cambodian")}
-    }
-    # Combine the non-empty ethnicities into a single string
-    paste(ethnicities, collapse = "; ")
-  }) %>%
+  mutate(
+    matching_cols = list({
+      vals <- across(asianDetailedList)  
+      names(vals)[!is.na(vals) & vals == 1]
+    }),
+    datadict_values = list(
+      svy_dd$response_1[svy_dd$variable %in% matching_cols]
+    ),
+    detailed_asian = paste(datadict_values, collapse = "; ")
+  ) %>%
   ungroup()
+
 
 # Clean up bh_clean in order to add other Asian ethnicities to detailed_asian
 svy_data_final <- svy_data_final %>%
