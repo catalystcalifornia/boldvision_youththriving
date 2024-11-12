@@ -44,7 +44,11 @@ svy_dd <- dbGetQuery(con, "SELECT variable, response_1
 # the string description of race/ethnicity. It's helpful to view svy_dd to
 # quickly decipher the meaning of each column during QA.
 svy_dd <- svy_dd  %>%
-  filter(variable %in% raceColumnList) 
+  filter(variable %in% raceColumnList) %>%
+  # Temporarily add the additional race recode columns as needed to create 
+  # detailed_asian/detailed_nhpi cols later in script
+  add_row(variable = "isCambodian", response_1 = "Cambodian")
+  
 
 ```
 
@@ -581,14 +585,11 @@ svy_data_detailed_asian <- svy_data_detailed %>%
   rowwise() %>%
   mutate(
     matching_cols = list({
-      vals <- across(asianDetailedList)  
-      names(vals)[!is.na(vals) & vals == 1]
-    }),
+      vals <- across(all_of(asianDetailedList))  
+      names(vals)[!is.na(vals) & vals == 1]}),
     datadict_values = list(
-      svy_dd$response_1[svy_dd$variable %in% matching_cols]
-    ),
-    detailed_asian = paste(datadict_values, collapse = "; ")
-  ) %>%
+      svy_dd$response_1[svy_dd$variable %in% matching_cols]),
+    detailed_asian = paste(datadict_values, collapse = "; ")) %>%
   ungroup()
 
 
