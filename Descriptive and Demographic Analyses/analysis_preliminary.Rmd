@@ -1,8 +1,8 @@
 ---
 title: Bold Vision Youth Thriving Survey 
-subtitle: Frequencies and Trends by Question and Category
-author: Catalyst California
-date: October 2024
+subtitle: Total Trends by Component, Subcomponent, and Question
+author: Catalyst California in collaboration with Bold Vision
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document:
     number_sections: no
@@ -73,20 +73,10 @@ for (i in unique_vars) {
   df_final <-  merge(x = df_var, y = dict_var, by.x = c(i), by.y = c("variable_merge_col"))%>% # merge data dictionary to the dataframe with summarized data
     select(question,sub_question,response,frequency,weighted_percent,percent_cv) # clean up columns
  
- #  df_table<-df_final%>%rename_with(toupper)%>%rename(PERCENT=WEIGHTED_PERCENT)
- #  colnames(df_table)<-gsub("_", " ", colnames(df_table))
- #  
- # visual <- kable(as.data.frame(df_table)%>% 
- #   mutate_if(is.numeric, format, digits=2)) %>%
- #  kable_styling("striped", full_width = F) %>%
- #  row_spec(0, background = "#2A12B2", color = "white",font_size=12)%>%
- #   footnote(general="Frequencies are unweighted counts. Percentages and coefficients of variation (CV) are weighted")
 
-
-  # print(visual) 
   mylist[[i]] <- df_final # assign table/list output to my empty list
 
-# print(mylist)
+
   }
 all_vars_df<-dplyr::bind_rows(mylist)%>%mutate(variable_name=variable_target)%>% # assign to a data frame to return
         left_join(df%>%select(question,sub_question,variable),by=c("question","sub_question"))
@@ -131,7 +121,11 @@ true_factors<-c("Never true","Sometimes true","Often true","Always true","Don't 
 
 ```
 
-The following provides a summary of how youth answered each item in the Bold Vision Youth Thriving Survey for every category and construct measured. The total number of surveys collected was 3,444.
+The following summarizes how youth overall responded to each item in the Bold Vision Youth Thriving Survey by every component and subcomponent measured. The distribution of responses to each question within each subcomponent (e.g., Positive Emotions) is visualized using either a heatmap or table. The percentages shown are based on weighted estimates that adjust the youth thriving sample by age, sex, race, and Service Planning Area. Estimates that have a coefficient of variation greater than 40% are regarded as unstable and are suppressed from the heatmaps. 
+
+A total of 3,444 youth ages 15-24 in Los Angeles County completed the survey.
+
+For a corresponding analysis by race, see [Trends by Race and Question] (https://catalystcalifornia.github.io/boldvision_youththriving/Descriptive%20and%20Demographic%20Analyses/visual_analysis_race).
 
 # Strong Minds
 
