@@ -255,11 +255,11 @@ fx_single_barchart_freq <- function(domain_pgname, #name of domain as it is in t
                                     variable_i, #these are the inputs, i stands for insert/input of the variable of interest we want to look at
                                title_text, x_axis_text #insert text on graph that is customized
 ) { 
-  data_freq_ques <- dbGetQuery(con, paste0("SELECT * FROM youth_thriving.", domain_pgname, "_frequencies"))
+  data_freq_ques <- dbGetQuery(con, paste0("SELECT * FROM youth_thriving.tot_freq_", domain_pgname))
   
   df_filter <- data_freq_ques %>% filter(variable == variable_i) 
   
-  df_visual <- ggplot(df_filter, aes(x = weighted_percent, y = reorder(response, weighted_percent), fill = ifelse(domain == 'Caring Families And Relationships', pink, 
+  df_visual <- ggplot(df_filter, aes(x = weighted_percent, y = response, fill = ifelse(domain == 'Caring Families And Relationships', pink, 
                                                                                                          ifelse(domain == 'Cultural Identity', dark_pink,
                                                                                                                 ifelse(domain == 'Demographics', gray,
                                                                                                                        ifelse(domain == 'Positive Identity And Self-Worth', yellow, 
