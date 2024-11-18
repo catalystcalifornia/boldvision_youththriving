@@ -57,7 +57,7 @@ get_revised_gender_response <- function(response) {
   # Initialize an empty vector. This represents the respondent's write-in response.
   genders <- list()  
   
-  if (grepl("^indigiqueer$|^bigender$|^queer$|^gender expansive$", response, ignore.case = TRUE)) 
+  if (grepl("^indigiqueer$|^bigender$|^queer$|^gender expansive$|^null$", response, ignore.case = TRUE)) 
   {genders <- append(genders, c("fl"))} # Something else, another gender 
   
   if (grepl("^man.$|^male$|^i am a man$|^man/male adult$|^a man$", response, ignore.case = TRUE))
@@ -71,9 +71,6 @@ get_revised_gender_response <- function(response) {
   
   if (grepl("^trans-masc nonbinary he/they$", response, ignore.case = TRUE)) 
   {genders <- append(genders, c("fe", "fh"))} 
-  
-  if (grepl("^null$", response, ignore.case = TRUE))
-  {genders <- append(genders, c("fj","not_fl"))} # I do not have a gender/gender identity
   
   return(paste(genders, collapse = "; "))
 }
@@ -91,10 +88,10 @@ get_revised_sexuality_response <- function(response) {
   # Initialize an empty vector. This represents the respondent's write-in response.
   sexualities <- list()  
 
-  if (grepl("^but i am open minded and respect every one$|^homophohe$|^i i'm rick grimes$|^i like dinosaurs$|^i‚äôm not gay$|^null$|^unlabeled$", response, ignore.case = TRUE)) # Not Something Else
+  if (grepl("^but i am open minded and respect every one$|^homophohe$|^i i'm rick grimes$|^i like dinosaurs$|^i‚äôm not gay$|^unlabeled$", response, ignore.case = TRUE)) # Not Something Else
   {sexualities <- append(sexualities, c("not_fx"))} 
   
-  if (grepl("^aroace$|^aromantic$|^aromantic as well$|^demisexual$|^fluid$|^have no interest in relationships with anyone$|^heteroromantic$|.*m never straight i just like what i like at that given time$|^none$|^omnisexual$|^pansexual$|^specifically demisexual/demi romantic$", response, ignore.case = TRUE)) # Something Else, another sexuality
+  if (grepl("^null$|^aroace$|^aromantic$|^aromantic as well$|^demisexual$|^fluid$|^have no interest in relationships with anyone$|^heteroromantic$|.*m never straight i just like what i like at that given time$|^none$|^omnisexual$|^pansexual$|^specifically demisexual/demi romantic$", response, ignore.case = TRUE)) # Something Else, another sexuality
   {sexualities <- append(sexualities, c("fx"))} 
     
   if (grepl("^aroace/bi$", response, ignore.case = TRUE)) 
