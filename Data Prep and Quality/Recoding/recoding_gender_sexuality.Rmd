@@ -372,13 +372,13 @@ dbWriteTable(con, c(schema, table_name), final_df,
 column_names <- colnames(final_df) # Get column names
 column_comments <- c(
   "A unique, numeric ID for each respondent",
-  "0/1: Cisgender male vs cisgender female",
-  "0/1: Cisgender vs TGNC (transgender, gender non-conforming)",
+  "0/1: Cisgender male (0) vs cisgender female (1)",
+  "0/1: Cisgender (0) vs TGNC (transgender, gender non-conforming) (1)",
   "Categorical: Cisgender, gender non-conforming, transgender",
   "Categorical: Cisgender male, cisgender female, transgender, gender non-conforming",
-  "0/1: Straight vs LGBQA",
-  "0/1: Cisgender heterosexual vs LGBTQIA+",
-  "0/1: LGBTQIA+ white vs LGBTQIA+ BIPOC"
+  "0/1: Straight (0) vs LGBQA (1)",
+  "0/1: Cisgender heterosexual (0) vs LGBTQIA+ (1)",
+  "0/1: LGBTQIA+ white (0) vs LGBTQIA+ BIPOC (1)"
 )
 
 add_table_comments <- function(con, schema, table_name, indicator, source, column_names, column_comments) {
