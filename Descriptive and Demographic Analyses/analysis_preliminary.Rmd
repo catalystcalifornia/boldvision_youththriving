@@ -560,7 +560,7 @@ df_equity<-rbind(equity_micro,equity_experiences,equity_structural)%>%mutate(dom
 # # write table
 # dbWriteTable(con, c(schema, table_name),df_community,
 #              overwrite = FALSE, row.names = FALSE)
-# 
+
 # #### Racial Justice ----
 # table_name <- "tot_freq_racial_justice"
 # schema <- 'youth_thriving'
