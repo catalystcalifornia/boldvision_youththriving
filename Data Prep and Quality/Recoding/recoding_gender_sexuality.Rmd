@@ -7,8 +7,8 @@ output: html_document
 
 ```{r}
 knitr::opts_chunk$set(echo = TRUE)
-library(data.table)
 library(tidyverse)
+library(data.table)
 library(RPostgreSQL)
 
 # Connect to postgres
@@ -21,6 +21,8 @@ svy_data <- dbGetQuery(con, "
   FROM youth_thriving.raw_survey_data")
 
 race_data <-dbGetQuery(con, "SELECT response_id, nh_race FROM youth_thriving.race_ethnicity_data")
+svy_dd <- dbGetQuery(con, "SELECT variable, response_1 
+                     FROM youth_thriving.bvys_datadictionary_2024")
 ```
 ## Clean all write-in responses for gender and sexuality questions (fl, fx). 
 ## Add columns fl_original, fl_clean, fx_original, fx_clean to svy_data
@@ -152,6 +154,43 @@ svy_data <- revise_all_columns(svy_data, 'fx', sexuality_columns, get_revised_se
 ```{r}
 gender_sexuality_data <- svy_data
 setDT(gender_sexuality_data)
+```
+
+## Create columns detailed_gender and detailed_sexuality. Note that detailed_gender is not updated if the respondent needs to be labelled as transgender.
+```{r}
+# Create column detailed_gender
+gender_sexuality_data <- gender_sexuality_data %>%
+  rowwise() %>%
+  mutate(
+    matching_gender_cols = list({
+      vals <- across(all_of(gender_columns))  
+      names(vals)[!is.na(vals) & vals == 1]}),
+    svydd_gender_vals = list(
+      svy_dd$response_1[svy_dd$variable %in% matching_gender_cols]),
+    detailed_gender = paste(svydd_gender_vals, collapse = "; ")) %>%
+  ungroup()
+
+# If the respondent's sex assigned at birth (Male, Female) does not match their gender identity (Girl or Woman, Boy or Man), label them as transgender
+gender_sexuality_data <- gender_sexuality_data %>%
+  mutate(
+    fe = if_else(
+      (str_detect(detailed_gender, "Boy or Man") & q22==2) | (str_detect(detailed_gender, "Girl or Woman") & q22==1),
+      1,
+      fe
+    )
+  )
+
+# Create column detailed_sexuality
+gender_sexuality_data <- gender_sexuality_data %>%
+  rowwise() %>%
+  mutate(
+    matching_sexuality_cols = list({
+      vals <- across(all_of(sexuality_columns))  
+      names(vals)[!is.na(vals) & vals == 1]}),
+    svydd_sexuality_vals = list(
+      svy_dd$response_1[svy_dd$variable %in% matching_sexuality_cols]),
+    detailed_sexuality = paste(svydd_sexuality_vals, collapse = "; ")) %>%
+  ungroup()
 ```
 
 ## 1.	Cisgender male vs cisgender female
