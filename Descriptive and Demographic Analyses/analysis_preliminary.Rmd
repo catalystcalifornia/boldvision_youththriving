@@ -503,7 +503,7 @@ df_cultural<-df_cultural%>%mutate(domain="Cultural Identity")
 df_safety<-df_safety%>%mutate(domain="Safety")
 
 ## Vibrant Communities ----
-df_community<-community_access%>%mutate(variable="Safe Access to Public Spaces",domain="Vibrant Communities")
+df_community<-community_access%>%mutate(domain="Vibrant Communities")
 
 ## Racial Justice, Equity----
 df_equity<-rbind(equity_micro,equity_experiences,equity_structural)%>%mutate(domain="Racial Justice, Equity, And Inclusion")
