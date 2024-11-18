@@ -103,7 +103,7 @@ fx_grouped_barchart <- function(question_number_i, sub_question_i, #these are th
          caption= paste(str_wrap(paste0("Question: ", unique(df_filter$question), "\n",
                                         " Sub Question: ", unique(df_filter$sub_question), "\n",
                                         " Category: ", unique(df_filter$response_domain), "\n",
-                                        " Data Source: Catalyst California, Bold Vision Youth Thriving Survey, 2024."),
+                                        " Data Source: Bold Vision Youth Thriving Survey, 2024."),
                                  whitespace_only = TRUE, width = 120), collapse = "\n")) +
     #theme/aesthetics
     theme_minimal() +
@@ -143,16 +143,18 @@ fx_single_barchart <- function(question_number_i, sub_question_i, #these are the
     summarise(total_count = sum(count),
               total_rate = sum(rate))
   
-  df_visual <- ggplot(df_filter, aes(x = total_rate, y = reorder(race_labels, total_rate), fill = ifelse(response_domain == 'Caring Families And Relationships', pink, 
-                                                                                                         ifelse(response_domain == 'Cultural Identity', dark_pink,
-                                                                                                                ifelse(response_domain == 'Demographics', gray,
-                                                                                                                       ifelse(response_domain == 'Positive Identity And Self-Worth', yellow, 
-                                                                                                                              ifelse(response_domain == 'Racial Justice, Equity, And Inclusion', light_green,
-                                                                                                                                     ifelse(response_domain == 'Safety', dark_green,
-                                                                                                                                            ifelse(response_domain == 'Strong Minds', blue,
-                                                                                                                                                   ifelse(response_domain == 'Vibrant Communities', orange,
-                                                                                                                                                          gray)))))))))) +
+  df_visual <- ggplot(df_filter, aes(x = total_rate, y = reorder(race_labels, total_rate), fill = response_domain)) +
     geom_bar(stat = "identity", position = "dodge") + 
+    scale_fill_manual(values = c(
+      "Caring Families And Relationships" = pink,
+      "Cultural Identity" = dark_pink,
+      "Demographics" = gray,
+      "Positive Identity And Self-Worth" = yellow,
+      "Racial Justice, Equity, And Inclusion" = light_green,
+      "Safety" = dark_green,
+      "Strong Minds" = blue,
+      "Vibrant Communities" = orange
+    )) +    
     scale_y_discrete(labels = function(race_labels) str_wrap(race_labels, width = 18)) +
     # bar labels
     geom_text(data = df_filter,
@@ -169,7 +171,7 @@ fx_single_barchart <- function(question_number_i, sub_question_i, #these are the
          caption= paste(str_wrap(paste0("Question: ", unique(df_filter$question), "\n",
                                         " Sub Question: ", unique(df_filter$sub_question), "\n",
                                         " Category: ", unique(df_filter$response_domain), "\n",
-                                        " Data Source: Catalyst California, Bold Vision Youth Thriving Survey, 2024."),
+                                        " Data Source: Bold Vision Youth Thriving Survey, 2024."),
                                  whitespace_only = TRUE, width = 120), collapse = "\n")) +
     #theme/aesthetics
     theme_minimal() +
@@ -224,7 +226,7 @@ fx_stacked_barchart <- function(question_number_i, sub_question_i, #these are th
          caption= paste(str_wrap(paste0("Question: ", unique(df_filter$question), "\n",
                                         " Sub Question: ", unique(df_filter$sub_question), "\n",
                                         " Category: ", unique(df_filter$response_domain), "\n",
-                                        " Data Source: Catalyst California, Bold Vision Youth Thriving Survey, 2024."),
+                                        " Data Source: Bold Vision Youth Thriving Survey, 2024."),
                                  whitespace_only = TRUE, width = 120), collapse = "\n")) +
     #theme/aesthetics
     theme_minimal() +
@@ -251,24 +253,36 @@ fx_stacked_barchart <- function(question_number_i, sub_question_i, #these are th
 
 #### Step 7: Function- SINGLE VERTICAL Bar Chart by Question/FREQUENCIES ####
 
+true_scale <-c("Don't wish to answer", "Never true","Sometimes true","Often true","Always true") 
+time_scale_rev <-c("All of the time", "Most of the time", "Some of the time", "A little of the time", "None of the time", "Don't wish to answer") #reverse so a greater number means a good outcome and a smaller number means a bad outcome
+yes_scale <-c("Don't wish to answer", "Don't know", "No", "Yes")
+yes_scale_rev <- c("Yes", "No", "Don't know", "Don't wish to answer") #reverse so a greater number means a good outcome and a smaller number means a bad outcome
+count_scale <-c("Don't wish to answer", "None","One","Two","Three or more")
+freq_scale_rev <-c("All of the time", "Most of the time","Sometimes", "Rarely","Never", "Does not apply to me") #reverse so a greater number means a good outcome and a smaller number means a bad outcome
+
+
 fx_single_barchart_freq <- function(domain_pgname, #name of domain as it is in the pgadmine table// for example, "strong_minds"
                                     variable_i, #these are the inputs, i stands for insert/input of the variable of interest we want to look at
-                               title_text, x_axis_text #insert text on graph that is customized
+                                    likert_type_i, #choose likert type scale for ordering, make sure it matches what is in the data dictionary for appropiate ordering! Refer to source script for details
+                                    title_text, x_axis_text #insert text on graph that is customized
 ) { 
-  data_freq_ques <- dbGetQuery(con, paste0("SELECT * FROM youth_thriving.", domain_pgname, "_frequencies"))
+  data_freq_ques <- dbGetQuery(con, paste0("SELECT * FROM youth_thriving.tot_freq_", domain_pgname))
   
-  df_filter <- data_freq_ques %>% filter(variable == variable_i) 
-  
-  df_visual <- ggplot(df_filter, aes(x = weighted_percent, y = reorder(response, weighted_percent), fill = ifelse(domain == 'Caring Families And Relationships', pink, 
-                                                                                                         ifelse(domain == 'Cultural Identity', dark_pink,
-                                                                                                                ifelse(domain == 'Demographics', gray,
-                                                                                                                       ifelse(domain == 'Positive Identity And Self-Worth', yellow, 
-                                                                                                                              ifelse(domain == 'Racial Justice, Equity, And Inclusion', light_green,
-                                                                                                                                     ifelse(domain == 'Safety', dark_green,
-                                                                                                                                            ifelse(domain == 'Strong Minds', blue,
-                                                                                                                                                   ifelse(domain == 'Vibrant Communities', orange,
-                                                                                                                                                          gray)))))))))) +
+  df_filter <- data_freq_ques %>% filter(variable == variable_i) %>%
+    mutate(response = factor(response, levels = likert_type_i))  # Set the order of levels
+
+  df_visual <- ggplot(df_filter, aes(x = weighted_percent, y = response, fill = domain )) + 
     geom_bar(stat = "identity", position = "dodge") + 
+    scale_fill_manual(values = c(
+      "Caring Families And Relationships" = pink,
+      "Cultural Identity" = dark_pink,
+      "Demographics" = gray,
+      "Positive Identity And Self-Worth" = yellow,
+      "Racial Justice, Equity, And Inclusion" = light_green,
+      "Safety" = dark_green,
+      "Strong Minds" = blue,
+      "Vibrant Communities" = orange
+    )) +    
     scale_y_discrete(labels = function(response) str_wrap(response, width = 18)) +
     # bar labels
     geom_text(data = df_filter,
@@ -285,7 +299,7 @@ fx_single_barchart_freq <- function(domain_pgname, #name of domain as it is in t
          caption= paste(str_wrap(paste0("Question: ", unique(df_filter$question), "\n",
                                         " Sub Question: ", unique(df_filter$sub_question), "\n",
                                         " Category: ", unique(df_filter$domain), "\n",
-                                        " Data Source: Catalyst California, Bold Vision Youth Thriving Survey, 2024."),
+                                        " Data Source: Bold Vision Youth Thriving Survey, 2024."),
                                  whitespace_only = TRUE, width = 120), collapse = "\n")) +
     #theme/aesthetics
     theme_minimal() +
@@ -332,6 +346,7 @@ fx_stacked_barchart(question_number_i = '16', sub_question_i = 'At your job', #t
 
 fx_single_barchart_freq(domain_pgname = 'racial_justice', #name of domain as it is in the pgadmine table// for example, "strong_minds"
                         variable_i = 'ef', #these are the inputs, i stands for insert/input of the variable of interest we want to look at
+                        likert_type_i = true_scale , #choose likert type scale for ordering, make sure it matches what is in the data dictionary for appropiate ordering! Refer to source script for details
                         title_text = 'insert title', x_axis_text = 'Rate of youth surveyed reporting being treated unfairly due to their race at their job' #insert text on graph that is customized
                         )
 #### Last Step: Disconnect ####

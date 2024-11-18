@@ -71,7 +71,7 @@ for (i in unique_vars) {
     rename(weighted_percent=percent)
 
   df_final <-  merge(x = df_var, y = dict_var, by.x = c(i), by.y = c("variable_merge_col"))%>% # merge data dictionary to the dataframe with summarized data
-    select(question,sub_question,response,frequency,weighted_percent,percent_cv) # clean up columns
+    select(question,sub_question,response,frequency,weighted_percent,percent_cv, likert_type) # clean up columns
  
  #  df_table<-df_final%>%rename_with(toupper)%>%rename(PERCENT=WEIGHTED_PERCENT)
  #  colnames(df_table)<-gsub("_", " ", colnames(df_table))
@@ -503,7 +503,7 @@ df_cultural<-df_cultural%>%mutate(domain="Cultural Identity")
 df_safety<-df_safety%>%mutate(domain="Safety")
 
 ## Vibrant Communities ----
-df_community<-community_access%>%mutate(variable="Safe Access to Public Spaces",domain="Vibrant Communities")
+df_community<-community_access%>%mutate(domain="Vibrant Communities")
 
 ## Racial Justice, Equity----
 df_equity<-rbind(equity_micro,equity_experiences,equity_structural)%>%mutate(domain="Racial Justice, Equity, And Inclusion")
@@ -511,8 +511,8 @@ df_equity<-rbind(equity_micro,equity_experiences,equity_structural)%>%mutate(dom
 
 # Push tables to postgres ----
 
-# #### Strong Minds ----
-# table_name <- "strong_minds_frequencies"
+# # #### Strong Minds ----
+# table_name <- "tot_freq_strong_minds"
 # schema <- 'youth_thriving'
 # 
 # # write table
@@ -520,8 +520,8 @@ df_equity<-rbind(equity_micro,equity_experiences,equity_structural)%>%mutate(dom
 #              overwrite = FALSE, row.names = FALSE)
 # 
 # 
-# #### Positive Identity and Self-Worth ----
-# table_name <- "positive_identity_frequencies"
+#### Positive Identity and Self-Worth ----
+# table_name <- "tot_freq_positive_identity"
 # schema <- 'youth_thriving'
 # 
 # # write table
@@ -530,7 +530,7 @@ df_equity<-rbind(equity_micro,equity_experiences,equity_structural)%>%mutate(dom
 # 
 # 
 # #### Caring Families and Relationships ----
-# table_name <- "caring_families_frequencies"
+# table_name <- "tot_freq_caring_families"
 # schema <- 'youth_thriving'
 # 
 # # write table
@@ -538,7 +538,7 @@ df_equity<-rbind(equity_micro,equity_experiences,equity_structural)%>%mutate(dom
 #              overwrite = FALSE, row.names = FALSE)
 # 
 # #### Cultural Identity ----
-# table_name <- "cultural_identity_frequencies"
+# table_name <- "tot_freq_cultural_identity"
 # schema <- 'youth_thriving'
 # 
 # # write table
@@ -546,7 +546,7 @@ df_equity<-rbind(equity_micro,equity_experiences,equity_structural)%>%mutate(dom
 #              overwrite = FALSE, row.names = FALSE)
 # 
 # #### Safety ----
-# table_name <- "safety_frequencies"
+# table_name <- "tot_freq_safety"
 # schema <- 'youth_thriving'
 # 
 # # write table
@@ -554,7 +554,7 @@ df_equity<-rbind(equity_micro,equity_experiences,equity_structural)%>%mutate(dom
 #              overwrite = FALSE, row.names = FALSE)
 # 
 # #### Vibrant Communities ----
-# table_name <- "vibrant_community_frequencies"
+# table_name <- "tot_freq_vibrant_community"
 # schema <- 'youth_thriving'
 # 
 # # write table
@@ -562,7 +562,7 @@ df_equity<-rbind(equity_micro,equity_experiences,equity_structural)%>%mutate(dom
 #              overwrite = FALSE, row.names = FALSE)
 # 
 # #### Racial Justice ----
-# table_name <- "racial_justice_frequencies"
+# table_name <- "tot_freq_racial_justice"
 # schema <- 'youth_thriving'
 # 
 # # write table
