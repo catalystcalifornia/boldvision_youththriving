@@ -7,7 +7,6 @@ output: html_document
 
 ```{r}
 knitr::opts_chunk$set(echo = TRUE)
-
 library(tidyverse)
 library(data.table)
 library(RPostgreSQL)
@@ -16,20 +15,15 @@ library(RPostgreSQL)
 source("W:\\RDA Team\\R\\credentials_source.R")
 con <- connect_to_db("bold_vision")
 # Pull in the response_id and gender/sexuality columns from the survey data
-# raw_svy_data <- dbGetQuery(con, "
-#   SELECT response_id, 
-#     fc,fd,fe,ff,fg,fh,fi,fj,fk,fl,q22,fo,fp,fq,fr,fs,ft,fu,fv,fw,fx
-#   FROM youth_thriving.raw_survey_data")
-
-raw_svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
-
-svy_data <- raw_svy_data
+svy_data <- dbGetQuery(con, "
+  SELECT response_id, 
+    fc,fd,fe,ff,fg,fh,fi,fj,fk,fl,q22,fo,fp,fq,fr,fs,ft,fu,fv,fw,fx
+  FROM youth_thriving.raw_survey_data")
 
 race_data <-dbGetQuery(con, "SELECT response_id, nh_race FROM youth_thriving.race_ethnicity_data")
 svy_dd <- dbGetQuery(con, "SELECT variable, response_1 
                      FROM youth_thriving.bvys_datadictionary_2024")
 ```
-
 ## Clean all write-in responses for gender and sexuality questions (fl, fx). 
 ## Add columns fl_original, fl_clean, fx_original, fx_clean to svy_data
 ```{r}
@@ -84,7 +78,6 @@ get_revised_gender_response <- function(response) {
 }
 ```
 
-
 ## Define a function get_revised_sexuality_response to recode the respondent's clean
 ## write-in sexualities(s) to sexuality categories already listed in the survey. 
 ## Another purpose to this recoding is so that we can add "Something Else" to the 
@@ -116,7 +109,7 @@ get_revised_sexuality_response <- function(response) {
   {sexualities <- append(sexualities, c("fx", "ft"))} 
   
   if (grepl("^straight but have had experiences that makes me question it$", response, ignore.case = TRUE))
-  {sexualities <- append(sexualities, c("not_fx","fu"))} # I am not sure or questioning
+  {sexualities <- append(sexualities, c("not_fx","fu"))} # I do not have a gender/gender identity
   
   return(paste(sexualities, collapse = "; "))
 }
@@ -158,57 +151,46 @@ sexuality_columns <- c('fo','fp','fq','fr','fs','ft','fu','fv','fw','fx')
 svy_data <- revise_all_columns(svy_data, 'fx', sexuality_columns, get_revised_sexuality_response)
 ```
 
-## Check for bots and "odd" respondents using detailed gender and detailed sexuality.
-```{r}
-svy_data <- svy_data %>%
-  rowwise() %>%
-  mutate(detailed_gender = {
-    genders <- c()  # Initialize an empty vector
-    if (!is.na(fc) && fc == 1) {genders <- c(genders, svy_dd$response_1[svy_dd$variable == "fc"])}
-    if (!is.na(fd) && fd == 1) {genders <- c(genders, svy_dd$response_1[svy_dd$variable == "fd"])}
-    if (!is.na(fe) && fe == 1) {genders <- c(genders, svy_dd$response_1[svy_dd$variable == "fe"])}
-    if (!is.na(ff) && ff == 1) {genders <- c(genders, svy_dd$response_1[svy_dd$variable == "ff"])}
-    if (!is.na(fg) && fg == 1) {genders <- c(genders, svy_dd$response_1[svy_dd$variable == "fg"])}
-    if (!is.na(fh) && fh == 1) {genders <- c(genders, svy_dd$response_1[svy_dd$variable == "fh"])}
-    if (!is.na(fi) && fi == 1) {genders <- c(genders, svy_dd$response_1[svy_dd$variable == "fi"])}
-    if (!is.na(fj) && fj == 1) {genders <- c(genders, svy_dd$response_1[svy_dd$variable == "fj"])}
-    if (!is.na(fk) && fk == 1) {genders <- c(genders, svy_dd$response_1[svy_dd$variable == "fk"])}
-    if (!is.na(fl)) {genders <- c(genders, paste(svy_dd$response_1[svy_dd$variable == "fl"], fl_clean))}
-    if (!is.na(q22) && q22 == 1) {genders <- c(genders, paste('Sex:', svy_dd$response_1[svy_dd$variable == "q22"]))}    
-    # Combine the non-empty genders into a single string
-    paste(genders, collapse = "; ")
-  }) %>%
-  ungroup()
-
-sort(unique(svy_data$detailed_gender))
-```
-
-```{r}
-svy_data <- svy_data %>%
-  rowwise() %>%
-  mutate(detailed_sexuality = {
-    sexualities <- c()  # Initialize an empty vector
-    if (!is.na(fo) && fo == 1) {sexualities <- c(sexualities, svy_dd$response_1[svy_dd$variable == "fo"])}
-    if (!is.na(fp) && fp == 1) {sexualities <- c(sexualities, svy_dd$response_1[svy_dd$variable == "fp"])}
-    if (!is.na(fq) && fq == 1) {sexualities <- c(sexualities, svy_dd$response_1[svy_dd$variable == "fq"])}
-    if (!is.na(fr) && fr == 1) {sexualities <- c(sexualities, svy_dd$response_1[svy_dd$variable == "fr"])}
-    if (!is.na(fs) && fs == 1) {sexualities <- c(sexualities, svy_dd$response_1[svy_dd$variable == "fs"])}
-    if (!is.na(ft) && ft == 1) {sexualities <- c(sexualities, svy_dd$response_1[svy_dd$variable == "ft"])}
-    if (!is.na(fu) && fu == 1) {sexualities <- c(sexualities, svy_dd$response_1[svy_dd$variable == "fu"])}
-    if (!is.na(fv) && fv == 1) {sexualities <- c(sexualities, svy_dd$response_1[svy_dd$variable == "fv"])}
-    if (!is.na(fw) && fw == 1) {sexualities <- c(sexualities, paste(svy_dd$response_1[svy_dd$variable == "fw"]))}
-    if (!is.na(fx)) {sexualities <- c(sexualities, paste(svy_dd$response_1[svy_dd$variable == "fx"], fx_clean))}
-    # Combine the non-empty sexualities into a single string
-    paste(sexualities, collapse = "; ")
-  }) %>%
-  ungroup() 
-
-sort(unique(svy_data$detailed_sexuality))
-```
-
 ```{r}
 gender_sexuality_data <- svy_data
 setDT(gender_sexuality_data)
+```
+
+## Create columns detailed_gender and detailed_sexuality. Note that detailed_gender is not updated if the respondent needs to be labelled as transgender.
+```{r}
+# Create column detailed_gender
+gender_sexuality_data <- gender_sexuality_data %>%
+  rowwise() %>%
+  mutate(
+    matching_gender_cols = list({
+      vals <- across(all_of(gender_columns))  
+      names(vals)[!is.na(vals) & vals == 1]}),
+    svydd_gender_vals = list(
+      svy_dd$response_1[svy_dd$variable %in% matching_gender_cols]),
+    detailed_gender = paste(svydd_gender_vals, collapse = "; ")) %>%
+  ungroup()
+
+# If the respondent's sex assigned at birth (Male, Female) does not match their gender identity (Girl or Woman, Boy or Man), label them as transgender
+gender_sexuality_data <- gender_sexuality_data %>%
+  mutate(
+    fe = if_else(
+      (str_detect(detailed_gender, "Boy or Man") & q22==2) | (str_detect(detailed_gender, "Girl or Woman") & q22==1),
+      1,
+      fe
+    )
+  )
+
+# Create column detailed_sexuality
+gender_sexuality_data <- gender_sexuality_data %>%
+  rowwise() %>%
+  mutate(
+    matching_sexuality_cols = list({
+      vals <- across(all_of(sexuality_columns))  
+      names(vals)[!is.na(vals) & vals == 1]}),
+    svydd_sexuality_vals = list(
+      svy_dd$response_1[svy_dd$variable %in% matching_sexuality_cols]),
+    detailed_sexuality = paste(svydd_sexuality_vals, collapse = "; ")) %>%
+  ungroup()
 ```
 
 ## 1.	Cisgender male vs cisgender female
@@ -368,6 +350,7 @@ gender_sexuality_data %>%
   summarize(rows_with_more_than_one = sum(non_na_count > 1))
 ```
 
+
 ## Export final data frame as relational table.
 ```{r}
 # Get relevant columns from gender_sexuality_data to put into a table in the database
@@ -390,12 +373,12 @@ column_names <- colnames(final_df) # Get column names
 column_comments <- c(
   "A unique, numeric ID for each respondent",
   "0/1: Cisgender male (0) vs cisgender female (1)",
-  "0/1: Cisgender (0)  vs TGNC (transgender, gender non-conforming) (1)",
+  "0/1: Cisgender (0) vs TGNC (transgender, gender non-conforming) (1)",
   "Categorical: Cisgender, gender non-conforming, transgender",
   "Categorical: Cisgender male, cisgender female, transgender, gender non-conforming",
-  "0/1: Straight (0)  vs LGBQA (1)",
-  "0/1: Cisgender heterosexual (0)  vs LGBTQIA+ (1)",
-  "0/1: LGBTQIA+ white (0)  vs LGBTQIA+ BIPOC (1)"
+  "0/1: Straight (0) vs LGBQA (1)",
+  "0/1: Cisgender heterosexual (0) vs LGBTQIA+ (1)",
+  "0/1: LGBTQIA+ white (0) vs LGBTQIA+ BIPOC (1)"
 )
 
 add_table_comments <- function(con, schema, table_name, indicator, source, column_names, column_comments) {
