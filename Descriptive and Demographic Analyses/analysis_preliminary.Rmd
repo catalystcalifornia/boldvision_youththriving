@@ -126,7 +126,9 @@ A total of 3,444 youth ages 15-24 in Los Angeles County completed the survey.
 
 For a corresponding analysis by race, see [Trends by Race and Question] (https://catalystcalifornia.github.io/boldvision_youththriving/Descriptive%20and%20Demographic%20Analyses/visual_analysis_race).
 
-# Strong Minds
+# Strong Minds (and Bodies)
+
+Component definition: Youth with positive mental and physical health, which includes but is not limited to positive emotions, health behaviors, cognitive development, and accessible resources that promote overall well-being for youth. Note not every aspect is measured in the Youth Thriving Survey.
 
 ## Positive Emotions
 ```{r}
@@ -173,6 +175,8 @@ heatmap(sm_psychologicaldistress,time_factors)
 ```
 
 # Positive Identity And Self-Worth
+
+Component definition: Youth having a strong sense of self, self-worth, and hope for the future. It can include things like hope for the future, purpose, and self-efficacy.
 
 ## Self-Efficacy
 ```{r}
@@ -295,6 +299,8 @@ kable(as.data.frame(df_table)%>%
 
 # Caring Families And Relationships
 
+Component definition: Relational aspects of youth thriving such as friendships, caregiver relationships, school relationships, and more to identify the caring, stable, and positive relations in a youth’s network.
+
 ## Relationships And Support
 
 ```{r}
@@ -353,6 +359,8 @@ heatmap(family_connection,true_factors)
 
 # Cultural Identity
 
+Component definition: The connectedness youth have to their culture/ethnic identity which includes healing practices, ethnic pride and following family traditions.
+
 ## Cultural Identity And Connection
 
 ```{r}
@@ -371,6 +379,8 @@ heatmap(df_cultural,true_factors)
 
 
 # Safety
+
+Component definition: Safety that youth feel in their neighborhoods, at school, and in their larger communities across physically safe spaces, secure relationships (not fearing bullying, violence or abandonment), and protected development (free to be children). Note not every aspect is measured in the Youth Thriving Survey.
 
 ## Personal Safety
 
@@ -404,6 +414,8 @@ kable(as.data.frame(df_table)%>%
 
 # Vibrant Communities
 
+Component definition: Local resources available to youth such as open public spaces, safe spaces, accessible public transportation, and more. 
+
 ## Safe Access To Public Spaces
 
 
@@ -424,6 +436,8 @@ heatmap(community_access,yes_factors_2)
 
 
 # Racial Justice, Equity, And Inclusion
+
+Component definition: Youth feeling comfortable, accepted, and included in all spaces they enter, regardless of race/ethnicity, gender, religion, health status, and appearance. Youth’s systemic interactions should be fair and equitable irrespective of their identity.
 
 ## Microaggressions
 
