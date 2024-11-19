@@ -16,17 +16,13 @@ knitr::opts_chunk$set(echo = FALSE)
 
 ### Step 1: Environment set up ----
 
-library(data.table)
 library(dplyr)
 library(RPostgreSQL)
 library(sf)
 library(tidyr)
-library(readxl)
 library(tidyverse)
-library(janitor)
 library(srvyr)
 library(survey)
-library(highcharter)
 library(knitr)
 library(kableExtra)
 library(devtools) 
@@ -124,7 +120,7 @@ The following summarizes how all youth responded to each question in the Bold Vi
 
 A total of 3,444 youth ages 15-24 in Los Angeles County completed the survey.
 
-For a corresponding analysis by race, see [Trends by Race and Question] (https://catalystcalifornia.github.io/boldvision_youththriving/Descriptive%20and%20Demographic%20Analyses/visual_analysis_race).
+For a corresponding analysis by race, see [Trends by Race and Question](https://catalystcalifornia.github.io/boldvision_youththriving/Descriptive%20and%20Demographic%20Analyses/visual_analysis_race).
 
 # Strong Minds (and Bodies)
 
@@ -232,7 +228,7 @@ sparks<-pi_sparks%>%filter(question=="Q10. When people are really happy, energiz
 
 # clean up table for kable styling
 df_table<-sparks%>%rename_with(toupper)%>%rename(PERCENT=WEIGHTED_PERCENT)%>%
-    select(-c(1,2,6:7))
+    select(-c(1,2,6:9))
   colnames(df_table)<-gsub("_", " ", colnames(df_table))
 
   # assign a title
@@ -250,7 +246,7 @@ sparks_table<-pi_sparks%>%filter(question!="Q10. When people are really happy, e
 
 # clean up table
   df_table<-sparks_table%>%rename_with(toupper)%>%rename(PERCENT=WEIGHTED_PERCENT)%>%
-    select(-c(1,2,6:7))
+    select(-c(1,2,6:9))
   colnames(df_table)<-gsub("_", " ", colnames(df_table))
 
   # title  
@@ -282,7 +278,7 @@ pi_action<-question_sum(svy_df,svy_dd,domain="Positive Identity And Self-Worth",
 
 # Single question so do another kable table
   df_table<-pi_action%>%rename_with(toupper)%>%rename(PERCENT=WEIGHTED_PERCENT)%>%
-    select(-c(1,2,6:7))
+    select(-c(1,2,6:9))
   colnames(df_table)<-gsub("_", " ", colnames(df_table))
   
   title<-unique(pi_action$question)
@@ -319,7 +315,7 @@ count_factors<-c("None","One","Two","Three or more","Not Sure","Don't wish to an
 
 # create a table for first question about how many adults know sparks
  df_table<-df%>%rename_with(toupper)%>%rename(PERCENT=WEIGHTED_PERCENT)%>%
-    select(-c(1,2,6:7))
+    select(-c(1,2,6:9))
   colnames(df_table)<-gsub("_", " ", colnames(df_table))
   
   title<-unique(df$question)
@@ -398,7 +394,7 @@ frequency_factors<-c("Never","Rarely","Sometimes","Most of the time","All of the
 
 # create a kable table for single question in this subcomponent
  df_table<-df_safety%>%rename_with(toupper)%>%rename(PERCENT=WEIGHTED_PERCENT)%>%
-    select(-c(1,2,6:7))
+    select(-c(1,2,6:9))
   colnames(df_table)<-gsub("_", " ", colnames(df_table))
   
   title<-unique(df_safety$question)
