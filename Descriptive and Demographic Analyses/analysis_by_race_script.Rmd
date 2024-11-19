@@ -122,35 +122,37 @@ df_merged <- combine_data_frames(actual_data_frames)
 
 #push to postgres in pgAdmin 
 
-dbWriteTable(con, c('youth_thriving', 'response_analysis_by_race'), df_merged,
-             overwrite = FALSE, row.names = FALSE)
+# dbWriteTable(con, c('youth_thriving', 'response_analysis_by_race'), df_merged,
+#              overwrite = FALSE, row.names = FALSE)
 
-dbSendQuery(con, "COMMENT ON TABLE youth_thriving.response_analysis_by_race IS 'The following is a table of response frequency and rate by race group and question. The denominator for each analysis is the total number of youth who answered that way for each particular question. In other words, the rates represent - of the youth who responded X to a question, Y% were from each race group. W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_racetables_chi_analysis.docx'")
+table_comment<-paste0("The following is a table of response frequency and rate by race group and question. The denominator for each analysis is the total number of youth who answered that way for each particular question. In other words, the rates represent - of the youth who responded X to a question, Y% were from each race group. W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_racetables_chi_analysis.docx"," Created on ", Sys.Date())
 
-
-dbSendQuery(con, "COMMENT ON COLUMN youth_thriving.response_analysis_by_race.variable IS 
-                      'refers to the column label or variable in the survey data';
-                     COMMENT ON COLUMN youth_thriving.response_analysis_by_race.question IS 
-                      'the question that this variable refers to';
-                     COMMENT ON COLUMN youth_thriving.response_analysis_by_race.sub_question IS 
-                      'the subquestion that this variable refers to';
-                     COMMENT ON COLUMN youth_thriving.response_analysis_by_race.variable_name IS 
-                      'a more explanatory name of what the variable aims to measure';
-                     COMMENT ON COLUMN youth_thriving.response_analysis_by_race.response_domain IS 
-                      'the survey domain this variable refers to';
-                      COMMENT ON COLUMN youth_thriving.response_analysis_by_race.race IS 
-                      'race group';
-                      COMMENT ON COLUMN youth_thriving.response_analysis_by_race.response IS 
-                      'the response that the data is about';
-                      COMMENT ON COLUMN youth_thriving.response_analysis_by_race.count IS 
-                      'the count of people within this race that answered this response';
-                      COMMENT ON COLUMN youth_thriving.response_analysis_by_race.rate IS 
-                      'the weighted rate of people in this race group that answered with this response compared to OTHER race groups';
-                    COMMENT ON COLUMN youth_thriving.response_analysis_by_race.rate_cv IS 
-                      'coefficient of variation for this weighted rate';
-                      COMMENT ON COLUMN youth_thriving.response_analysis_by_race.moe IS 
-                      'margin of error for this weighted rate';
-            ")
+# dbSendQuery(con, paste0("COMMENT ON TABLE youth_thriving.response_analysis_by_race IS '",table_comment,"';"))
+# 
+# 
+# dbSendQuery(con, "COMMENT ON COLUMN youth_thriving.response_analysis_by_race.variable IS 
+#                       'refers to the column label or variable in the survey data';
+#                      COMMENT ON COLUMN youth_thriving.response_analysis_by_race.question IS 
+#                       'the question that this variable refers to';
+#                      COMMENT ON COLUMN youth_thriving.response_analysis_by_race.sub_question IS 
+#                       'the subquestion that this variable refers to';
+#                      COMMENT ON COLUMN youth_thriving.response_analysis_by_race.variable_name IS 
+#                       'a more explanatory name of what the variable aims to measure';
+#                      COMMENT ON COLUMN youth_thriving.response_analysis_by_race.response_domain IS 
+#                       'the survey domain this variable refers to';
+#                       COMMENT ON COLUMN youth_thriving.response_analysis_by_race.race IS 
+#                       'race group';
+#                       COMMENT ON COLUMN youth_thriving.response_analysis_by_race.response IS 
+#                       'the response that the data is about';
+#                       COMMENT ON COLUMN youth_thriving.response_analysis_by_race.count IS 
+#                       'the count of people within this race that answered this response';
+#                       COMMENT ON COLUMN youth_thriving.response_analysis_by_race.rate IS 
+#                       'the weighted rate of people in this race group that answered with this response compared to OTHER race groups';
+#                     COMMENT ON COLUMN youth_thriving.response_analysis_by_race.rate_cv IS 
+#                       'coefficient of variation for this weighted rate';
+#                       COMMENT ON COLUMN youth_thriving.response_analysis_by_race.moe IS 
+#                       'margin of error for this weighted rate';
+#             ")
 
 ```
 
@@ -217,35 +219,37 @@ df_merged_per_race <- combine_data_frames(actual_data_frames)
 
 #push to postgres in pgAdmin 
 
-dbWriteTable(con, c('youth_thriving', 'response_analysis_per_race'), df_merged_per_race,
-             overwrite = FALSE, row.names = FALSE)
+# dbWriteTable(con, c('youth_thriving', 'response_analysis_per_race'), df_merged_per_race,
+#              overwrite = FALSE, row.names = FALSE)
 
-dbSendQuery(con, "COMMENT ON TABLE youth_thriving.response_analysis_per_race IS 'The following is a table of response frequency and rate PER race group. The denominator for each analysis is the total number of youth from the race group who answered the question. In other words- of the potential responses to a question, what % of X race group said Y compared to how many of that race group said Z. W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_racetables_chi_analysis.docx'")
+table_comment<-paste0("The following is a table of response frequency and rate PER race group. The denominator for each analysis is the total number of youth from the race group who answered the question. In other words- of the potential responses to a question, what % of X race group said Y compared to how many of that race group said Z. W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_racetables_chi_analysis.docx"," Created on ", Sys.Date())
+
+# dbSendQuery(con, paste0("COMMENT ON TABLE youth_thriving.response_analysis_per_race IS '",table_comment,"';"))
 
 
-dbSendQuery(con, "COMMENT ON COLUMN youth_thriving.response_analysis_per_race.variable IS 
-                      'refers to the column label or variable in the survey data';
-                     COMMENT ON COLUMN youth_thriving.response_analysis_per_race.question IS 
-                      'the question that this variable refers to';
-                     COMMENT ON COLUMN youth_thriving.response_analysis_per_race.sub_question IS 
-                      'the subquestion that this variable refers to';
-                     COMMENT ON COLUMN youth_thriving.response_analysis_per_race.variable_name IS 
-                      'a more explanatory name of what the variable aims to measure';
-                     COMMENT ON COLUMN youth_thriving.response_analysis_per_race.response_domain IS 
-                      'the survey domain this variable refers to';
-                      COMMENT ON COLUMN youth_thriving.response_analysis_per_race.race IS 
-                      'race group';
-                      COMMENT ON COLUMN youth_thriving.response_analysis_per_race.response IS 
-                      'the response that the data is about';
-                      COMMENT ON COLUMN youth_thriving.response_analysis_per_race.count IS 
-                      'the count of people within this race that answered this response';
-                      COMMENT ON COLUMN youth_thriving.response_analysis_per_race.rate IS 
-                      'the weighted rate of people in this race group that answered with this response compared to how others in this race group responded';
-                    COMMENT ON COLUMN youth_thriving.response_analysis_per_race.rate_cv IS 
-                      'a weighted coefficient of variation for this rate';
-                      COMMENT ON COLUMN youth_thriving.response_analysis_per_race.moe IS 
-                      'a weighted margin of error for this rate';
-            ")
+# dbSendQuery(con, "COMMENT ON COLUMN youth_thriving.response_analysis_per_race.variable IS 
+#                       'refers to the column label or variable in the survey data';
+#                      COMMENT ON COLUMN youth_thriving.response_analysis_per_race.question IS 
+#                       'the question that this variable refers to';
+#                      COMMENT ON COLUMN youth_thriving.response_analysis_per_race.sub_question IS 
+#                       'the subquestion that this variable refers to';
+#                      COMMENT ON COLUMN youth_thriving.response_analysis_per_race.variable_name IS 
+#                       'a more explanatory name of what the variable aims to measure';
+#                      COMMENT ON COLUMN youth_thriving.response_analysis_per_race.response_domain IS 
+#                       'the survey domain this variable refers to';
+#                       COMMENT ON COLUMN youth_thriving.response_analysis_per_race.race IS 
+#                       'race group';
+#                       COMMENT ON COLUMN youth_thriving.response_analysis_per_race.response IS 
+#                       'the response that the data is about';
+#                       COMMENT ON COLUMN youth_thriving.response_analysis_per_race.count IS 
+#                       'the count of people within this race that answered this response';
+#                       COMMENT ON COLUMN youth_thriving.response_analysis_per_race.rate IS 
+#                       'the weighted rate of people in this race group that answered with this response compared to how others in this race group responded';
+#                     COMMENT ON COLUMN youth_thriving.response_analysis_per_race.rate_cv IS 
+#                       'a weighted coefficient of variation for this rate';
+#                       COMMENT ON COLUMN youth_thriving.response_analysis_per_race.moe IS 
+#                       'a weighted margin of error for this rate';
+#             ")
 
 
 
@@ -295,33 +299,35 @@ df_merged_chi_test <- combine_data_frames(actual_data_frames)
 
 #push to postgres in pgAdmin 
 
-dbWriteTable(con, c('youth_thriving', 'chi_testing_per_race'), df_merged_chi_test,
-             overwrite = FALSE, row.names = FALSE)
+# dbWriteTable(con, c('youth_thriving', 'chi_testing_per_race'), df_merged_chi_test,
+#              overwrite = FALSE, row.names = FALSE)
 
-dbSendQuery(con, "COMMENT ON TABLE youth_thriving.chi_testing_per_race IS 'The following is a table of chi square tests run for the race by question for all the domains in the survey. The Chi-Square tests gives us an indication if there were equal responses by race group to the responses or was there variation enough to suspect inequity. W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_racetables_chi_analysis.docx'")
+table_comment<-paste0("The following is a table of chi square tests run for the race by question for all the domains in the survey. The Chi-Square tests gives us an indication if there were equal responses by race group to the responses or was there variation enough to suspect inequity. W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_racetables_chi_analysis.docx."," Created on ", Sys.Date())
+
+# dbSendQuery(con, paste0("COMMENT ON TABLE youth_thriving.chi_testing_per_race IS '",table_comment,"';"))
 
 
-dbSendQuery(con, "COMMENT ON COLUMN youth_thriving.chi_testing_per_race.variable IS 
-                      'refers to the column label or variable in the survey data';
-                     COMMENT ON COLUMN youth_thriving.chi_testing_per_race.question IS 
-                      'the question that this variable refers to';
-                     COMMENT ON COLUMN youth_thriving.chi_testing_per_race.sub_question IS 
-                      'the subquestion that this variable refers to';
-                     COMMENT ON COLUMN youth_thriving.chi_testing_per_race.variable_category IS 
-                      'the categories the data collector identified in their codebook';
-                     COMMENT ON COLUMN youth_thriving.chi_testing_per_race.variable_name IS 
-                      'a more explanatory name of what the variable aims to measure';
-                     COMMENT ON COLUMN youth_thriving.chi_testing_per_race.response_domain IS 
-                      'the survey domain this variable refers to';
-                      COMMENT ON COLUMN youth_thriving.chi_testing_per_race.null_hypothesis IS 
-                      'if the null hypothesis (that all race groups answered at about the same rate) is true or false. If it is true, we accept it and if it is false, we reject it. this is based on the p-value. if the p-value is greater than .05 we accept the null hypothesis and if it is lower than .05, we reject it';
-                      COMMENT ON COLUMN youth_thriving.chi_testing_per_race.p_value IS 
-                      'the p value';
-                      COMMENT ON COLUMN youth_thriving.chi_testing_per_race.chi_square IS 
-                      'the chi square statistic';
-                      COMMENT ON COLUMN youth_thriving.chi_testing_per_race.degrees_of_freedom IS 
-                      'the degrees of freedom or sometimes referred to the parameters';
-            ")
+# dbSendQuery(con, "COMMENT ON COLUMN youth_thriving.chi_testing_per_race.variable IS 
+#                       'refers to the column label or variable in the survey data';
+#                      COMMENT ON COLUMN youth_thriving.chi_testing_per_race.question IS 
+#                       'the question that this variable refers to';
+#                      COMMENT ON COLUMN youth_thriving.chi_testing_per_race.sub_question IS 
+#                       'the subquestion that this variable refers to';
+#                      COMMENT ON COLUMN youth_thriving.chi_testing_per_race.variable_category IS 
+#                       'the categories the data collector identified in their codebook';
+#                      COMMENT ON COLUMN youth_thriving.chi_testing_per_race.variable_name IS 
+#                       'a more explanatory name of what the variable aims to measure';
+#                      COMMENT ON COLUMN youth_thriving.chi_testing_per_race.response_domain IS 
+#                       'the survey domain this variable refers to';
+#                       COMMENT ON COLUMN youth_thriving.chi_testing_per_race.null_hypothesis IS 
+#                       'if the null hypothesis (that all race groups answered at about the same rate) is true or false. If it is true, we accept it and if it is false, we reject it. this is based on the p-value. if the p-value is greater than .05 we accept the null hypothesis and if it is lower than .05, we reject it';
+#                       COMMENT ON COLUMN youth_thriving.chi_testing_per_race.p_value IS 
+#                       'the p value';
+#                       COMMENT ON COLUMN youth_thriving.chi_testing_per_race.chi_square IS 
+#                       'the chi square statistic';
+#                       COMMENT ON COLUMN youth_thriving.chi_testing_per_race.degrees_of_freedom IS 
+#                       'the degrees of freedom or sometimes referred to the parameters';
+#             ")
 
 ```
 
