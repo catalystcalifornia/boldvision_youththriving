@@ -354,7 +354,42 @@ print(visual)}
 
 # Caring Families And Relationships
 
-## Relationships/Support
+## Relationships And Support
+
+```{r, echo = FALSE}
+#### NEXT CATEGORY 
+df <- svy_dd%>%filter(response_domain=="Caring Families And Relationships" & variable_name=="Relationships/Support" & variable == 'q10a') # filter dictionary just for questions of interest
+
+unique_vars <- unique(df$variable) # create a list of questions/variables to analyze
+
+# Factor options
+num_factors<-c("None","One","Two","Three or more","Not Sure","Don't wish to answer")
+
+
+for (i in unique_vars) {   df<-df_merged_per_race%>%filter(variable==i)%>%filter(rate_cv<40)
+my_height <- 0.95 # height and width of ggplot
+my_width <- 0.95
+df$response <- factor(x=df$response, levels = num_factors) # factor levels to order plot by
+# plot styling
+visual<-ggplot(data = df, aes(x = response, y = race_labels,fill=rate))+
+  geom_tile(height=my_height, width=my_width, color="white",lwd = 1.5,
+            linetype = 1)+
+  geom_text(aes(label=round(rate,1)),size=3)+
+  scale_fill_gradient(low="#f9de8d", high="#EF4A66",name="Weighted Percent")+
+  scale_y_discrete(labels=function(x)str_wrap(x,width=20),)+
+  scale_x_discrete(labels=function(y)str_wrap(y,width=5))+
+  labs(title= str_wrap(paste0(df$question, " ", df$sub_question)), width=60,
+       x="",
+       y="")+
+  # coord_fixed()+
+  theme_bw()+
+  theme(plot.title=element_text(size=10),
+        legend.title=element_text(size=9),
+        axis.text.x=element_text(size=10),
+        axis.text.y=element_text(size=10))
+print(visual)}
+
+```
 
 ```{r, echo = FALSE}
 #### NEXT CATEGORY 
@@ -390,7 +425,6 @@ visual<-ggplot(data = df, aes(x = response, y = race_labels,fill=rate))+
 print(visual)}
 
 ```
-
 
 
 ## Connectedness 
@@ -510,7 +544,7 @@ print(visual)}
 
 # Vibrant Communities
 
-## Safe Access To Public Spaces For Social, Cultural, And Literary Opportunities
+## Safe Access To Public Spaces 
 
 ```{r, echo = FALSE}
 df <- svy_dd%>%filter(response_domain=="Vibrant Communities" & variable_name=="Safe Access To Public Spaces For Social, Cultural, And Literary Opportunities") # filter dictionary just for questions of interest
@@ -621,7 +655,7 @@ print(visual)}
 
 ## Structural Racism
 
-```{r, echo = FALSE}
+```{r, include=FALSE, echo = FALSE}
 #### NEXT CATEGORY 
 df <- svy_dd%>%filter(response_domain=="Racial Justice, Equity, And Inclusion" & variable_name=="Structural Racism") # filter dictionary just for questions of interest
 
