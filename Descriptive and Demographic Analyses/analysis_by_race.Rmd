@@ -1,6 +1,6 @@
 ---
 title: Bold Vision Youth Thriving Survey 
-subtitle: Trends by Race, Component, Subcomponent, and Question
+subtitle: Trends by Race and Question
 author: Catalyst California in collaboration with Bold Vision
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
@@ -670,7 +670,7 @@ print(visual)}
 
 ## Structural Racism
 
-```{r, include=FALSE, echo = FALSE}
+```{r, echo = FALSE}
 #### NEXT CATEGORY 
 df <- svy_dd%>%filter(response_domain=="Racial Justice, Equity, And Inclusion" & variable_name=="Structural Racism") # filter dictionary just for questions of interest
 
@@ -705,7 +705,7 @@ print(visual)}
 
 ```
 
-```{r, echo=FALSE}
+```{r, include=FALSE, echo=FALSE}
 
 dbDisconnect(con)
 
