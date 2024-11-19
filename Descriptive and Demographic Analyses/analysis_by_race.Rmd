@@ -1,8 +1,8 @@
 ---
 title: Bold Vision Youth Thriving Survey 
-subtitle: Analysis by Race and Questions
-author: Catalyst California
-date: October 2024
+subtitle: Trends by Race, Component, Subcomponent, and Question
+author: Catalyst California in collaboration with Bold Vision
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document:
     number_sections: no
@@ -15,17 +15,13 @@ output:
 ```{r setup, include=FALSE, echo=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 
-library(data.table)
 library(dplyr)
 library(RPostgreSQL)
 library(sf)
 library(tidyr)
-library(readxl)
 library(tidyverse)
-library(janitor)
 library(srvyr)
 library(survey)
-library(highcharter)
 library(knitr)
 library(kableExtra)
 library(weights)
@@ -51,9 +47,16 @@ df_merged_per_race <- dbGetQuery(con, "SELECT * FROM youth_thriving.response_ana
  
 
 ```
+The following summarizes how youth responded to each question in the Bold Vision Youth Thriving Survey by major racial group. Questions are organized by component (e.g., Strong Minds) and subcomponent (e.g., Positive Emotions). The distribution of responses to each question for every racial group is visualized using a heatmap. The percentages shown are based on weighted estimates that adjust the Youth Thriving sample by age, sex, race, and Service Planning Area. Estimates that have a coefficient of variation greater than 40% are regarded as unstable and are suppressed from the heatmaps. 
+
+A total of 3,444 youth ages 15-24 in Los Angeles County completed the survey.
+
+For a corresponding analysis that shows percentages by question for all youth, see [Total Trends by Question](https://catalystcalifornia.github.io/boldvision_youththriving/Descriptive%20and%20Demographic%20Analyses/analysis_by_question).
 
 
-# Strong Minds
+# Strong Minds (And Bodies)
+
+Component definition: Youth with positive mental and physical health, which includes but is not limited to positive emotions, health behaviors, cognitive development, and accessible resources that promote overall well-being for youth. Note not every aspect is measured in the Youth Thriving Survey.
 
 ## Positive Emotions
 
@@ -166,6 +169,8 @@ print(visual)}
 
 
 # Positive Identity And Self-Worth
+
+Component definition: Youth having a strong sense of self, self-worth, and hope for the future. It can include things like hope for the future, purpose, and self-efficacy.
 
 ## Self-Efficacy
 
@@ -354,6 +359,8 @@ print(visual)}
 
 # Caring Families And Relationships
 
+Component definition: Relational aspects of youth thriving such as friendships, caregiver relationships, school relationships, and more to identify the caring, stable, and positive relations in a youth’s network.
+
 ## Relationships And Support
 
 ```{r, echo = FALSE}
@@ -464,6 +471,8 @@ print(visual)}
 
 # Cultural Identity
 
+Component definition: The connectedness youth have to their culture/ethnic identity which includes healing practices, ethnic pride and following family traditions.
+
 ## Cultural Identity And Connection
 
 ```{r, echo=FALSE}
@@ -505,6 +514,8 @@ print(visual)}
 
 # Safety
 
+Component definition: Safety that youth feel in their neighborhoods, at school, and in their larger communities across physically safe spaces, secure relationships (not fearing bullying, violence or abandonment), and protected development (free to be children). Note not every aspect is measured in the Youth Thriving Survey.
+
 ## Personal Safety
 
 ```{r, echo = FALSE}
@@ -544,6 +555,8 @@ print(visual)}
 
 # Vibrant Communities
 
+Component definition: Local resources available to youth such as open public spaces, safe spaces, accessible public transportation, and more. 
+
 ## Safe Access To Public Spaces 
 
 ```{r, echo = FALSE}
@@ -582,6 +595,8 @@ print(visual)}
 ```
 
 # Racial Justice, Equity, And Inclusion 
+
+Component definition: Youth feeling comfortable, accepted, and included in all spaces they enter, regardless of race/ethnicity, gender, religion, health status, and appearance. Youth’s systemic interactions should be fair and equitable irrespective of their identity.
 
 ## Microaggressions
 ```{r, echo = FALSE}
