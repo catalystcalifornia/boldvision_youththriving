@@ -147,10 +147,19 @@ df <- svy_data %>%
   mutate(variable_name = 'Education')
 
 # Calculate the sum of 'count' where 'variable' is "bv" or "bw"
-total_students <- demographics_employ_educ_df %>%
-  filter(variable %in% c("bv", "bw")) %>%
-  summarise(total = sum(count, na.rm = TRUE)) %>%
-  pull(total)
+# total_students <- demographics_employ_educ_df %>%
+#   filter(variable %in% c("bv", "bw")) %>%
+#   summarise(total = sum(count, na.rm = TRUE)) %>%
+#   pull(total)
+# 
+# total_students
+
+# Calculate total students where 'variable' is "bv" or "bw"
+total_students <- svy_data %>%
+  filter(bv==1 | bw==1) %>%
+  nrow()
+
+total_students
 
 demographics_educ_df<-df %>%
   pivot_longer(!variable_name,names_to='variable',values_to='count') %>%
