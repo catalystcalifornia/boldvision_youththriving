@@ -59,16 +59,16 @@ font_axis_label <- "HelveticaNeueLTStdMdCn"
 source("W:\\RDA Team\\R\\credentials_source.R")
 con <- connect_to_db("bold_vision")
 
-df_dem_race <- dbGetQuery(con, "SELECT * FROM youth_thriving.race_demographics") %>%
-  mutate(race_labels = if_else(nh_race == 'latinx', 'Latine',
-                               if_else(nh_race == 'nh_aian', 'American Indian & Alaska Native',
-                                       if_else(nh_race == 'nh_black', 'Black',
-                                               ifelse(nh_race == 'nh_white', 'White',
-                                                      if_else(nh_race == 'nh_asian', 'Asian',
-                                                              if_else(nh_race == 'nh_swana', 'Southwest Asian & North African',
-                                                                      if_else(nh_race == 'nh_twoormor', 'Multiracial', 
-                                                                              if_else(nh_race == 'nh_nhpi', 'Native Hawaiian & Pacific Islander' ,
-                                                                                      if_else(nh_race == 'nh_other', 'Other', 'NA')))))))))) %>%
+df_dem_race <- dbGetQuery(con, "SELECT * FROM youth_thriving.race_nh_demographics") %>%
+  mutate(race_labels = if_else(race == 'latinx', 'Latine',
+                               if_else(race == 'nh_aian', 'American Indian & Alaska Native',
+                                       if_else(race == 'nh_black', 'Black',
+                                               ifelse(race == 'nh_white', 'White',
+                                                      if_else(race == 'nh_asian', 'Asian',
+                                                              if_else(race == 'nh_swana', 'Southwest Asian & North African',
+                                                                      if_else(race == 'nh_twoormor', 'Multiracial', 
+                                                                              if_else(race == 'nh_nhpi', 'Native Hawaiian & Pacific Islander' ,
+                                                                                      if_else(race == 'nh_other', 'Other', 'NA')))))))))) %>%
   filter(race_labels != 'NA')
 
 
@@ -112,15 +112,15 @@ ggsave(plot=viz_dem_race,
 
 
 df_dem_asian_sub <- dbGetQuery(con, "SELECT * FROM youth_thriving.asian_ethnicity_demographics") %>%
-  filter(percentage > 1)
+  filter(rate > 1)  %>% filter(detailed_asian != 'NA')
 
 
-viz_dem_asian <- ggplot(df_dem_asian_sub, aes(x = percentage, y = reorder(detailed_asian, percentage), width = 0.8)) +
+viz_dem_asian <- ggplot(df_dem_asian_sub, aes(x = rate, y = reorder(detailed_asian, rate), width = 0.8)) +
   geom_bar(stat = "identity", position = "dodge", fill = blue) + 
   scale_y_discrete(labels = function(detailed_asian) str_wrap(detailed_asian, width = 30)) +
   # bar labels
   geom_text(data = df_dem_asian_sub,
-            aes(label = paste0(round(percentage, digits = 1), "%")),
+            aes(label = paste0(round(rate, digits = 1), "%")),
             size = 3,
             stat="identity", colour = "black",
             position = position_dodge(width = 1), 
