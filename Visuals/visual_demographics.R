@@ -59,7 +59,7 @@ font_axis_label <- "HelveticaNeueLTStdMdCn"
 source("W:\\RDA Team\\R\\credentials_source.R")
 con <- connect_to_db("bold_vision")
 
-df_dem_race <- dbGetQuery(con, "SELECT * FROM youth_thriving.race_nh_demographics") %>%
+df_dem_race <- dbGetQuery(con, "SELECT * FROM youth_thriving.demographics_nh_race") %>%
   mutate(race_labels = if_else(race == 'latinx', 'Latine',
                                if_else(race == 'nh_aian', 'American Indian & Alaska Native',
                                        if_else(race == 'nh_black', 'Black',
@@ -74,12 +74,12 @@ df_dem_race <- dbGetQuery(con, "SELECT * FROM youth_thriving.race_nh_demographic
 
 
 
-viz_dem_race <- ggplot(df_dem_race, aes(x = percentage, y = reorder(race_labels, percentage))) +
+viz_dem_race <- ggplot(df_dem_race, aes(x = rate, y = reorder(race_labels, rate))) +
   geom_bar(stat = "identity", position = "dodge", fill = yellow) + 
   scale_y_discrete(labels = function(race_labels) str_wrap(race_labels, width = 18)) +
   # bar labels
   geom_text(data = df_dem_race,
-            aes(label = paste0(round(percentage, digits = 1), "%")),
+            aes(label = paste0(round(rate, digits = 1), "%")),
             size = 4,
             stat="identity", colour = "black",
             position = position_dodge(width = 1), 
@@ -89,7 +89,7 @@ viz_dem_race <- ggplot(df_dem_race, aes(x = percentage, y = reorder(race_labels,
   labs(title = paste(str_wrap("Youth Thriving Survey Participants' Race Groups", whitespace_only = TRUE, width = 57), collapse = "\n"),
        x = paste(str_wrap("", whitespace_only = TRUE, width = 95), collapse = "\n"),
        y = "",
-       caption= paste(str_wrap(paste0("Data Source: Catalyst California, Bold Vision Youth Thriving Survey, 2024."),
+       caption= paste(str_wrap(paste0("Data Source: Bold Vision Youth Thriving Survey, 2024."),
                                whitespace_only = TRUE, width = 120), collapse = "\n")) +
   #theme/aesthetics
   theme_minimal() +
@@ -111,7 +111,7 @@ ggsave(plot=viz_dem_race,
        units = c("in"),  width = 10, height = 5.5)
 
 
-df_dem_asian_sub <- dbGetQuery(con, "SELECT * FROM youth_thriving.asian_ethnicity_demographics") %>%
+df_dem_asian_sub <- dbGetQuery(con, "SELECT * FROM youth_thriving.demographics_asian_ethnicity") %>%
   filter(rate > 1)  %>% filter(detailed_asian != 'NA')
 
 
@@ -130,7 +130,7 @@ viz_dem_asian <- ggplot(df_dem_asian_sub, aes(x = rate, y = reorder(detailed_asi
   labs(title = paste(str_wrap("Youth Thriving Survey Asian Participants' Subgroups", whitespace_only = TRUE, width = 57), collapse = "\n"),
        x = paste(str_wrap("", whitespace_only = TRUE, width = 95), collapse = "\n"),
        y = "",
-       caption= paste(str_wrap(paste0("Data Source: Catalyst California, Bold Vision Youth Thriving Survey, 2024."),
+       caption= paste(str_wrap(paste0("Data Source: Bold Vision Youth Thriving Survey, 2024."),
                                whitespace_only = TRUE, width = 120), collapse = "\n")) +
   #theme/aesthetics
   theme_minimal() +
@@ -150,3 +150,5 @@ ggsave(plot=viz_dem_asian,
        file=paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", "Demographics", "/",
                    "race_asian_sub_barchart", ".svg"),
        units = c("in"),  width = 10, height = 5.5)
+
+dbDisconnect(con)

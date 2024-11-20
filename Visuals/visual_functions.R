@@ -34,6 +34,7 @@ yellow <- "#FFBF00"
 light_green <- "#00A75A"
 dark_green <- "#00864A"
 blue  <- "#2A12B2"
+light_blue <- "#465adc"
 
 
 ## FONTS ## 
@@ -146,14 +147,14 @@ fx_single_barchart <- function(question_number_i, sub_question_i, #these are the
   df_visual <- ggplot(df_filter, aes(x = total_rate, y = reorder(race_labels, total_rate), fill = response_domain)) +
     geom_bar(stat = "identity", position = "dodge") + 
     scale_fill_manual(values = c(
-      "Caring Families And Relationships" = pink,
-      "Cultural Identity" = dark_pink,
+      "Caring Families And Relationships" = yellow,
+      "Cultural Identity" = light_blue,
       "Demographics" = gray,
-      "Positive Identity And Self-Worth" = yellow,
-      "Racial Justice, Equity, And Inclusion" = light_green,
-      "Safety" = dark_green,
-      "Strong Minds" = blue,
-      "Vibrant Communities" = orange
+      "Positive Identity And Self-Worth" = dark_pink,
+      "Racial Justice, Equity, And Inclusion" = blue,
+      "Safety" = light_green,
+      "Strong Minds" = pink,
+      "Vibrant Communities" = dark_green
     )) +    
     scale_y_discrete(labels = function(race_labels) str_wrap(race_labels, width = 18)) +
     # bar labels
@@ -274,14 +275,14 @@ fx_single_barchart_freq <- function(domain_pgname, #name of domain as it is in t
   df_visual <- ggplot(df_filter, aes(x = weighted_percent, y = response, fill = domain )) + 
     geom_bar(stat = "identity", position = "dodge") + 
     scale_fill_manual(values = c(
-      "Caring Families And Relationships" = pink,
-      "Cultural Identity" = dark_pink,
+      "Caring Families And Relationships" = yellow,
+      "Cultural Identity" = light_blue,
       "Demographics" = gray,
-      "Positive Identity And Self-Worth" = yellow,
-      "Racial Justice, Equity, And Inclusion" = light_green,
-      "Safety" = dark_green,
-      "Strong Minds" = blue,
-      "Vibrant Communities" = orange
+      "Positive Identity And Self-Worth" = dark_pink,
+      "Racial Justice, Equity, And Inclusion" = blue,
+      "Safety" = light_green,
+      "Strong Minds" = pink,
+      "Vibrant Communities" = dark_green
     )) +    
     scale_y_discrete(labels = function(response) str_wrap(response, width = 18)) +
     # bar labels

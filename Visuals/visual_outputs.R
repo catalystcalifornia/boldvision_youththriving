@@ -1,6 +1,6 @@
 #source script
 
-source('W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\GitHub\\MK\\boldvision_youththriving\\Visuals\\visual_functions.R')
+# source('W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\GitHub\\MK\\boldvision_youththriving\\Visuals\\visual_functions.R')
 
 source('visual_functions.R')
 
@@ -64,7 +64,7 @@ fx_single_barchart_freq(domain_pgname = 'positive_identity', #name of domain as 
 #RAN
 fx_single_barchart(question_number_i = '18', sub_question_i = 'Contact with the police', #these are the inputs, i stands for insert/input of the variable of interest we want to look at
                    response_label_1 = 'Sometimes', response_label_2 = 'Most of the time', response_label_3 = 'All of the time', #insert the responses we want to capture data for, up to 3
-                   title_text = 'Contact with police is interfering with Black youth at a rate higher than most groups', x_axis_text = 'Rate of youth reporting contact in police getting in the way of living their best life' #insert text on graph that is customized
+                   title_text = 'Contact with police is interfering with NHPI and Black youth at a rate higher than most groups', x_axis_text = 'Rate of youth reporting contact in police getting in the way of living their best life' #insert text on graph that is customized
 )  
 
 #RAN
@@ -84,7 +84,7 @@ fx_single_barchart_freq(domain_pgname = 'caring_families', #name of domain as it
 #RAN
 fx_single_barchart(question_number_i = '9', sub_question_i = 'Nervous', #these are the inputs, i stands for insert/input of the variable of interest we want to look at
                    response_label_1 = 'Some of the time', response_label_2 = 'Most of the time', response_label_3 = 'All of the time', #insert the responses we want to capture data for, up to 3
-                   title_text = 'Over 60% of Multiracial, Asian, and Latine youth feel nervous some of the time', x_axis_text = 'Rate of youth reporting feelings of nervousness in the past year' #insert text on graph that is customized
+                   title_text = 'Over 60% of Multiracial, Asian, and Latine youth feel nervous at least some of the time', x_axis_text = 'Rate of youth reporting feelings of nervousness in the past year' #insert text on graph that is customized
 )  
 
 #RAN
