@@ -300,8 +300,8 @@ indicator <- "Frequencies and percentages of non-Hispanic race categories. Unive
 source <- "script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/getting_demographics.Rmd"
 qa_filepath <- "W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_getting_demographics"
 table_comment <- paste0(indicator, source)
-dbWriteTable(con, c(schema, table_name), demographics_nh_race_df,
-             overwrite = TRUE, row.names = FALSE)
+# dbWriteTable(con, c(schema, table_name), demographics_nh_race_df,
+#              overwrite = FALSE, row.names = FALSE)
 
 # Add metadata for demographics_nh_race_df
 column_names <- colnames(demographics_nh_race_df) # Get column names
@@ -311,7 +311,8 @@ column_comments <- c(
   'Denotes the number of respondents with the corresponding racial identity',
   'Denotes the percentage of respondents with the corresponding racial identity')
 
-add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
+
 ```
 
 # Export demographics_detailed_race_df dataframe as a table 
@@ -322,8 +323,8 @@ table_name <- "demographics_detailed_race"
 indicator <- "Frequencies and percentages of detailed race categories, including mixed races. Universe: out of all respondents including NA"
 
 table_comment <- paste0(indicator, source)
-dbWriteTable(con, c(schema, table_name), demographics_detailed_race_df,
-             overwrite = TRUE, row.names = FALSE)
+# dbWriteTable(con, c(schema, table_name), demographics_detailed_race_df,
+#              overwrite = FALSE, row.names = FALSE)
 
 # Add metadata for demographics_detailed_race_df
 column_names <- colnames(demographics_detailed_race_df) # Get column names
@@ -333,7 +334,8 @@ column_comments <- c(
   'Denotes the number of respondents with the corresponding racial identity',
   'Denotes the percentage of respondents with the corresponding racial identity')
 
-add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
+
 ```
 
 # Export demographics_asian_ethnicity_df dataframe as a table 
@@ -344,8 +346,8 @@ table_name <- "demographics_asian_ethnicity"
 indicator <- "Frequencies and percentages of detailed Asian ethnicity categories. Universe: out of all Asian respondents"
 
 table_comment <- paste0(indicator, source)
-dbWriteTable(con, c(schema, table_name), demographics_asian_ethnicity_df,
-             overwrite = TRUE, row.names = FALSE)
+# dbWriteTable(con, c(schema, table_name), demographics_asian_ethnicity_df,
+#              overwrite = FALSE, row.names = FALSE)
 
 # Add metadata for demographics_asian_ethnicity_df
 column_names <- colnames(demographics_asian_ethnicity_df) # Get column names
@@ -355,7 +357,8 @@ column_comments <- c(
   'Denotes the number of respondents with the corresponding ethnic identity',
   'Denotes the percentage of respondents with the corresponding ethnic identity')
 
-add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
+
 ```
 
 # Export demographics_nhpi_ethnicity_df dataframe as a table 
@@ -366,8 +369,8 @@ table_name <- "demographics_nhpi_ethnicity"
 indicator <- "Frequencies and percentages of detailed NHPI ethnicity categories. Universe: out of all NHPI respondents"
 
 table_comment <- paste0(indicator, source)
-dbWriteTable(con, c(schema, table_name), demographics_nhpi_ethnicity_df,
-             overwrite = TRUE, row.names = FALSE)
+# dbWriteTable(con, c(schema, table_name), demographics_nhpi_ethnicity_df,
+#              overwrite = FALSE, row.names = FALSE)
 
 # Add metadata for demographics_nhpi_ethnicity_df
 column_names <- colnames(demographics_nhpi_ethnicity_df) # Get column names
@@ -377,7 +380,8 @@ column_comments <- c(
   'Denotes the number of respondents with the corresponding ethnic identity',
   'Denotes the percentage of respondents with the corresponding ethnic identity')
 
-add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
+
 ```
 
 # Export demographics_gender_sexuality_df dataframe as a table with comments
@@ -388,8 +392,8 @@ table_name <- "demographics_gender_sexuality"
 indicator <- "Frequencies and percentages of gender/sexuality groups. Universe: out of all respondents including NA"
 
 table_comment <- paste0(indicator, source)
-dbWriteTable(con, c(schema, table_name), demographics_gender_sexuality_df,
-             overwrite = TRUE, row.names = FALSE)
+# dbWriteTable(con, c(schema, table_name), demographics_gender_sexuality_df,
+#              overwrite = FALSE, row.names = FALSE)
 
 # Add metadata for gender_demographics
 column_names <- colnames(demographics_gender_sexuality_df) # Get column names
@@ -399,7 +403,8 @@ column_comments <- c(
   'Denotes the number of respondents with the corresponding gender/sexuality identity',
   'Denotes the percentage of respondents with the corresponding gender/sexuality identity')
 
-add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
+
 ```
 
 # Export demographics_employ_educ dataframe as a table with comments
@@ -411,8 +416,8 @@ indicator <- "Frequencies and percentages of education and employment groups.
 Universe: out of all respondents including NA (for variable bt-by) and out of all students (for variable ca-cf)"
 
 table_comment <- paste0(indicator, source)
-dbWriteTable(con, c(schema, table_name), demographics_employ_educ_df,
-            overwrite = TRUE, row.names = FALSE)
+# dbWriteTable(con, c(schema, table_name), demographics_employ_educ_df,
+#             overwrite = FALSE, row.names = FALSE)
 
 # Add metadata for demographics_employ_educ_df
 column_names <- colnames(demographics_employ_educ_df) # Get column names
@@ -423,7 +428,8 @@ column_comments <- c(
   'Denotes the number of respondents with the corresponding response',
   'Denotes the percentage of respondents with the corresponding response')
 
-add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
 ```
 
 # Export demographics_system_involvement_df dataframe as a table with comments
@@ -435,8 +441,8 @@ indicator <- "Frequencies and percentages of system involved groups.
 Universe: out of all systems-impacted youth (for variable_name: System Involvement Rates Amongst Systems-Impacted Youth) and out of all respondents including NA (for every other variable_name)"
 
 table_comment <- paste0(indicator, source)
-dbWriteTable(con, c(schema, table_name), demographics_system_involvement_df,
-             overwrite = TRUE, row.names = FALSE)
+# dbWriteTable(con, c(schema, table_name), demographics_system_involvement_df,
+#              overwrite = FALSE, row.names = FALSE)
 
 # Add metadata for demographics_system_involvement
 column_comments <- c(
@@ -446,7 +452,8 @@ column_comments <- c(
   'Denotes the number of respondents with the corresponding response',
   'Denotes the percentage of respondents with the corresponding response')
 
-add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
+
 ```
 
 ```{r}
