@@ -1,8 +1,8 @@
 ---
 title: Bold Vision Youth Thriving Survey 
-subtitle: Frequencies and Trends by Question and Category
-author: Catalyst California
-date: October 2024
+subtitle: Total Trends by Component, Subcomponent, and Question
+author: Catalyst California in collaboration with Bold Vision
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document:
     number_sections: no
@@ -16,17 +16,13 @@ knitr::opts_chunk$set(echo = FALSE)
 
 ### Step 1: Environment set up ----
 
-library(data.table)
 library(dplyr)
 library(RPostgreSQL)
 library(sf)
 library(tidyr)
-library(readxl)
 library(tidyverse)
-library(janitor)
 library(srvyr)
 library(survey)
-library(highcharter)
 library(knitr)
 library(kableExtra)
 library(devtools) 
@@ -34,7 +30,8 @@ options(scipen=999)
 
 # connect to postgres and source functions
 source("W:\\RDA Team\\R\\credentials_source.R")
-# source_url('https://github.com/catalystcalifornia/RDA-Functions/blob/main/Utility_Functions.R') 
+
+source("W:\\RDA Team\\R\\Github\\RDA Functions\\main\\RDA-Functions\\Utility_Functions.R")
 
 con <- connect_to_db("bold_vision")
 
@@ -44,7 +41,7 @@ svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024
 dd_all <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 ") # full dictionary for reference
 
 # Descriptive Function -----
-# Function calculates unweighted frequencies and weighted percentages and cvs for each construct and category/domain of interest, produces a df for each question in the construct
+# Function calculates unweighted frequencies and weighted percentages and cvs for each subcomponent and component of interest, produces a df for each question in the subcomponent
 question_sum<-function (svy_df,svy_dd,domain,variable_target) {
 df <- svy_dd%>%filter(response_domain==domain & variable_name==variable_target) # filter dictionary just for questions of interest
 
@@ -73,20 +70,8 @@ for (i in unique_vars) {
   df_final <-  merge(x = df_var, y = dict_var, by.x = c(i), by.y = c("variable_merge_col"))%>% # merge data dictionary to the dataframe with summarized data
     select(question,sub_question,response,frequency,weighted_percent,percent_cv, likert_type) # clean up columns
  
- #  df_table<-df_final%>%rename_with(toupper)%>%rename(PERCENT=WEIGHTED_PERCENT)
- #  colnames(df_table)<-gsub("_", " ", colnames(df_table))
- #  
- # visual <- kable(as.data.frame(df_table)%>% 
- #   mutate_if(is.numeric, format, digits=2)) %>%
- #  kable_styling("striped", full_width = F) %>%
- #  row_spec(0, background = "#2A12B2", color = "white",font_size=12)%>%
- #   footnote(general="Frequencies are unweighted counts. Percentages and coefficients of variation (CV) are weighted")
-
-
-  # print(visual) 
   mylist[[i]] <- df_final # assign table/list output to my empty list
 
-# print(mylist)
   }
 all_vars_df<-dplyr::bind_rows(mylist)%>%mutate(variable_name=variable_target)%>% # assign to a data frame to return
         left_join(df%>%select(question,sub_question,variable),by=c("question","sub_question"))
@@ -131,14 +116,20 @@ true_factors<-c("Never true","Sometimes true","Often true","Always true","Don't 
 
 ```
 
-The following provides a summary of how youth answered each item in the Bold Vision Youth Thriving Survey for every category and construct measured. The total number of surveys collected was 3,444.
+The following summarizes how all youth responded to each question in the Bold Vision Youth Thriving Survey by component and subcomponent measured. The distribution of responses to each question within each subcomponent (e.g., Positive Emotions) is visualized using either a heatmap or table. The percentages shown are based on weighted estimates that adjust the Youth Thriving sample by age, sex, race, and Service Planning Area. Estimates that have a coefficient of variation greater than 40% are regarded as unstable and are suppressed from the heatmaps. 
 
-# Strong Minds
+A total of 3,444 youth ages 15-24 in Los Angeles County completed the survey.
+
+For a corresponding analysis by race, see [Trends by Race and Question](https://catalystcalifornia.github.io/boldvision_youththriving/Descriptive%20and%20Demographic%20Analyses/visual_analysis_race).
+
+# Strong Minds (and Bodies)
+
+Component definition: Youth with positive mental and physical health, which includes but is not limited to positive emotions, health behaviors, cognitive development, and accessible resources that promote overall well-being for youth. Note not every aspect is measured in the Youth Thriving Survey.
 
 ## Positive Emotions
 ```{r}
 
-# create dataframe with summary by question in this construct
+# create dataframe with summary by question in this subcomponent
 sm_positive_emotions<-question_sum(svy_df,svy_dd,domain="Strong Minds",variable_target="Positive Emotions")
 
 # check factors
@@ -152,7 +143,7 @@ heatmap(sm_positive_emotions,true_factors)
 ## Growth Mindset
 ```{r}
 
-# create dataframe with summary by question in this construct
+# create dataframe with summary by question in this subcomponent
 sm_growth_mindset<-question_sum(svy_df,svy_dd,domain="Strong Minds",variable_target="Growth Mindset")
 
 # check factors
@@ -166,7 +157,7 @@ heatmap(sm_growth_mindset,true_factors)
 ## Psychological Distress
 ```{r}
 
-# create dataframe with summary by question in this construct
+# create dataframe with summary by question in this subcomponent
 sm_psychologicaldistress<-question_sum(svy_df,svy_dd,domain="Strong Minds",variable_target="Psychological Distress")
 
 # check factors
@@ -181,10 +172,12 @@ heatmap(sm_psychologicaldistress,time_factors)
 
 # Positive Identity And Self-Worth
 
+Component definition: Youth having a strong sense of self, self-worth, and hope for the future. It can include things like hope for the future, purpose, and self-efficacy.
+
 ## Self-Efficacy
 ```{r}
 
-# create dataframe with summary by question in this construct
+# create dataframe with summary by question in this subcomponent
 pi_self<-question_sum(svy_df,svy_dd,domain="Positive Identity And Self-Worth",variable_target="Self-Efficacy")
 
 # check factors
@@ -196,7 +189,7 @@ heatmap(pi_self,true_factors)
 
 ## Hope For The Future
 ```{r}
-# create dataframe with summary by question in this construct
+# create dataframe with summary by question in this subcomponent
 pi_hope<-question_sum(svy_df,svy_dd,domain="Positive Identity And Self-Worth",variable_target="Hope For The Future")
 
 # check factors
@@ -207,7 +200,7 @@ heatmap(pi_hope,true_factors)
 
 ## Freedom To Explore Self
 ```{r}
-# create dataframe with summary by question in this construct
+# create dataframe with summary by question in this subcomponent
 pi_freedom<-question_sum(svy_df,svy_dd,domain="Positive Identity And Self-Worth",variable_target="Freedom To Explore The Self")
 
 # check factors
@@ -219,7 +212,7 @@ heatmap(pi_freedom,true_factors)
 
 ## Sparks
 ```{r}
-# create dataframe with summary by question in this construct
+# create dataframe with summary by question in this subcomponent
 pi_sparks<-question_sum(svy_df,svy_dd,domain="Positive Identity And Self-Worth",variable_target="Sparks")
 
 # check factors
@@ -228,14 +221,14 @@ pi_sparks<-question_sum(svy_df,svy_dd,domain="Positive Identity And Self-Worth",
 # new factors
 yes_factors<-c("Yes","No","Not sure","Don't wish to answer")
 
-# because this construct has different responses, filter by question and create a basic table for each question
+# because this subcomponent has different responses, filter by question and create a basic table for each question
 
 # question 1-- do you have a spark?
 sparks<-pi_sparks%>%filter(question=="Q10. When people are really happy, energized, and passionate about their talents, interests, or hobbies, we say they have a “spark” in their life. This spark is more than just interesting or fun for them. They are passionate about it. It gives them joy and energy. It is a really important part of their life that gives them real purpose, direction, or focus. Do you have this kind of spark in your life?")%>%mutate(question="Q10. When people are really happy, energized, and passionate about their talents, interests, or hobbies, we say they have a “spark” in their life.",sub_question="Do you have this kind of spark in your life?")
 
 # clean up table for kable styling
 df_table<-sparks%>%rename_with(toupper)%>%rename(PERCENT=WEIGHTED_PERCENT)%>%
-    select(-c(1,2,6:7))
+    select(-c(1,2,6:9))
   colnames(df_table)<-gsub("_", " ", colnames(df_table))
 
   # assign a title
@@ -253,7 +246,7 @@ sparks_table<-pi_sparks%>%filter(question!="Q10. When people are really happy, e
 
 # clean up table
   df_table<-sparks_table%>%rename_with(toupper)%>%rename(PERCENT=WEIGHTED_PERCENT)%>%
-    select(-c(1,2,6:7))
+    select(-c(1,2,6:9))
   colnames(df_table)<-gsub("_", " ", colnames(df_table))
 
   # title  
@@ -285,7 +278,7 @@ pi_action<-question_sum(svy_df,svy_dd,domain="Positive Identity And Self-Worth",
 
 # Single question so do another kable table
   df_table<-pi_action%>%rename_with(toupper)%>%rename(PERCENT=WEIGHTED_PERCENT)%>%
-    select(-c(1,2,6:7))
+    select(-c(1,2,6:9))
   colnames(df_table)<-gsub("_", " ", colnames(df_table))
   
   title<-unique(pi_action$question)
@@ -302,17 +295,19 @@ kable(as.data.frame(df_table)%>%
 
 # Caring Families And Relationships
 
+Component definition: Relational aspects of youth thriving such as friendships, caregiver relationships, school relationships, and more to identify the caring, stable, and positive relations in a youth’s network.
+
 ## Relationships And Support
 
 ```{r}
 
-# create dataframe with summary by question in this construct
+# create dataframe with summary by question in this subcomponent
 family_support<-question_sum(svy_df,svy_dd,domain="Caring Families And Relationships",variable_target="Relationships/Support")
 
 # check factors
 # unique(family_support$response)
 
-# different responses in this construct so split
+# different responses in this subcomponent so split
 df<-family_support%>%filter(question=="Q10a. How many adults really know what your sparks are and help you go after them?")%>%mutate(sub_question='')
 
 count_factors<-c("None","One","Two","Three or more","Not Sure","Don't wish to answer")
@@ -320,7 +315,7 @@ count_factors<-c("None","One","Two","Three or more","Not Sure","Don't wish to an
 
 # create a table for first question about how many adults know sparks
  df_table<-df%>%rename_with(toupper)%>%rename(PERCENT=WEIGHTED_PERCENT)%>%
-    select(-c(1,2,6:7))
+    select(-c(1,2,6:9))
   colnames(df_table)<-gsub("_", " ", colnames(df_table))
   
   title<-unique(df$question)
@@ -345,7 +340,7 @@ heatmap(temp_family,true_factors)
 ## Connectedness
 
 ```{r}
-# create dataframe with summary by question in this construct
+# create dataframe with summary by question in this subcomponent
 
 family_connection<-question_sum(svy_df,svy_dd,domain="Caring Families And Relationships",variable_target="Connectedness")
 
@@ -360,10 +355,12 @@ heatmap(family_connection,true_factors)
 
 # Cultural Identity
 
+Component definition: The connectedness youth have to their culture/ethnic identity which includes healing practices, ethnic pride and following family traditions.
+
 ## Cultural Identity And Connection
 
 ```{r}
-# create dataframe with summary by question in this construct
+# create dataframe with summary by question in this subcomponent
 
 df_cultural<-question_sum(svy_df,svy_dd,domain="Cultural Identity",variable_target="Cultural Identity And Connection")
 
@@ -379,10 +376,12 @@ heatmap(df_cultural,true_factors)
 
 # Safety
 
+Component definition: Safety that youth feel in their neighborhoods, at school, and in their larger communities across physically safe spaces, secure relationships (not fearing bullying, violence or abandonment), and protected development (free to be children). Note not every aspect is measured in the Youth Thriving Survey.
+
 ## Personal Safety
 
 ```{r}
-# create dataframe with summary by question in this construct
+# create dataframe with summary by question in this subcomponent
 
 df_safety<-question_sum(svy_df,svy_dd,domain="Safety",variable_target="Personal Safety")
 
@@ -393,9 +392,9 @@ frequency_factors<-c("Never","Rarely","Sometimes","Most of the time","All of the
 
 # heatmap(df_safety%>%mutate(sub_question=''),frequency_factors)
 
-# create a kable table for single question in this construct
+# create a kable table for single question in this subcomponent
  df_table<-df_safety%>%rename_with(toupper)%>%rename(PERCENT=WEIGHTED_PERCENT)%>%
-    select(-c(1,2,6:7))
+    select(-c(1,2,6:9))
   colnames(df_table)<-gsub("_", " ", colnames(df_table))
   
   title<-unique(df_safety$question)
@@ -411,11 +410,13 @@ kable(as.data.frame(df_table)%>%
 
 # Vibrant Communities
 
+Component definition: Local resources available to youth such as open public spaces, safe spaces, accessible public transportation, and more. 
+
 ## Safe Access To Public Spaces
 
 
 ```{r}
-# create dataframe with summary by question in this construct
+# create dataframe with summary by question in this subcomponent
 
 community_access<-question_sum(svy_df,svy_dd,domain="Vibrant Communities",variable_target="Safe Access To Public Spaces For Social, Cultural, And Literary Opportunities")
 
@@ -432,10 +433,12 @@ heatmap(community_access,yes_factors_2)
 
 # Racial Justice, Equity, And Inclusion
 
+Component definition: Youth feeling comfortable, accepted, and included in all spaces they enter, regardless of race/ethnicity, gender, religion, health status, and appearance. Youth’s systemic interactions should be fair and equitable irrespective of their identity.
+
 ## Microaggressions
 
 ```{r}
-# create dataframe with summary by question in this construct
+# create dataframe with summary by question in this subcomponent
 
 equity_micro<-question_sum(svy_df,svy_dd,domain="Racial Justice, Equity, And Inclusion",variable_target="Microaggressions")
 
@@ -450,7 +453,7 @@ heatmap(equity_micro,frequency_factors)
 ## Experiences of Racism
 
 ```{r}
-# create dataframe with summary by question in this construct
+# create dataframe with summary by question in this subcomponent
 
 equity_experiences<-question_sum(svy_df,svy_dd,domain="Racial Justice, Equity, And Inclusion",variable_target="Experiences Of Racism And Discrimination")
 
@@ -467,7 +470,7 @@ heatmap(equity_experiences,frequency_factors_2)
 ## Structural Racism
 
 ```{r}
-# create dataframe with summary by question in this construct
+# create dataframe with summary by question in this subcomponent
 
 equity_structural<-question_sum(svy_df,svy_dd,domain="Racial Justice, Equity, And Inclusion",variable_target="Structural Racism")
 
@@ -486,7 +489,7 @@ heatmap(equity_structural,frequency_factors)
 
 ```{r, include=FALSE, echo=FALSE}
 
-# Bind together all variables from every category/factor----
+# Bind together all variables from every component----
 ## Strong Minds -----
 df_sm<-rbind(sm_psychologicaldistress,sm_growth_mindset,sm_positive_emotions)%>%mutate(domain="Strong Minds")
 
@@ -510,64 +513,115 @@ df_equity<-rbind(equity_micro,equity_experiences,equity_structural)%>%mutate(dom
 
 
 # Push tables to postgres ----
-
-# # #### Strong Minds ----
-# table_name <- "tot_freq_strong_minds"
+# # metadata needed across tables
+# source<-"Bold Vision Youth Thriving Survey Script:analysis_preliminary.Rmd "
 # schema <- 'youth_thriving'
+# qa_filepath<- "W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_frequencytables.docx "
+# column_comments <- c(
+#   'Main question asked in the survey',
+#   'Subquestion asked',
+#   'The response options',
+#   'The unweighted frequency or count of the response by question',
+#   'The weighted percentage of respondents with the corresponding response',
+#   'The 90% CV for the weighted percentage',
+#   'The type of likert scale used',
+#   'The subcomponent name',
+#   'The variable shorthand as used in data dictionary',
+#   'The component name')
+
+#### Strong Minds ----
+# indicator <- "Frequencies and weighted percentages by question and response for all youth for Strong Minds"
+# table_name <- "tot_freq_strong_minds"
+# # 
+# # # write table
+# # dbWriteTable(con, c(schema, table_name),df_sm,
+# #              overwrite = FALSE, row.names = FALSE)
+# # 
+# # Write table comments
+# column_names <- colnames(df_sm) # Get column names
 # 
-# # write table
-# dbWriteTable(con, c(schema, table_name),df_sm,
-#              overwrite = FALSE, row.names = FALSE)
-# 
-# 
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
+
 #### Positive Identity and Self-Worth ----
 # table_name <- "tot_freq_positive_identity"
-# schema <- 'youth_thriving'
+# indicator <- "Frequencies and weighted percentages by question and response for all youth for Positive Identity and Self-Worth"
 # 
-# # write table
-# dbWriteTable(con, c(schema, table_name),df_pi,
-#              overwrite = FALSE, row.names = FALSE)
+# # # write table
+# # dbWriteTable(con, c(schema, table_name),df_pi,
+# #              overwrite = FALSE, row.names = FALSE)
 # 
+# # Write table comments
+# column_names <- colnames(df_pi) # Get column names
 # 
-# #### Caring Families and Relationships ----
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
+
+
+#### Caring Families and Relationships ----
 # table_name <- "tot_freq_caring_families"
-# schema <- 'youth_thriving'
+# indicator <- "Frequencies and weighted percentages by question and response for all youth for Caring Families and Relationships"
 # 
-# # write table
-# dbWriteTable(con, c(schema, table_name),df_family,
-#              overwrite = FALSE, row.names = FALSE)
+# # # write table
+# # dbWriteTable(con, c(schema, table_name),df_family,
+# #              overwrite = FALSE, row.names = FALSE)
 # 
-# #### Cultural Identity ----
+# # Write table comments
+# column_names <- colnames(df_family) # Get column names
+# 
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
+
+
+#### Cultural Identity ----
 # table_name <- "tot_freq_cultural_identity"
-# schema <- 'youth_thriving'
+# indicator <- "Frequencies and weighted percentages by question and response for all youth for Cultural Identity"
+# # 
+# # # write table
+# # dbWriteTable(con, c(schema, table_name),df_cultural,
+# #              overwrite = FALSE, row.names = FALSE)
 # 
-# # write table
-# dbWriteTable(con, c(schema, table_name),df_cultural,
-#              overwrite = FALSE, row.names = FALSE)
+# # Write table comments
+# column_names <- colnames(df_cultural) # Get column names
 # 
-# #### Safety ----
+# 
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
+
+#### Safety ----
 # table_name <- "tot_freq_safety"
-# schema <- 'youth_thriving'
+# indicator <- "Frequencies and weighted percentages by question and response for all youth for Safety"
+# # 
+# # # write table
+# # dbWriteTable(con, c(schema, table_name),df_safety,
+# #              overwrite = FALSE, row.names = FALSE)
 # 
-# # write table
-# dbWriteTable(con, c(schema, table_name),df_safety,
-#              overwrite = FALSE, row.names = FALSE)
+# # Write table comments
+# column_names <- colnames(df_safety) # Get column names
 # 
-# #### Vibrant Communities ----
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
+
+#### Vibrant Communities ----
 # table_name <- "tot_freq_vibrant_community"
-# schema <- 'youth_thriving'
+# indicator <- "Frequencies and weighted percentages by question and response for all youth for Vibrant Communities"
+# # 
+# # # write table
+# # dbWriteTable(con, c(schema, table_name),df_community,
+# #              overwrite = FALSE, row.names = FALSE)
 # 
-# # write table
-# dbWriteTable(con, c(schema, table_name),df_community,
-#              overwrite = FALSE, row.names = FALSE)
+# # Write table comments
+# column_names <- colnames(df_community) # Get column names
 # 
-# #### Racial Justice ----
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
+
+#### Racial Justice ----
 # table_name <- "tot_freq_racial_justice"
-# schema <- 'youth_thriving'
+# indicator <- "Frequencies and weighted percentages by question and response for all youth for Racial Justice, Equity, and Inclusion"
+# # 
+# # # write table
+# # dbWriteTable(con, c(schema, table_name),df_equity,
+# #              overwrite = FALSE, row.names = FALSE)
 # 
-# # write table
-# dbWriteTable(con, c(schema, table_name),df_equity,
-#              overwrite = FALSE, row.names = FALSE)
+# # Write table comments
+# column_names <- colnames(df_equity) # Get column names
+# 
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
 
 dbDisconnect(con)
 ```

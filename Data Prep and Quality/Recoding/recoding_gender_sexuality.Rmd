@@ -207,7 +207,7 @@ gender_sexuality_data <- svy_data %>%
   )
 ```
 
-## 2.	Cisgender vs TGNC (transgender, gender non-conforming)
+## 2.	Cisgender vs TGNC (transgender, gender nonconforming)
 a.	Possible values will be 0 = Cisgender, 1 = TGNC, NA = everyone else
 ```{r}
 # Create the cisgender_tgnc column
@@ -225,7 +225,7 @@ gender_sexuality_data <- gender_sexuality_data %>%
     )
 ```
 
-## 3.	Cisgender, transgender, gender non-conforming 
+## 3.	Cisgender, transgender, gender nonconforming 
 a.	Possible values will be categorical (i.e string values)
 ```{r}
 # Create the cis_trans_gnc column
@@ -237,14 +237,14 @@ gender_sexuality_data <- gender_sexuality_data %>%
          (!is.na(fg) & fg == 1) | 
          (!is.na(fh) & fh == 1) | 
          (!is.na(fj) & fj == 1) | 
-         !is.na(fl)) ~ "gender non-conforming",  
+         !is.na(fl)) ~ "gender nonconforming",  
       !is.na(cisgender_tgnc) & cisgender_tgnc == 0 ~ "cisgender",  
       TRUE ~ NA_character_  # Everyone else as NA
     )
   )
 ```
 
-## 4.	Cisgender male, cisgender female, transgender, gender non-conforming
+## 4.	Cisgender male, cisgender female, transgender, gender nonconforming
 a.	Possible values will be categorical (i.e string values)
 ```{r}
 # Create the cis_mf_trans_gnc column based on cisgender_mf and cis_trans_gnc
@@ -252,7 +252,7 @@ gender_sexuality_data <- gender_sexuality_data %>%
   mutate(
     cis_mf_trans_gnc = case_when(
       !is.na(cis_trans_gnc) & cis_trans_gnc == "transgender" ~ "transgender",       
-      !is.na(cis_trans_gnc) & cis_trans_gnc == "gender non-conforming" ~ "gender non-conforming",       
+      !is.na(cis_trans_gnc) & cis_trans_gnc == "gender nonconforming" ~ "gender nonconforming",       
       !is.na(cisgender_mf) & cisgender_mf == 1 ~ "cisgender female",  
       !is.na(cisgender_mf) & cisgender_mf == 0 ~ "cisgender male",  
       TRUE ~ NA_character_  # Assign NA if no conditions match
@@ -373,9 +373,9 @@ column_names <- colnames(final_df) # Get column names
 column_comments <- c(
   "A unique, numeric ID for each respondent",
   "0/1: Cisgender male (0) vs cisgender female (1)",
-  "0/1: Cisgender (0) vs TGNC (transgender, gender non-conforming) (1)",
-  "Categorical: Cisgender, gender non-conforming, transgender",
-  "Categorical: Cisgender male, cisgender female, transgender, gender non-conforming",
+  "0/1: Cisgender (0) vs TGNC (transgender, gender nonconforming) (1)",
+  "Categorical: Cisgender, gender nonconforming, transgender",
+  "Categorical: Cisgender male, cisgender female, transgender, gender nonconforming",
   "0/1: Straight (0) vs LGBQA (1)",
   "0/1: Cisgender heterosexual (0) vs LGBTQIA+ (1)",
   "0/1: LGBTQIA+ white (0) vs LGBTQIA+ BIPOC (1)"
