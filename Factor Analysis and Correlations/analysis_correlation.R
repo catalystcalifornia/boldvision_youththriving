@@ -147,9 +147,9 @@ domain_data_frames <- lapply(data_frames_list_domain, get)
 #merge the tables by running a full join by the response_id columns so there is one row PER survey respondent
 df_merged_final <- Reduce(function(x, y) full_join(x, y, by = "response_id"), c(sc_data_frames,domain_data_frames))
 
-#### Step 5: Push final table to postgres and apply appropriate comments ####
-dbWriteTable(con, c('youth_thriving', 'avg_scores'), df_merged_final,
-             overwrite = TRUE, row.names = FALSE)
+# #### Step 5: Push final table to postgres and apply appropriate comments ####
+# dbWriteTable(con, c('youth_thriving', 'avg_scores'), df_merged_final,
+#              overwrite = FALSE, row.names = FALSE)
 
 dbSendQuery(con, "COMMENT ON TABLE youth_thriving.avg_scores IS 'The following is a table of average scores across subcomponent (referred to as variable name in data dictionary) 
 and across component (referred to as response domain in data dictionary). We first converted the responses to factor levels, ranging from worst outcome to best outcome-
