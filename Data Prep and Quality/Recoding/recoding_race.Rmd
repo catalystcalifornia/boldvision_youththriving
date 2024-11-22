@@ -801,5 +801,5 @@ add_table_comments <- function(con, schema, table_name, indicator, source, colum
 
 add_table_comments(con, schema, table_name, indicator, source, column_names, column_comments)
 
-#dbDisconnect(con)
+dbDisconnect(con)
 ```
