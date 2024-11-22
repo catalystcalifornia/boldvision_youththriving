@@ -315,8 +315,11 @@ get_revised_nhpi_response <- function(response) {
   if (grepl("^Panamanian$", response, ignore.case = TRUE)) 
   {ethnicities <- append(ethnicities, c("au", "not_br", "not_aw"))}
   
-  if (grepl("^Polynesian$|^Pohnpeian$|^K<U+2206>ÍvÖnaka$", response, ignore.case = TRUE)) 
+  if (grepl("^Polynesian$|^Pohnpeian$", response, ignore.case = TRUE)) 
   {ethnicities <- append(ethnicities, c("aw", "br"))}
+ 
+  if (grepl("^K<U+2206>ÍvÖnaka$", response, ignore.case = TRUE)) 
+  {ethnicities <- append(ethnicities, c("aw", "not_br"))}
   
   return(paste(ethnicities, collapse = "; "))
 }
@@ -386,19 +389,7 @@ svy_data_revised_other_asian <- svy_data_revised %>%
   mutate(  
     # Mark the respondent's correct race(s) based on revised_response
     across(all_of(setdiff(raceColumnList, "bh")),  
-          ~ ifelse(str_detect(revised_asian_response, paste0("\\b", cur_column(), "\\b")), 1, .))) %>%
-  # Respondents who already identified as Vietnamese or Filipino (without write-in)
-  mutate(isSoutheastAsian = 
-           case_when(
-             bd == 1 ~ 1, # Filipino
-             bf == 1 ~ 1, # Vietnamese
-             isCambodian == 1 ~ 1, # Cambodian
-             .default = isSoutheastAsian),
-         # Respondents who identify as Asian Indian will also be labelled as South Asian
-         isSouthAsian = 
-           case_when(
-             bc == 1 ~ 1, # Asian Indian,
-             .default = isSouthAsian))
+          ~ ifelse(str_detect(revised_asian_response, paste0("\\b", cur_column(), "\\b")), 1, .)))
 
 # qa check
 qa_revised_other_asian <- svy_data_clean %>%
@@ -458,6 +449,23 @@ qa_revised_other_nhpi <- svy_data_clean %>%
          isSoutheastAsian.x, isSoutheastAsian.y, 
          starts_with("b"), everything()) 
 
+```
+
+Creating columns isSouthAsian and isSoutheastAsian 
+```{r}
+svy_data_revised_other_nhpi <- svy_data_revised_other_nhpi %>%
+  # Mark respondents who identified as Vietnamese, Filipino, or Cambodian as Southeast Asian
+  mutate(isSoutheastAsian = 
+           case_when(
+             bd == 1 ~ 1, # Filipino
+             bf == 1 ~ 1, # Vietnamese
+             isCambodian == 1 ~ 1, # Cambodian
+             .default = isSoutheastAsian),
+         # Mark respondents who identified as Asian Indian as South Asian
+         isSouthAsian = 
+           case_when(
+             bc == 1 ~ 1, # Asian Indian,
+             .default = isSouthAsian))
 ```
 
 
@@ -587,7 +595,10 @@ svy_data_detailed <- svy_data_recode_final %>%
 Create the detailed_asian column in svy_data, which lists the Asian ethnic 
 composition of each Asian/Asian American respondent.
 ```{r}
-asianDetailedList <- c("bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "isCambodian")
+# List doesn't include "bh" which inidicates "Other Asian" because we use 
+# bh_clean later on to create detailed_asian
+asianDetailedList <- c("bb", "bc", "bd", "be", "bf", "bg", "bi", "isCambodian")
+
 svy_data_detailed_asian <- svy_data_detailed %>%
   mutate(bh = as.numeric(ifelse(!is.na(bh), 1, bh))) %>%
   rowwise() %>%
@@ -635,7 +646,7 @@ svy_data_detailed_asian <- svy_data_detailed_asian %>%
         
         # Ensure no extra space around semicolons
         str_replace_all("(\\w+)\\s*;\\s*(\\w+)", "\\1; \\2"))) %>%
-  mutate(
+    mutate(
     detailed_asian = case_when(
       # Concatenate detailed_asian and bh_clean only if both are not NA or empty
       ((!is.na(bh_clean) & bh_clean != "") & (!is.na(detailed_asian) & detailed_asian != "")) ~ paste0(detailed_asian, "; ", bh_clean),
@@ -644,13 +655,14 @@ svy_data_detailed_asian <- svy_data_detailed_asian %>%
       # Otherwise (bh_clean is empty or NA), keep detailed_asian as is
       .default = detailed_asian)) %>%
   ungroup()
-
 ```
 
 Create the detailed_nhpi column in svy_data, which lists the NHPI ethnic 
 composition of each NHPI respondent.
 ```{r}
-nhpiDetailedList <- c("bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs")
+# List doesn't include "br" which inidicates "Other NHPI" because we use 
+# br_clean later on to create detailed_nhpi
+nhpiDetailedList <- c("bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "bs")
 
 svy_data_detailed_nhpi <- svy_data_detailed_asian %>%
   rowwise() %>%
@@ -698,6 +710,9 @@ svy_data_detailed_nhpi <- svy_data_detailed_nhpi %>%
       .default = detailed_nhpi)) %>%
   ungroup()
 
+# Replace empty cells with NA for specified columns
+svy_data_detailed_nhpi <- svy_data_detailed_nhpi %>%
+  mutate(across(c(detailed_race, detailed_asian, detailed_nhpi), ~ ifelse(. == "", NA, .)))
 ```
 
 One last QA check
@@ -721,12 +736,13 @@ Export final data frame as relational table.
 ```{r}
 # Get relevant columns from svy_data to put into a table in the database
 final_df <- svy_data_final %>%
-  select(response_id, all_of(raceColumnList),
-         nh_race, acs_race, race_aian_indigenous, race_aian, 
-         race_black, race_indigenous, race_latinx, race_asian, race_nhpi, 
-         race_swana, race_white, race_dwta, race_other, detailed_race,
-         detailed_asian, detailed_nhpi, ba_original, ba_clean, bh_original, 
-         bh_clean, br_original, br_clean)
+  select(response_id,
+         nh_race, acs_race, 
+         race_aian, race_indigenous, race_aian_indigenous, 
+         race_black, race_latinx, race_asian, race_nhpi, 
+         race_swana, race_white, race_dwta, race_other, 
+         detailed_race, detailed_asian, detailed_nhpi, 
+         isSouthAsian,isSoutheastAsian)
 
 # Write table with metadata
 table_name <- "race_ethnicity_data"
@@ -742,59 +758,30 @@ dbWriteTable(con, c(schema, table_name), final_df,
 column_names <- colnames(final_df) # Get column names
 column_comments <- c(
   "A unique, numeric ID for each respondent",
-  "1 flags respondents that selected or were recoded as American Indian and Alaska Native",
-  "1 flags respondents that selected or were recoded as Black or African American",
-  "1 flags respondents that selected or were recoded as Indigenous from Mexico, Central America, or South America",
-  "1 flags respondents that selected or were recoded as Latinx/Latino/a/Hispanic",
-  "1 flags respondents that selected or were recoded as Asian or Asian American",
-  "1 flags respondents that selected or were recoded as Native Hawaiian and Pacific Islander",
-  "1 flags respondents that selected or were recoded as Other Race",
-  "1 flags respondents that selected or were recoded as Chinese",
-  "1 flags respondents that selected or were recoded as Asian Indian",
-  "1 flags respondents that selected or were recoded as Filipino",
-  "1 flags respondents that selected or were recoded as Korean",
-  "1 flags respondents that selected or were recoded as Vietnamese",
-  "1 flags respondents that selected or were recoded as Japanese",
-  "1 flags respondents that selected or were recoded as Other (Asian identity)",
-  "1 flags respondents that selected or were recoded as Do Not Wish to Answer (Asian identity)",
-  "1 flags respondents that selected or were recoded as Samoan",
-  "1 flags respondents that selected or were recoded as Togan",
-  "1 flags respondents that selected or were recoded as Chamarron",
-  "1 flags respondents that selected or were recoded as Marshallese",
-  "1 flags respondents that selected or were recoded as Fijan",
-  "1 flags respondents that selected or were recoded as Maori",
-  "1 flags respondents that selected or were recoded as PNG",
-  "1 flags respondents that selected or were recoded as Chuukese",
-  "1 flags respondents that selected or were recoded as Other (NHPI identity)",
-  "1 flags respondents that selected or were recoded as Do Not Wish to Answer (NHPI identity)",
-  "0/1 flag for whether the respondent is South Asian",
-  "0/1 flag for whether the respondent is Southeast Asian",  
-  "0/1 flag for whether the respondent is Cambodian (CC-Added Asian identity, not include in Other (Asian identity)",
-  "1 flags respondents that selected or were recoded as White",
-  "1 flags respondents that selected or were recoded as Do Not Wish to Answer",
-  "1 flags respondents that selected or were recoded as South West Asian and North African",
+  
   "A string for whether the respondent is latinx, nh_twoormor, nh_aian_indigenous, nh_asian, nh_nhpi, nh_swana, nh_white, do_not_wish, nh_other",
-  "A string the uses acs race labels: latino, nh_aian (incl. indigenous), nh_asian, nh_black, nh_other (incl. do not wish, NA, other), nh_pacisl (nh_nhpi), nh_twoormor, nh_white (incl. nh_swana)",
-  "0/1 flag for whether the respondent is AIAN or indigenous from Mexico, Central America, or South America",
-  "0/1 flag for whether the respondent is American Indian or Alaskan Native",
-  "0/1 flag for whether the respondent is Black",
-  "0/1 flag for whether the respondent is indigenous from Mexico, Central America, or South America",
-  "0/1 flag for whether the respondent is Latinx/Latino/a/Hispanic",
-  "0/1 flag for whether the respondent is Asian or Asian American",
-  "0/1 flag for whether the respondent is Native Hawaiian and Pacific Islander",
-  "0/1 flag for whether the respondent is South West Asian and North African",
-  "0/1 flag for whether the respondent is White",
-  "0/1 flag for whether the respondent did not wish to answer what their race is",
-  "0/1 flag for whether the respondent is of another race not previously mentioned",
+  "A string the uses acs race labels: latino, nh_aian (incl. indigenous), nh_asian, nh_black, nh_other (incl. do not wish, NA, other), nh_pacisl (nh_nhpi), nh_twoormor, nh_white (incl. nh_swana)",  
+  
+  "0/1 flag respondents that selected or were recoded as American Indian and Alaska Native",
+  "0/1 flag respondents that selected or were recoded as Indigenous from Mexico, Central America, or South America", 
+  "0/1 flag respondents that selected or were recoded as American Indian and Alaska Native OR Indigenous from Mexico, Central America, or South America",
+  
+  "0/1 flag respondents that selected or were recoded as Black or African American",
+  "0/1 flag respondents that selected or were recoded as Latinx/Latino/a/Hispanic",
+  "0/1 flag respondents that selected or were recoded as Asian or Asian American",
+  "0/1 flag respondents that selected or were recoded as Native Hawaiian and Pacific Islander",
+  
+  "0/1 flag respondents that selected or were recoded as South West Asian and North African",
+  "0/1 flag respondents that selected or were recoded as White",
+  "0/1 flag respondents that selected or were recoded as Do Not Wish to Answer",
+  "0/1 flag respondents that selected or were recoded as Other Race",
+  
   "A string that lists the racial composition of each respondent. The column does not list the specific ethnic origins of each respondent",
   "A string that lists the Asian ethnic composition of each Asian/Asian American respondent",
   "A string that lists the NHPI ethnic composition of each NHPI respondent",
-  "The original response by the respondent if they included another racial identity",
-  "The cleaned response used to recode identities and create detailed_race column",
-  "The original response by the respondent if they included another Asian identity",
-  "The cleaned response used to recode identities and create detailed_asian column",
-  "The original response by the respondent if they included another NHPI identity",
-  "The cleaned response used to recode identities and create detailed_nhpi column"
+  
+  "0/1 flag for whether the respondent is South Asian",
+  "0/1 flag for whether the respondent is Southeast Asian"  
 )
 
 add_table_comments <- function(con, schema, table_name, indicator, source, column_names, column_comments) {
@@ -814,5 +801,5 @@ add_table_comments <- function(con, schema, table_name, indicator, source, colum
 
 add_table_comments(con, schema, table_name, indicator, source, column_names, column_comments)
 
-dbDisconnect(con)
+#dbDisconnect(con)
 ```
