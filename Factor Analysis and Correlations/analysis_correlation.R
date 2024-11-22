@@ -35,6 +35,10 @@ combine_data_frames <- function(df_list) {
   return(combined_df)
 }
 
+## emg QA test
+# pull the whole data dictionary
+svy_dd_qa <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024")
+
 #### Step 1: Create a datatable scoring every variable for each respondent ####
 
 #making sure to only use unique ones and creating a list that the loop functions can run through
