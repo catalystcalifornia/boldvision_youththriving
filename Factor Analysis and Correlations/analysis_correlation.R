@@ -1,17 +1,15 @@
-## The following R script is created to run a correlation analysis to uderstand the relationship between the different variables measured in the Bold Vision Youth Thriving Survey.
+## The following R script is created to calculate average scores by component and subcomponent. 
+## It serves to prep for run correlation and factor analysis to understand the relationship between the different variables measured in the Bold Vision Youth Thriving Survey.
 
 ## Author: Maria Khan 
 
 #### Step 0: Setting Up Workspace ####
-library(data.table)
+# library(data.table)
 library(dplyr)
 library(RPostgreSQL)
 library(tidyr)
-library(readxl)
 library(tidyverse)
-library(srvyr)
-library(survey)
-library(devtools) 
+# library(devtools) 
 options(scipen=999)
 
 # connect to postgres and source functions
@@ -169,3 +167,8 @@ for (i in unique_components) {
 }
 
 dbDisconnect(con)
+
+# Qa
+qa<-svy_dd %>%
+  unite("likert_values_list", response_1:response_12, remove = FALSE)%>%
+  select(variable,question,sub_question,variable_name,response_domain,likert,likert_type,likert_values_list)
