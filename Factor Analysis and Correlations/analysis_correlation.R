@@ -158,8 +158,8 @@ then to component. Learn more about the methodology here: [insert QA doc]'
 ")
 
 
-dbSendQuery(con, "COMMENT ON COLUMN youth_thriving.avg_scores.response_id IS 
-                      'refers to the id of the respondent who took this survey';")
+# dbSendQuery(con, "COMMENT ON COLUMN youth_thriving.avg_scores.response_id IS 
+#                       'refers to the id of the respondent who took this survey';")
 
 for (i in unique_subcomponents) {            
   dbSendQuery(con, paste0("COMMENT ON COLUMN youth_thriving.avg_scores.", i, "_sc_score", 
