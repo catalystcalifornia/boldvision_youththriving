@@ -19,7 +19,7 @@ source("W:\\RDA Team\\R\\credentials_source.R")
 con_bv <- connect_to_db("bold_vision") 
 
 
-#### Step 2: Read in dataset and clean column names ####
+#### Step 2a: Read in dataset and clean column names ####
 ## Read in data
 ys_data <- read_excel("W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Updated - 09252024\\BVYTSDatabase_Updated.xlsx", sheet="Data Base")
 
@@ -37,6 +37,22 @@ ys_data <- ys_data %>%
 colnames(ys_data)[grepl('q12a_how_true_is_this_about_you',colnames(ys_data))] <- 'q12a'
 colnames(ys_data)[grepl('q10b_which_of_the_following_',colnames(ys_data))] <- 'q10b'
 colnames(ys_data)[grepl('q10a_how_many_adults_really_',colnames(ys_data))] <- 'q10a'
+
+#### Step 2b: Correct skip-logic failures ####
+# Using paper survey as reference: W:\Project\OSI\Bold Vision\Youth Thriving Survey\Data\Survey responses\Updated - 09252024\BVYTS_PaperSurvey_Updated.pdf
+# Responses to correct: q7 (from q6), q10a and 10b (from q10), q12a (from q12), q24a (from q24) 
+# Note: q4 and q5 corrections are addressed in race recode script
+
+# Before correcting, check that there aren't other values not captured in the paper survey or data dictionary (i.e., NA, null, write-ins, etc.)
+
+# Q7: if bv != 1 and bw != 1 then ca:cf are null
+
+# Q10a: if q10 != "Yes" & q10 != "Not sure" & q10 != "Don't wish to answer" then q10a is null
+# Q10b: if q10 != "No" then q10b is null
+
+# Q12a: if q12 != "yes" then q12a is null
+
+# Q24a: if q24 != "yes" then q24a is null 
 
 #### Step 3: Add adjusted weights ####
 # remove original weighting cols from vendor (note: will reuse column names in table exported to pg)
