@@ -1,0 +1,461 @@
+---
+title: "Running survey demographics"
+author: "Alicia Vo"
+date: "2024-10-07"
+output: html_document
+---
+## Purpose: Running survey demographics
+
+# Pull data from database.
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE) 
+library(data.table)
+library(dplyr)
+library(RPostgreSQL)
+library(purrr)
+library(stringr)
+library(tibble)
+library(tidyr)
+library(devtools) 
+
+# Connect to postgres
+source("W:\\RDA Team\\R\\credentials_source.R")
+con <- connect_to_db("bold_vision")
+
+source("W:\\RDA Team\\R\\Github\\RDA Functions\\main\\RDA-Functions\\Utility_Functions.R")
+
+# Pull in the data dictionary
+svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024")
+
+# Pull in the raw survey data 
+svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
+
+race_ethnicity_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.race_ethnicity_data")
+gender_sexuality_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.gender_sexuality_data")
+total_respondents <- nrow(svy_data)
+
+```
+
+# Calculate the frequencies and percentages of Latinx and non-Hispanic race categories.
+```{r}
+demographics_nh_race_df <- race_ethnicity_data %>%
+  count(nh_race) %>%  # Count occurrences of each unique value in the column
+  rename(count = n, race=nh_race) %>%
+  mutate(variable_name = 'Non-Hispanic race', rate = count/total_respondents*100) %>%
+  select(variable_name, everything())
+```
+
+# Calculate the frequencies and percentages of detailed races.
+```{r}
+demographics_detailed_race_df <- race_ethnicity_data %>%
+  count(detailed_race) %>%  # Count occurrences of each unique value in the column
+  rename(count = n) %>%
+  mutate(variable_name = 'Detailed race', rate = count/total_respondents*100,
+         detailed_race = ifelse(detailed_race == "", NA, detailed_race)) %>%
+  arrange(desc(rate)) %>%  # Arrange by rate in descending order
+  select(variable_name, everything())
+```
+
+# Calculate the frequencies and percentages of detailed Asian ethnicities.
+```{r}
+total_asian_aoic <- nrow(race_ethnicity_data%>%filter(race_asian==1))
+
+# Includes NA where Asian respondents did not provide an answer to the detailed Asian question
+demographics_asian_ethnicity_df <- race_ethnicity_data %>%
+ filter(race_asian==1)%>% # Get all respondents who are Asian alone or in combination 
+  count(detailed_asian) %>%  # Count occurrences of each unique value in the column
+  rename(count = n) %>%
+  mutate(variable_name = 'Asian detailed ethnicity', rate = count/total_asian_aoic*100,
+         detailed_asian = ifelse(detailed_asian == "", NA, detailed_asian)) %>%
+  arrange(desc(rate)) %>%  # Arrange by rate in descending order
+  select(variable_name, everything())
+```
+
+# Calculate the frequencies and percentages of detailed NHPI ethnicities. 
+# AV 10/22/24 Potential TODO: Edit detailed_nhpi column in recording_race.Rmd so that it adds the "Other NHPI" ethnicities as well - similar to the edits made to the detailed_asian column. For example, Filipino is not listed in this table, even though some Filipino respondents chose to identify as NHPI.
+```{r}
+total_nhpi_aoic <- nrow(race_ethnicity_data%>%filter(race_nhpi==1))
+
+# Includes NA where NHPI respondents did not provide an answer to the detailed NHPI question
+demographics_nhpi_ethnicity_df <- race_ethnicity_data %>%
+ filter(race_nhpi==1)%>% # Get all respondents who are NHPI alone or in combination 
+  count(detailed_nhpi) %>%  # Count occurrences of each unique value in the column
+  rename(count = n) %>%
+  mutate(variable_name = 'NHPI detailed ethnicity', rate = count/total_nhpi_aoic*100,
+         detailed_nhpi = ifelse(detailed_nhpi == "", NA, detailed_nhpi)) %>%
+  arrange(desc(rate)) %>%  # Arrange by rate in descending order
+  select(variable_name, everything())
+```
+
+# Calculate the frequencies and percentages of gender identities.
+```{r}
+gender_demographics <- gender_sexuality_data %>% 
+  count(cis_mf_trans_gnc) %>%
+  rename(response = cis_mf_trans_gnc, count=n) %>%
+  mutate(rate = count/total_respondents*100, variable_name="Gender") %>%
+  slice(-n()) %>% # Removes the last row
+  select(variable_name, everything())
+
+sexuality_demographics <- gender_sexuality_data %>% 
+  count(cishet_lgbtqia) %>%
+  rename(response = cishet_lgbtqia, count = n) %>%
+  mutate(
+    response = case_when(
+      response == 0 ~ "cisgender heterosexual",
+      response == 1 ~ "lgbtqia",
+      TRUE ~ as.character(response)), # Preserve any other values, if applicable
+    rate = count / total_respondents * 100,
+    variable_name = "Sexuality"
+  ) %>%
+  slice(-n()) %>%  # Removes the last row
+  select(variable_name, everything())
+
+demographics_gender_sexuality_df <- bind_rows(gender_demographics, sexuality_demographics)
+```
+
+# Calculate frequencies and percentages of employment status.
+```{r}
+# vars contains the column names and response values of a question domain
+vars<-svy_dd %>%
+  filter(variable_name=='Employment And Education') %>%
+  select(variable,response_1)
+
+df <- svy_data %>%
+  select(all_of(vars$variable)) %>%  # Select all of the question domain's columns in the raw data
+  mutate(across(where(is.character), ~ ifelse(!is.na(.), 1, 0))) %>% # Convert non-numeric values to 0/1
+  summarise(across(where(is.numeric), ~ sum(.x, na.rm = TRUE))) %>% # Sum up numeric columns, ignoring NA
+  mutate(variable_name = 'Employment And Education')
+
+demographics_employ_educ_df<-df %>%
+  pivot_longer(!variable_name,names_to='variable',values_to='count') %>%
+  left_join(vars, by="variable") %>%
+  mutate(rate = count/total_respondents * 100) %>%
+  select(variable_name, variable, response_1, count, rate)
+```
+
+# Calculate frequencies and percentages for school type enrollment.
+```{r}
+# vars contains the column names and response values of a question domain
+vars<-svy_dd %>%
+  filter(variable_name=='Education') %>%
+  select(variable,response_1)
+
+df <- svy_data %>%
+  select(all_of(vars$variable)) %>%  # Select all of the question domain's columns in the raw data
+  mutate(across(where(is.character), ~ ifelse(!is.na(.), 1, 0))) %>% # Convert non-numeric values to 0/1
+  summarise(across(where(is.numeric), ~ sum(.x, na.rm = TRUE))) %>% # Sum up numeric columns, ignoring NA
+  mutate(variable_name = 'Education')
+
+# Calculate total students where 'variable' is "bv" or "bw"
+total_students <- svy_data %>%
+  filter(bv==1 | bw==1) %>%
+  nrow()
+
+demographics_educ_df<-df %>%
+  pivot_longer(!variable_name,names_to='variable',values_to='count') %>%
+  left_join(vars, by="variable") %>%
+  mutate(rate = count/total_students * 100) %>%
+  select(variable_name, variable, response_1, count, rate)
+```
+
+```{r}
+# Bind the data frames into one long data frame
+demographics_employ_educ_df <- bind_rows(
+  demographics_employ_educ_df,
+  demographics_educ_df)
+```
+
+# Calculate the frequencies and percentages of system involvement.
+# Q24. At any point have you: Lived in foster care, spent time in juvenile hall or probation camp, spent time in jail or prison, lived in a group home or residential program, or lived with relatives who were responsible for you legally? 
+```{r}
+# System involvement out of all youth
+
+# Total percentage of respondents who were ever system involved
+ever_system_involved_demographics_df<-svy_data %>% 
+  count(q24)%>%
+  rename(count = n) %>%
+  mutate(variable_name = 'Ever system involved', rate = count/total_respondents*100,
+         variable="(q24) At any point system involved")%>%
+  filter(q24==1)%>%
+  select(variable_name, variable,everything(), -q24)
+
+# System involved by type of system
+# vars contains the column names and response values of a question domain 
+vars<-svy_dd %>% 
+  filter(variable_name=='System Involvement' & response_type=='tf') %>% # system involvement questions that were true false but not ones that were multiple choice - yes, no, don't know, etc.
+  select(variable,response_1)
+
+df <- svy_data %>%
+  select(all_of(vars$variable)) %>%  # Select all of the system-involved columns in the raw data
+  mutate(across(where(is.character), ~ ifelse(!is.na(.), 1, 0))) %>% # Convert specific non-numeric values
+  summarise(across(where(is.numeric), ~ sum(.x, na.rm = TRUE))) %>% # Sum up numeric columns, ignoring NA
+  mutate(variable_name = 'System Involvement Rates Amongst All Youth')
+
+system_involved_by_type_demographics_df<-df %>% 
+  pivot_longer(!variable_name,names_to='variable',values_to='count') %>%
+  left_join(vars, by="variable") %>% 
+  mutate(rate = count/total_respondents * 100) %>%
+  select(variable_name, variable, response_1, count, rate)
+```
+
+```{r}
+# This frequency table has rates for system involvement out of all system involved youth (instead of all respondents)
+system_involved_total<- nrow(svy_data %>% filter(q24 == 1))
+
+# Step 1: Filter respondents who answered "Yes" (1) to Q24
+system_involved_data<- svy_data %>% filter(q24 == 1)
+
+df <- system_involved_data  %>%
+  select(all_of(vars$variable)) %>%  # Select all of the system involved columns in the raw data
+  mutate(across(where(is.character), ~ ifelse(!is.na(.), 1, 0))) %>% # Convert specific non-numeric values
+  summarise(across(where(is.numeric), ~ sum(.x, na.rm = TRUE))) %>% # Sum up numeric columns, ignoring NA
+  mutate(variable_name = 'System Involvement Rates Amongst Systems-Impacted Youth')
+
+system_involved_by_type_demographics_df_2<-df %>% 
+  pivot_longer(!variable_name,names_to='variable',values_to='count') %>%
+  left_join(vars, by="variable") %>% 
+  mutate(rate = count/system_involved_total * 100) %>%
+  select(variable_name, variable, response_1, count, rate)
+```
+
+# Calculate frequencies and percentages of law enforcement involvement.
+# Q25. At any point, have you ever been detained AND/OR arrested by law enforcement in any capactiy?
+```{r}
+# Total percentage arrested ever
+arrested_demographics_df<-svy_data %>% 
+  count(q25)%>%
+  rename(count = n) %>%
+  mutate(variable_name = 'Law enforcement involvement', rate = count/total_respondents*100,
+         variable="(q25) Ever been detained or arrested")%>%
+  filter(q25==1)%>%
+  select(variable_name, variable,everything(), -q25)
+```
+
+#Q26. At any point, have you ever been suspended, experienced an "opportunity transfer", been expelled, have been sent out of class by a teacher, had your parents contacted for a school-based incident, or arrested at school? 
+```{r}
+# Total percentage disciplined in school ever
+school_discipline_demographics_df<-svy_data %>% 
+  count(q26)%>%
+  rename(count = n) %>%
+  mutate(variable_name = 'Disciplined at school', rate = count/total_respondents*100,
+         variable="(q26) Ever been suspended, experienced an opportunity transfer, expelled,
+         sent out of class by a teacher, had your parents contacted for a school-based 
+         incident, or arrested at school?")%>%
+  filter(q26==1)%>%
+  select(variable_name, variable,everything(), -q26)
+```
+
+# Calculate the frequencies and percentages of immigration system involvement. 
+# Q27: Do any of the following apply to you: Temporary Protected Status, Asylum Status, Refugee Status, Differed Action for Childhood Arrivals (DACA), Non-Citizen Resident?
+```{r}
+# total percentage impacted by immigration systems-temporary status or undocumented
+immigration_demographics_df<-svy_data %>% 
+  count(q27)%>%
+  rename(count = n) %>%
+  mutate(variable_name = 'Immigration-system impacted', rate = count/total_respondents*100,
+         variable="(q27) Temporary Protected Status, Asylum Status, Refugee Status, DACA, Non-Citizen Resident")%>%
+  filter(q27==1)%>%
+  select(variable_name, variable,everything(), -q27)
+```
+
+# Calculate the frequencies and percentages of unhoused. 
+# Q28. In the past year, was there ever a time when you were homeless or had to stay in any of the following places: A shelter or emergency housing, garage, transitional housing program, motel or hotel, a car, a park, campground, another public place, trailer, motor home, temporarily in the home of a friend, family or another person?
+```{r}
+# total percentage unhoused in past year
+unhoused_demographics_df<-svy_data %>% 
+  count(q28)%>%
+  rename(count = n) %>%
+  mutate(variable_name = 'Housing Status', rate = count/total_respondents*100,
+         variable="(q28) Was homeless or had to stay in any of the following places: 
+         A shelter or emergency housing, garage, transitional housing program, 
+         motel or hotel, a car, a park, campground, another public place, trailer, 
+         motor home, temporarily in the home of a friend, family or another 
+         person in the past year?")%>%
+  filter(q28==1)%>%
+  select(variable_name, variable,everything(), -q28)
+```
+
+```{r}
+# Bind the system involved data frames into one long data frame
+demographics_system_involvement_df <- bind_rows(
+  ever_system_involved_demographics_df,
+  system_involved_by_type_demographics_df,
+  system_involved_by_type_demographics_df_2,
+  arrested_demographics_df,
+  school_discipline_demographics_df,
+  immigration_demographics_df,
+  unhoused_demographics_df)
+
+demographics_system_involvement_df <- demographics_system_involvement_df %>% 
+  mutate(response_1 = ifelse(is.na(response_1), "Yes", response_1))%>% 
+  select(variable_name, variable, response_1, everything())
+```
+
+# Export demographics_nh_race_df dataframe as a table 
+```{r}
+# Write table demographics_nh_race_df with metadata
+schema <- "youth_thriving"
+table_name <- "demographics_nh_race"
+indicator <- "Frequencies and percentages of non-Hispanic race categories. Universe: out of all respondents including NA"
+source <- "script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/getting_demographics.Rmd"
+qa_filepath <- "W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_getting_demographics"
+table_comment <- paste0(indicator, source)
+# dbWriteTable(con, c(schema, table_name), demographics_nh_race_df,
+#              overwrite = FALSE, row.names = FALSE)
+
+# Add metadata for demographics_nh_race_df
+column_names <- colnames(demographics_nh_race_df) # Get column names
+column_comments <- c(
+  'This table uses non-Hispanic race categories',
+  'This column has all of the non-Hispanic race categories',
+  'Denotes the number of respondents with the corresponding racial identity',
+  'Denotes the percentage of respondents with the corresponding racial identity')
+
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
+
+```
+
+# Export demographics_detailed_race_df dataframe as a table 
+```{r}
+# Write table demographics_detailed_race_df with metadata
+schema <- "youth_thriving"
+table_name <- "demographics_detailed_race"
+indicator <- "Frequencies and percentages of detailed race categories, including mixed races. Universe: out of all respondents including NA"
+
+table_comment <- paste0(indicator, source)
+# dbWriteTable(con, c(schema, table_name), demographics_detailed_race_df,
+#              overwrite = FALSE, row.names = FALSE)
+
+# Add metadata for demographics_detailed_race_df
+column_names <- colnames(demographics_detailed_race_df) # Get column names
+column_comments <- c(
+  'This table uses detailed race categories',
+  'This column has all of the detailed race categories',
+  'Denotes the number of respondents with the corresponding racial identity',
+  'Denotes the percentage of respondents with the corresponding racial identity')
+
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
+
+```
+
+# Export demographics_asian_ethnicity_df dataframe as a table 
+```{r}
+# Write table demographics_asian_ethnicity_df with metadata
+schema <- "youth_thriving"
+table_name <- "demographics_asian_ethnicity"
+indicator <- "Frequencies and percentages of detailed Asian ethnicity categories. Universe: out of all Asian respondents"
+
+table_comment <- paste0(indicator, source)
+# dbWriteTable(con, c(schema, table_name), demographics_asian_ethnicity_df,
+#              overwrite = FALSE, row.names = FALSE)
+
+# Add metadata for demographics_asian_ethnicity_df
+column_names <- colnames(demographics_asian_ethnicity_df) # Get column names
+column_comments <- c(
+  'This table uses detailed Asian ethnic categories',
+  'This column has all of the Asian ethnic categories',
+  'Denotes the number of respondents with the corresponding ethnic identity',
+  'Denotes the percentage of respondents with the corresponding ethnic identity')
+
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
+
+```
+
+# Export demographics_nhpi_ethnicity_df dataframe as a table 
+```{r}
+# Write table demographics_nhpi_ethnicity_df with metadata
+schema <- "youth_thriving"
+table_name <- "demographics_nhpi_ethnicity"
+indicator <- "Frequencies and percentages of detailed NHPI ethnicity categories. Universe: out of all NHPI respondents"
+
+table_comment <- paste0(indicator, source)
+# dbWriteTable(con, c(schema, table_name), demographics_nhpi_ethnicity_df,
+#              overwrite = FALSE, row.names = FALSE)
+
+# Add metadata for demographics_nhpi_ethnicity_df
+column_names <- colnames(demographics_nhpi_ethnicity_df) # Get column names
+column_comments <- c(
+  'This table uses detailed NHPI ethnic categories',
+  'This column has all of the NHPI ethnic categories',
+  'Denotes the number of respondents with the corresponding ethnic identity',
+  'Denotes the percentage of respondents with the corresponding ethnic identity')
+
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
+
+```
+
+# Export demographics_gender_sexuality_df dataframe as a table with comments
+```{r}
+# Write table gender_sexuality_demographics with metadata
+schema <- "youth_thriving"
+table_name <- "demographics_gender_sexuality"
+indicator <- "Frequencies and percentages of gender/sexuality groups. Universe: out of all respondents including NA"
+
+table_comment <- paste0(indicator, source)
+# dbWriteTable(con, c(schema, table_name), demographics_gender_sexuality_df,
+#              overwrite = FALSE, row.names = FALSE)
+
+# Add metadata for gender_demographics
+column_names <- colnames(demographics_gender_sexuality_df) # Get column names
+column_comments <- c(
+  'This table uses gender and sexuality categories',
+  'Possible categories of gender and sexuality',
+  'Denotes the number of respondents with the corresponding gender/sexuality identity',
+  'Denotes the percentage of respondents with the corresponding gender/sexuality identity')
+
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
+
+```
+
+# Export demographics_employ_educ dataframe as a table with comments
+```{r}
+# Write table demographics_employ_educ_df with metadata
+schema <- "youth_thriving"
+table_name <- "demographics_employment_education"
+indicator <- "Frequencies and percentages of education and employment groups.  
+Universe: out of all respondents including NA (for variable bt-by) and out of all students (for variable ca-cf)"
+
+table_comment <- paste0(indicator, source)
+# dbWriteTable(con, c(schema, table_name), demographics_employ_educ_df,
+#             overwrite = FALSE, row.names = FALSE)
+
+# Add metadata for demographics_employ_educ_df
+column_names <- colnames(demographics_employ_educ_df) # Get column names
+column_comments <- c(
+  'This table uses employment and education categories',
+  'Name of the corresponding response column in the raw survey data',
+  'The response options',
+  'Denotes the number of respondents with the corresponding response',
+  'Denotes the percentage of respondents with the corresponding response')
+
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
+```
+
+# Export demographics_system_involvement_df dataframe as a table with comments
+```{r}
+# Write table demographics_system_involvement_df with metadata
+schema <- "youth_thriving"
+table_name <- "demographics_system_involvement"
+indicator <- "Frequencies and percentages of system involved groups. 
+Universe: out of all systems-impacted youth (for variable_name: System Involvement Rates Amongst Systems-Impacted Youth) and out of all respondents including NA (for every other variable_name)"
+
+table_comment <- paste0(indicator, source)
+# dbWriteTable(con, c(schema, table_name), demographics_system_involvement_df,
+#              overwrite = FALSE, row.names = FALSE)
+
+# Add metadata for demographics_system_involvement
+column_comments <- c(
+  'This table uses system involved categories',
+  'Name of the corresponding response column in the raw survey data',
+  'The response options',
+  'Denotes the number of respondents with the corresponding response',
+  'Denotes the percentage of respondents with the corresponding response')
+
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
+
+```
+
+```{r}
+#dbDisconnect(con)
+```
