@@ -7,8 +7,8 @@ output: html_document
 
 ```{r}
 knitr::opts_chunk$set(echo = TRUE)
-library(data.table)
 library(tidyverse)
+library(data.table)
 library(RPostgreSQL)
 
 # Connect to postgres
@@ -21,6 +21,8 @@ svy_data <- dbGetQuery(con, "
   FROM youth_thriving.raw_survey_data")
 
 race_data <-dbGetQuery(con, "SELECT response_id, nh_race FROM youth_thriving.race_ethnicity_data")
+svy_dd <- dbGetQuery(con, "SELECT variable, response_1 
+                     FROM youth_thriving.bvys_datadictionary_2024")
 ```
 ## Clean all write-in responses for gender and sexuality questions (fl, fx). 
 ## Add columns fl_original, fl_clean, fx_original, fx_clean to svy_data
@@ -57,7 +59,7 @@ get_revised_gender_response <- function(response) {
   # Initialize an empty vector. This represents the respondent's write-in response.
   genders <- list()  
   
-  if (grepl("^indigiqueer$|^bigender$|^queer$|^gender expansive$", response, ignore.case = TRUE)) 
+  if (grepl("^indigiqueer$|^bigender$|^queer$|^gender expansive$|^null$", response, ignore.case = TRUE)) 
   {genders <- append(genders, c("fl"))} # Something else, another gender 
   
   if (grepl("^man.$|^male$|^i am a man$|^man/male adult$|^a man$", response, ignore.case = TRUE))
@@ -71,9 +73,6 @@ get_revised_gender_response <- function(response) {
   
   if (grepl("^trans-masc nonbinary he/they$", response, ignore.case = TRUE)) 
   {genders <- append(genders, c("fe", "fh"))} 
-  
-  if (grepl("^null$", response, ignore.case = TRUE))
-  {genders <- append(genders, c("fj","not_fl"))} # I do not have a gender/gender identity
   
   return(paste(genders, collapse = "; "))
 }
@@ -91,10 +90,10 @@ get_revised_sexuality_response <- function(response) {
   # Initialize an empty vector. This represents the respondent's write-in response.
   sexualities <- list()  
 
-  if (grepl("^but i am open minded and respect every one$|^homophohe$|^i i'm rick grimes$|^i like dinosaurs$|^i‚äôm not gay$|^null$|^unlabeled$", response, ignore.case = TRUE)) # Not Something Else
+  if (grepl("^but i am open minded and respect every one$|^homophohe$|^i i'm rick grimes$|^i like dinosaurs$|^i‚äôm not gay$|^unlabeled$", response, ignore.case = TRUE)) # Not Something Else
   {sexualities <- append(sexualities, c("not_fx"))} 
   
-  if (grepl("^aroace$|^aromantic$|^aromantic as well$|^demisexual$|^fluid$|^have no interest in relationships with anyone$|^heteroromantic$|.*m never straight i just like what i like at that given time$|^none$|^omnisexual$|^pansexual$|^specifically demisexual/demi romantic$", response, ignore.case = TRUE)) # Something Else, another sexuality
+  if (grepl("^null$|^aroace$|^aromantic$|^aromantic as well$|^demisexual$|^fluid$|^have no interest in relationships with anyone$|^heteroromantic$|.*m never straight i just like what i like at that given time$|^none$|^omnisexual$|^pansexual$|^specifically demisexual/demi romantic$", response, ignore.case = TRUE)) # Something Else, another sexuality
   {sexualities <- append(sexualities, c("fx"))} 
     
   if (grepl("^aroace/bi$", response, ignore.case = TRUE)) 
@@ -157,6 +156,43 @@ gender_sexuality_data <- svy_data
 setDT(gender_sexuality_data)
 ```
 
+## Create columns detailed_gender and detailed_sexuality. Note that detailed_gender is not updated if the respondent needs to be labelled as transgender.
+```{r}
+# Create column detailed_gender
+gender_sexuality_data <- gender_sexuality_data %>%
+  rowwise() %>%
+  mutate(
+    matching_gender_cols = list({
+      vals <- across(all_of(gender_columns))  
+      names(vals)[!is.na(vals) & vals == 1]}),
+    svydd_gender_vals = list(
+      svy_dd$response_1[svy_dd$variable %in% matching_gender_cols]),
+    detailed_gender = paste(svydd_gender_vals, collapse = "; ")) %>%
+  ungroup()
+
+# If the respondent's sex assigned at birth (Male, Female) does not match their gender identity (Girl or Woman, Boy or Man), label them as transgender
+gender_sexuality_data <- gender_sexuality_data %>%
+  mutate(
+    fe = if_else(
+      (str_detect(detailed_gender, "Boy or Man") & q22==2) | (str_detect(detailed_gender, "Girl or Woman") & q22==1),
+      1,
+      fe
+    )
+  )
+
+# Create column detailed_sexuality
+gender_sexuality_data <- gender_sexuality_data %>%
+  rowwise() %>%
+  mutate(
+    matching_sexuality_cols = list({
+      vals <- across(all_of(sexuality_columns))  
+      names(vals)[!is.na(vals) & vals == 1]}),
+    svydd_sexuality_vals = list(
+      svy_dd$response_1[svy_dd$variable %in% matching_sexuality_cols]),
+    detailed_sexuality = paste(svydd_sexuality_vals, collapse = "; ")) %>%
+  ungroup()
+```
+
 ## 1.	Cisgender male vs cisgender female
 a.	Possible values will be 0 = cisgender male, 1 = cisgender female, NA = everyone else
 ```{r}
@@ -171,7 +207,7 @@ gender_sexuality_data <- svy_data %>%
   )
 ```
 
-## 2.	Cisgender vs TGNC (transgender, gender non-conforming)
+## 2.	Cisgender vs TGNC (transgender, gender nonconforming)
 a.	Possible values will be 0 = Cisgender, 1 = TGNC, NA = everyone else
 ```{r}
 # Create the cisgender_tgnc column
@@ -189,7 +225,7 @@ gender_sexuality_data <- gender_sexuality_data %>%
     )
 ```
 
-## 3.	Cisgender, transgender, gender non-conforming 
+## 3.	Cisgender, transgender, gender nonconforming 
 a.	Possible values will be categorical (i.e string values)
 ```{r}
 # Create the cis_trans_gnc column
@@ -201,14 +237,14 @@ gender_sexuality_data <- gender_sexuality_data %>%
          (!is.na(fg) & fg == 1) | 
          (!is.na(fh) & fh == 1) | 
          (!is.na(fj) & fj == 1) | 
-         !is.na(fl)) ~ "gender non-conforming",  
+         !is.na(fl)) ~ "gender nonconforming",  
       !is.na(cisgender_tgnc) & cisgender_tgnc == 0 ~ "cisgender",  
       TRUE ~ NA_character_  # Everyone else as NA
     )
   )
 ```
 
-## 4.	Cisgender male, cisgender female, transgender, gender non-conforming
+## 4.	Cisgender male, cisgender female, transgender, gender nonconforming
 a.	Possible values will be categorical (i.e string values)
 ```{r}
 # Create the cis_mf_trans_gnc column based on cisgender_mf and cis_trans_gnc
@@ -216,7 +252,7 @@ gender_sexuality_data <- gender_sexuality_data %>%
   mutate(
     cis_mf_trans_gnc = case_when(
       !is.na(cis_trans_gnc) & cis_trans_gnc == "transgender" ~ "transgender",       
-      !is.na(cis_trans_gnc) & cis_trans_gnc == "gender non-conforming" ~ "gender non-conforming",       
+      !is.na(cis_trans_gnc) & cis_trans_gnc == "gender nonconforming" ~ "gender nonconforming",       
       !is.na(cisgender_mf) & cisgender_mf == 1 ~ "cisgender female",  
       !is.na(cisgender_mf) & cisgender_mf == 0 ~ "cisgender male",  
       TRUE ~ NA_character_  # Assign NA if no conditions match
@@ -336,13 +372,13 @@ dbWriteTable(con, c(schema, table_name), final_df,
 column_names <- colnames(final_df) # Get column names
 column_comments <- c(
   "A unique, numeric ID for each respondent",
-  "0/1: Cisgender male vs cisgender female",
-  "0/1: Cisgender vs TGNC (transgender, gender non-conforming)",
-  "Categorical: Cisgender, gender non-conforming, transgender",
-  "Categorical: Cisgender male, cisgender female, transgender, gender non-conforming",
-  "0/1: Straight vs LGBQA",
-  "0/1: Cisgender heterosexual vs LGBTQIA+",
-  "0/1: LGBTQIA+ white vs LGBTQIA+ BIPOC"
+  "0/1: Cisgender male (0) vs cisgender female (1)",
+  "0/1: Cisgender (0) vs TGNC (transgender, gender nonconforming) (1)",
+  "Categorical: Cisgender, gender nonconforming, transgender",
+  "Categorical: Cisgender male, cisgender female, transgender, gender nonconforming",
+  "0/1: Straight (0) vs LGBQA (1)",
+  "0/1: Cisgender heterosexual (0) vs LGBTQIA+ (1)",
+  "0/1: LGBTQIA+ white (0) vs LGBTQIA+ BIPOC (1)"
 )
 
 add_table_comments <- function(con, schema, table_name, indicator, source, column_names, column_comments) {
