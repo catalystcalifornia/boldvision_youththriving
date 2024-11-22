@@ -736,12 +736,14 @@ Export final data frame as relational table.
 ```{r}
 # Get relevant columns from svy_data to put into a table in the database
 final_df <- svy_data_final %>%
+
   select(response_id, all_of(raceColumnList),
          nh_race, acs_race, race_aian_indigenous, race_aian, 
          race_black, race_indigenous, race_latinx, race_asian, race_nhpi, 
          race_swana, race_white, race_dwta, race_other, detailed_race,
          detailed_asian, detailed_nhpi, ba_original, ba_clean, bh_original, 
          bh_clean, br_original, br_clean)
+
 # Write table with metadata
 table_name <- "race_ethnicity_data"
 schema <- "youth_thriving"
@@ -786,7 +788,6 @@ column_comments <- c(
   "0/1 flag for whether the respondent is South Asian (CC-Added Asian identity; incl. Bangladeshi, Bengali, Indian, Pakistani, and Sri Lankan)",
   "0/1 flag for whether the respondent is Southeast Asian (CC-Added Asian identity; incl. Burmese, Cambodian, Filipino, Indonesian, Khmer, Laotian, Thai, and Vietnamese)",  
   "0/1 flag for whether the respondent is Cambodian (CC-Added Asian identity, not included in Other (Asian identity))",
-  
   "A string for whether the respondent is latinx, nh_twoormor, nh_aian_indigenous, nh_asian, nh_nhpi, nh_swana, nh_white, do_not_wish, nh_other",
   "A string that uses acs race labels: latino, nh_aian (incl. indigenous), nh_asian, nh_black, nh_other (incl. do not wish, NA, other), nh_pacisl (nh_nhpi), nh_twoormor, nh_white (incl. nh_swana)",
   "0/1 flag for whether the respondent is AIAN or indigenous from Mexico, Central America, or South America",
@@ -803,16 +804,13 @@ column_comments <- c(
   "A string that lists the racial composition of each respondent. The column does not list the specific ethnic origins of each respondent",
   "A string that lists the Asian ethnic composition of each Asian/Asian American respondent",
   "A string that lists the NHPI ethnic composition of each NHPI respondent",
-  "The original response by the respondent if they included another racial identity",
-  "The cleaned response used to recode identities and create detailed_race column",
-  "The original response by the respondent if they included another Asian identity",
-  "The cleaned response used to recode identities and create detailed_asian column",
-  "The original response by the respondent if they included another NHPI identity",
-  "The cleaned response used to recode identities and create detailed_nhpi column"
+  
+  "0/1 flag for whether the respondent is South Asian",
+  "0/1 flag for whether the respondent is Southeast Asian"  
 )
 
 
 add_table_comments(con, schema, table_name, indicator, source, column_names, column_comments)
 
-dbDisconnect(con)
+#dbDisconnect(con)
 ```
