@@ -309,14 +309,14 @@ ys_data_finalwts <- ys_data_finalwts %>%
 # dbWriteTable(con_bv, c('youth_thriving', 'raw_survey_data'), ys_data_finalwts,
 #                           overwrite = FALSE, row.names = FALSE)
 
-# dbSendQuery(con_bv, "COMMENT ON TABLE youth_thriving.raw_survey_data IS
+# dbSendQuery(con_bv, paste0("COMMENT ON TABLE youth_thriving.raw_survey_data IS
 #             'The following dataset are responses from the Youth Thriving Survey conducted by Bold Vision in 2024. The data dictionary explaining each variable is here: youth_thriving.bvys_datadictionary_2024 .
 #             Steps explaining data cleaning can be found here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Updated - 09252024\\BVYTSPopulationWeighting_DataCleaning.pdf
 #             Original Dataset is here: a)	W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Updated - 09252024\\BVYTSWeightSummary_Database.xlsx
 #             The process for cleaning and uploading the data is explained in the QA Documentation here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_dataimport_datadictionary.docx
-#             Script for cleaning data and recalculating sample weights can be found here Data Prep and Quality/importing_data.R'")
+#             Script for cleaning data and recalculating sample weights can be found here Data Prep and Quality/importing_data.R. ", "Table last updated: ", Sys.Date(), "'"))
 
-# UPDATE THIS LINE EVERY TIME DATA IS REPUSHED Survey data update date in postgres 11-12-24
+# UPDATE THIS LINE EVERY TIME DATA IS REPUSHED Survey data update date in postgres 11-25-24-
 
 ####Step 5: Read in data dictionary and send to database comments ####
 
