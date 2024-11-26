@@ -327,28 +327,28 @@ fx_single_barchart_freq <- function(domain_pgname, #name of domain as it is in t
 
 
 #### Step 8: Running Examples ####
-
-fx_grouped_barchart(question_number_i = '16', sub_question_i = 'At your job', #these are the inputs, i stands for insert/input of the variable of interest we want to look at
-                    response_label_1 = 'Sometimes', response_label_2 = 'Most of the time', response_label_3 = 'All of the time', #insert the responses we want to capture data for, up to 3
-                    title_text = 'insert title', x_axis_text = 'Rate of youth surveyed reporting being treated unfairly due to their race at their job' #insert text on graph that is customized
-                    )
-
-
-fx_single_barchart(question_number_i = '16', sub_question_i = 'At your job', #these are the inputs, i stands for insert/input of the variable of interest we want to look at
-                    response_label_1 = 'Sometimes', response_label_2 = 'Most of the time', response_label_3 = 'All of the time', #insert the responses we want to capture data for, up to 3
-                    title_text = 'insert title', x_axis_text = 'Rate of youth surveyed reporting being treated unfairly due to their race at their job' #insert text on graph that is customized
-                  )  
-
-fx_stacked_barchart(question_number_i = '16', sub_question_i = 'At your job', #these are the inputs, i stands for insert/input of the variable of interest we want to look at
-                    response_label_1 = 'Sometimes', response_label_2 = 'Most of the time', response_label_3 = 'All of the time', #insert the responses we want to capture data for, up to 3
-                    title_text = 'insert title', x_axis_text = 'Rate of youth surveyed reporting being treated unfairly due to their race at their job' #insert text on graph that is customized
-)
-  
-
-fx_single_barchart_freq(domain_pgname = 'racial_justice', #name of domain as it is in the pgadmine table// for example, "strong_minds"
-                        variable_i = 'ef', #these are the inputs, i stands for insert/input of the variable of interest we want to look at
-                        likert_type_i = true_scale , #choose likert type scale for ordering, make sure it matches what is in the data dictionary for appropiate ordering! Refer to source script for details
-                        title_text = 'insert title', x_axis_text = 'Rate of youth surveyed reporting being treated unfairly due to their race at their job' #insert text on graph that is customized
-                        )
+# 
+# fx_grouped_barchart(question_number_i = '16', sub_question_i = 'At your job', #these are the inputs, i stands for insert/input of the variable of interest we want to look at
+#                     response_label_1 = 'Sometimes', response_label_2 = 'Most of the time', response_label_3 = 'All of the time', #insert the responses we want to capture data for, up to 3
+#                     title_text = 'insert title', x_axis_text = 'Rate of youth surveyed reporting being treated unfairly due to their race at their job' #insert text on graph that is customized
+#                     )
+# 
+# 
+# fx_single_barchart(question_number_i = '16', sub_question_i = 'At your job', #these are the inputs, i stands for insert/input of the variable of interest we want to look at
+#                     response_label_1 = 'Sometimes', response_label_2 = 'Most of the time', response_label_3 = 'All of the time', #insert the responses we want to capture data for, up to 3
+#                     title_text = 'insert title', x_axis_text = 'Rate of youth surveyed reporting being treated unfairly due to their race at their job' #insert text on graph that is customized
+#                   )  
+# 
+# fx_stacked_barchart(question_number_i = '16', sub_question_i = 'At your job', #these are the inputs, i stands for insert/input of the variable of interest we want to look at
+#                     response_label_1 = 'Sometimes', response_label_2 = 'Most of the time', response_label_3 = 'All of the time', #insert the responses we want to capture data for, up to 3
+#                     title_text = 'insert title', x_axis_text = 'Rate of youth surveyed reporting being treated unfairly due to their race at their job' #insert text on graph that is customized
+# )
+#   
+# 
+# fx_single_barchart_freq(domain_pgname = 'racial_justice', #name of domain as it is in the pgadmine table// for example, "strong_minds"
+#                         variable_i = 'ef', #these are the inputs, i stands for insert/input of the variable of interest we want to look at
+#                         likert_type_i = true_scale , #choose likert type scale for ordering, make sure it matches what is in the data dictionary for appropiate ordering! Refer to source script for details
+#                         title_text = 'insert title', x_axis_text = 'Rate of youth surveyed reporting being treated unfairly due to their race at their job' #insert text on graph that is customized
+#                         )
 #### Last Step: Disconnect ####
 #  dbDisconnect(con)
