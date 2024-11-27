@@ -108,7 +108,7 @@ dt_select <-  dt_avg_scores %>%
 # )
 
 # Compute Spearman correlation matrix (no need to reorder dt_select here)
-mydata.cor2 = round(cor(dt_select, method = "spearman"), 1)
+mydata.cor2 = cor(dt_select, method = "spearman")
 
 # Statistical significance test for correlations
 testRes2 = cor.mtest(dt_select, method = "spearman", conf.level = 0.95, exact = FALSE)
@@ -140,7 +140,7 @@ dt_select <-  dt_avg_scores %>%
   select('Positive Emotions', 'Growth Mindset', 'Psychological Distress') %>%
    na.omit()
 
-mydata.cor2 = round(cor(dt_select, method="spearman"),1)
+mydata.cor2 = cor(dt_select, method="spearman")
 
 testRes2 = cor.mtest(dt_select, method="spearman", conf.level = 0.95,exact=FALSE)
 
@@ -158,7 +158,7 @@ dt_select <-  dt_avg_scores %>%
 "Self Efficacy") %>%
    na.omit()
 
-mydata.cor2 = round(cor(dt_select, method="spearman"),1)
+mydata.cor2 = cor(dt_select, method="spearman")
 
 testRes2 = cor.mtest(dt_select, method="spearman", conf.level = 0.95,exact=FALSE)
 
@@ -175,7 +175,7 @@ dt_select <-  dt_avg_scores %>%
 "Relationships/Support") %>%
    na.omit()
 
-mydata.cor2 = round(cor(dt_select, method="spearman"),1)
+mydata.cor2 = cor(dt_select, method="spearman")
 
 testRes2 = cor.mtest(dt_select, method="spearman", conf.level = 0.95,exact=FALSE)
 
@@ -260,7 +260,7 @@ dt_select <-  dt_avg_scores %>%
 'Safety') %>%
    na.omit()
 
-mydata.cor2 = round(cor(dt_select, method="spearman"),1)
+mydata.cor2 = cor(dt_select, method="spearman")
 
 testRes2 = cor.mtest(dt_select, method="spearman", conf.level = 0.95,exact=FALSE)
 
@@ -313,7 +313,7 @@ dt_select <-  dt_join %>%
 
 
 # Compute Spearman correlation matrix (no need to reorder dt_select here)
-mydata.cor2 = round(cor(dt_select, method = "spearman"), 1)
+mydata.cor2 = cor(dt_select, method = "spearman")
 
 # Statistical significance test for correlations
 testRes2 = cor.mtest(dt_select, method = "spearman", conf.level = 0.95, exact = FALSE)
@@ -358,7 +358,7 @@ dt_select <-  dt_join %>%
 
 
 # Compute Spearman correlation matrix (no need to reorder dt_select here)
-mydata.cor2 = round(cor(dt_select, method = "spearman"), 1)
+mydata.cor2 = cor(dt_select, method = "spearman")
 
 # Statistical significance test for correlations
 testRes2 = cor.mtest(dt_select, method = "spearman", conf.level = 0.95, exact = FALSE)
@@ -435,7 +435,7 @@ dt_select <-  dt_join_2 %>%
 
 
 # Compute Spearman correlation matrix (no need to reorder dt_select here)
-mydata.cor2 = round(cor(dt_select, method = "spearman"), 1)
+mydata.cor2 = cor(dt_select, method = "spearman")
 
 # Statistical significance test for correlations
 testRes2 = cor.mtest(dt_select, method = "spearman", conf.level = 0.95, exact = FALSE)
@@ -477,7 +477,7 @@ dt_select <-  dt_join_2 %>%
 
 
 # Compute Spearman correlation matrix (no need to reorder dt_select here)
-mydata.cor2 = round(cor(dt_select, method = "spearman"), 1)
+mydata.cor2 = cor(dt_select, method = "spearman")
 
 # Statistical significance test for correlations
 testRes2 = cor.mtest(dt_select, method = "spearman", conf.level = 0.95, exact = FALSE)
