@@ -57,6 +57,18 @@ rename( 'Positive Emotions' = "positiveemotions_sc_score",
 'Safety' = "safety_domain_score"
 )
 
+dt_race <-  dbGetQuery(con, "SELECT * FROM youth_thriving.race_ethnicity_data") 
+##Colors
+
+gray <- "#D6D7D6"
+pink <- "#F75EC1"
+dark_pink <- "#EF4A66"
+orange <- "#F57E20"
+yellow <- "#FFBF00"
+light_green <- "#00A75A"
+dark_green <- "#00864A"
+blue  <- "#2A12B2"
+light_blue <- "#465adc"
 ```
 
 ## Correlation Analysis by Subcomponent 
@@ -65,15 +77,15 @@ rename( 'Positive Emotions' = "positiveemotions_sc_score",
 ```{r}
 dt_select <-  dt_avg_scores %>%
   select('Positive Emotions',
-'Self Efficacy',
-'Hope for the Future',
 'Growth Mindset',
 'Psychological Distress',
+'Self Efficacy',
+'Hope for the Future',
 'Sparks',
-'Relationships/Support',
 'Freedom to Explore',
-'Connectedness',
 'Critical Action',
+'Relationships/Support',
+'Connectedness',
 'Safe Access',
 'Cultural Identity & Connections',
 'Experiences of Racism',
@@ -82,11 +94,43 @@ dt_select <-  dt_avg_scores %>%
 'Personal Safety',) %>%
    na.omit()
 
-mydata.cor2 = round(cor(dt_select, method="spearman"),1)
+# # Custom colors for the group headers
+# group_colors <- c(dark_pink, pink, yellow, dark_green, light_blue, blue, light_green)
+# 
+# # Create a grouping vector for headers/dividers
+# groups <- c(
+#   rep("Strong Minds", 3),         # Group 1
+#   rep("Positive Identity & Self Worth", 5),           # Group 2
+#   rep("Caring Families & Relationships", 2), # Group 3
+#   rep("Vibrant Communities", 1), # Group 4
+#   rep("Cultural Identity", 1),         # Group 5
+#   rep("Racial Justice, Equity, & Inclusion", 3),          # Group 6
+#   rep("Safety", 1) # Group 7 
+# )
 
-testRes2 = cor.mtest(dt_select, method="spearman", conf.level = 0.95,exact=FALSE)
+# Compute Spearman correlation matrix (no need to reorder dt_select here)
+mydata.cor2 = round(cor(dt_select, method = "spearman"), 1)
 
-corrplot(round(mydata.cor2,1), type='full', p.mat=testRes2$p, insig='blank', diag=FALSE)
+# Statistical significance test for correlations
+testRes2 = cor.mtest(dt_select, method = "spearman", conf.level = 0.95, exact = FALSE)
+
+# Assign colors to variables according to their group directly
+# We will match the color based on the group the variable belongs to
+
+# # Create a vector of colors for each label
+# group_colors_assigned <- unlist(lapply(groups, function(x) rep(group_colors[which(unique(groups) == x)], length.out = sum(groups == x))))
+
+# Create the correlation plot with custom group colors and grid
+corrplot(
+  mydata.cor2,
+  type = 'full',
+  p.mat = testRes2$p,
+  insig = 'blank',
+  diag = FALSE,
+  tl.col = c(dark_pink,dark_pink, dark_pink, pink,pink,pink,pink,pink, yellow,yellow, dark_green, light_blue, blue, blue, blue, light_green), # Apply the custom group colors to the text labels
+  addgrid.col = "black" # Add grid lines to emphasize group separation
+)
+
 
 ```
 
@@ -207,7 +251,6 @@ NO GRAPH FOR THIS ONE COMPARING SUBCOMPONENTS, ONLY ONE SUBCOMPONENT
 
 
 ## Correlation Analysis by Components 
-
 ```{r}
 dt_select <-  dt_avg_scores %>%
   select('Strong Minds',
@@ -226,3 +269,59 @@ testRes2 = cor.mtest(dt_select, method="spearman", conf.level = 0.95,exact=FALSE
 corrplot(round(mydata.cor2,1), type='full', p.mat=testRes2$p, insig='blank', diag=FALSE)
 
 ```
+
+## Correlation Analysis by Demographics
+
+### BIPOC by Subcomponents 
+
+```{r}
+
+dt_bipoc <- dt_race %>% select(response_id, race_black, race_aian, race_indigenous, race_latinx, race_asian, race_swana, race_nhpi, race_white) %>% 
+  mutate(bipoc = ifelse(race_white == 1, 0, 1))%>%
+  mutate(across(everything(), ~replace(., is.na(.), 0))) 
+
+
+dt_join <- left_join(dt_avg_scores, dt_bipoc, by = "response_id") %>%
+  na.omit() 
+
+dt_select <-  dt_join %>%
+  select('bipoc',
+         'Positive Emotions',
+'Growth Mindset',
+'Psychological Distress',
+'Self Efficacy',
+'Hope for the Future',
+'Sparks',
+'Freedom to Explore',
+'Critical Action',
+'Relationships/Support',
+'Connectedness',
+'Safe Access',
+'Cultural Identity & Connections',
+'Experiences of Racism',
+'Microaggressions',
+'Structural Racism',
+'Personal Safety',) %>%
+   na.omit()
+
+
+# Compute Spearman correlation matrix (no need to reorder dt_select here)
+mydata.cor2 = round(cor(dt_select, method = "spearman"), 1)
+
+# Statistical significance test for correlations
+testRes2 = cor.mtest(dt_select, method = "spearman", conf.level = 0.95, exact = FALSE)
+
+corrplot(
+  mydata.cor2,
+  type = 'full',
+  p.mat = testRes2$p,
+  insig = 'blank',
+  diag = FALSE,
+  tl.col = c("black", dark_pink,dark_pink, dark_pink, pink,pink,pink,pink,pink, yellow,yellow, dark_green, light_blue, blue, blue, blue, light_green), # Apply the custom group colors to the text labels
+  addgrid.col = "black" # Add grid lines to emphasize group separation
+)
+
+
+```
+
+
