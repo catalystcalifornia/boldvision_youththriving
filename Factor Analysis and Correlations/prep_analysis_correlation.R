@@ -90,6 +90,21 @@ actual_data_frames <- lapply(data_frames_list, get)
 
 df_merged_master <- combine_data_frames(actual_data_frames)
 
+# check number of unique response ids and number of responses
+qa_responses<-df_merged_master%>%
+  group_by(response_id)%>%
+  summarise(count=n())
+# 3439 ids included out of 34444
+
+# 60 possible likert questions, check those that responded to less than 10
+qa_responses_low<-qa_responses%>%
+  filter(count<10 | is.na(count))
+
+# valid ZIPs and other responses but high number of don't wish to answer, does not apply, etc.
+qa_responses_check<-svy_data%>%
+  filter(response_id %in% qa_responses_low$response_id)
+# consider including threshold with certain number responded by subcomponent
+
 #### Step 2: Create a datatable averaging variable scores for each respondent and BY SUBCOMPONENT ####
 
 #note that subcomponent is coded as variable_name in the data dictionary
@@ -99,14 +114,39 @@ for (i in unique_subcomponents) {
   
 df_subcomponents <- df_merged_master %>%
   filter(variable_name == i) %>%
-  group_by(response_id, variable_name) %>%
-  summarise(subcomponent_score = mean(factor_score)) %>%
-  rename(!!paste0(i, "_sc_score") := subcomponent_score) %>%
-  select(-variable_name)
+  group_by(response_id,response_domain,variable_name) %>%
+  summarise(subcomponent_score = mean(factor_score),
+            subcomponent_count=n(), .groups='drop')
 
 assign(paste0("df_sc_", i), df_subcomponents)
 
 }
+
+# note df_sc_sparks has lowest count of responses at 2674
+
+# getting list of subcomponent tables
+data_frames_list_sc <- paste("df_sc_", unique_subcomponents, sep = "")
+sc_data_frames <- lapply(data_frames_list_sc, get)
+
+# creating master subcomponent table
+df_merged_subcomponents <- combine_data_frames(sc_data_frames)
+
+# check response id
+length(unique(df_merged_subcomponents$response_id))
+# 3439 check
+
+# get total questions by subcomponent
+unique_questions_sc<-svy_dd%>%
+  group_by(response_domain,variable_name)%>%
+  summarise(subcomponent_total=n(), .groups='drop')%>%
+  group_by(response_domain)%>%
+  mutate(component_total=sum(subcomponent_total),.groups='drop')
+
+# join totals to subcomponent scores to get response rates
+df_merged_subcomponents<-df_merged_subcomponents%>%
+  left_join(unique_questions_sc%>%select(response_domain,variable_name,subcomponent_total))%>%
+  mutate(subcomponent_response_rate=subcomponent_count/subcomponent_total)
+
 
 #### Step 3: Create a datatable averaging variable scores for each respondent and BY COMPONENT ####
 
@@ -115,29 +155,45 @@ unique_components <- unique(svy_dd$response_domain)
 
 for (i in unique_components) { 
   
-  df_components <- df_merged_master %>%
+  df_components <- df_merged_subcomponents %>%
     filter(response_domain == i) %>%
     group_by(response_id, response_domain) %>%
-    summarise(domain_score = mean(factor_score)) %>%
-    rename(!!paste0(i, "_domain_score") := domain_score) %>%
+    summarise(domain_score = mean(subcomponent_score),
+              domain_count=n(),.groups='drop') %>%
+    rename(!!paste0(i, "_comp_score") := domain_score,
+           !!paste0(i, "_comp_count") := domain_count,) %>%
     select(-response_domain)
   
   assign(paste0("df_domain_", i), df_components)
   
 }
 
-#### Step 4: Create final data table by merging the subcomponent average scores and the component average scores ####
-
-#getting list of subcomponent tables
-data_frames_list_sc <- paste("df_sc_", unique_subcomponents, sep = "")
-sc_data_frames <- lapply(data_frames_list_sc, get)
-
 #getting list of component tables
 data_frames_list_domain <- paste("df_domain_", unique_components, sep = "")
 domain_data_frames <- lapply(data_frames_list_domain, get)
 
 #merge the tables by running a full join by the response_id columns so there is one row PER survey respondent
-df_merged_final <- Reduce(function(x, y) full_join(x, y, by = "response_id"), c(sc_data_frames,domain_data_frames))
+df_merged_components <- Reduce(function(x, y) full_join(x, y, by = "response_id"), c(domain_data_frames))
+
+#### Step 4: Create final data table by merging the subcomponent average scores and the component average scores ####
+
+# pivot subcomponent data frame to wide
+df_merged_subcomponents_wide<-df_merged_subcomponents%>%
+  select(-response_domain,-subcomponent_total)%>%
+  pivot_wider(
+    names_from = variable_name,
+    values_from = c(subcomponent_score,subcomponent_count,subcomponent_response_rate),
+    names_glue = "{variable_name}_{.value}")
+
+# shorten names
+colnames(df_merged_subcomponents_wide) = gsub("subcomponent", "sc", colnames(df_merged_subcomponents_wide))
+  
+# join subcomponent and component tables
+df_merged_final<-df_merged_subcomponents_wide%>%left_join(df_merged_components)
+
+# check NAs
+na_final_scores<-colSums(is.na(df_merged_final))%>%as.data.frame()
+# high number of youth who did not answer yes or no to sparks
 
 #### Step 5: Push final table to postgres and apply appropriate comments ####
 dbWriteTable(con, c('youth_thriving', 'avg_scores'), df_merged_final,
