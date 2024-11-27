@@ -140,7 +140,7 @@ unique_questions_sc<-svy_dd%>%
   group_by(response_domain,variable_name)%>%
   summarise(subcomponent_total=n(), .groups='drop')%>%
   group_by(response_domain)%>%
-  mutate(component_total=sum(subcomponent_total),.groups='drop')
+  mutate(component_total=sum(subcomponent_total))
 
 # join totals to subcomponent scores to get response rates
 df_merged_subcomponents<-df_merged_subcomponents%>%
@@ -187,17 +187,14 @@ df_merged_subcomponents_wide<-df_merged_subcomponents%>%
 
 # shorten names
 colnames(df_merged_subcomponents_wide) = gsub("subcomponent", "sc", colnames(df_merged_subcomponents_wide))
-  
+colnames(df_merged_subcomponents_wide) = gsub("safeaccesstopublicspacesforsocialculturalandliteraryopportunities", "safeaccesstopublicspaces", colnames(df_merged_subcomponents_wide))
+
 # join subcomponent and component tables
 df_merged_final<-df_merged_subcomponents_wide%>%left_join(df_merged_components)
 
-# check NAs
-na_final_scores<-colSums(is.na(df_merged_final))%>%as.data.frame()
-# high number of youth who did not answer yes or no to sparks
-
 #### Step 5: Push final table to postgres and apply appropriate comments ####
 dbWriteTable(con, c('youth_thriving', 'avg_scores'), df_merged_final,
-             overwrite = TRUE, row.names = FALSE)
+             overwrite = FALSE, row.names = FALSE)
 
 dbSendQuery(con, "COMMENT ON TABLE youth_thriving.avg_scores IS 'The following is a table of average scores across subcomponent (referred to as variable name in data dictionary) 
 and across component (referred to as response domain in data dictionary). We first converted the responses to factor levels, ranging from worst outcome to best outcome-
@@ -205,6 +202,7 @@ the lower the score, the worst outcome this respondent reported and the higher t
 then to component. Learn more about the methodology here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_averaging_scores.docx'
 ")
 
+unique_subcomponents<-gsub("safeaccesstopublicspacesforsocialculturalandliteraryopportunities", "safeaccesstopublicspaces",unique_subcomponents)
 
 dbSendQuery(con, "COMMENT ON COLUMN youth_thriving.avg_scores.response_id IS 
                       'refers to the id of the respondent who took this survey';")
@@ -216,14 +214,30 @@ for (i in unique_subcomponents) {
                     
 
 for (i in unique_components) {            
-  dbSendQuery(con, paste0("COMMENT ON COLUMN youth_thriving.avg_scores.", i, "_domain_score", 
+  dbSendQuery(con, paste0("COMMENT ON COLUMN youth_thriving.avg_scores.", i, "_comp_score", 
                           " IS 'the average scoring of this component/domain for this respondent';")) 
+}
+
+for (i in unique_subcomponents) {            
+  dbSendQuery(con, paste0("COMMENT ON COLUMN youth_thriving.avg_scores.", i, "_sc_count", 
+                          " IS 'the number of questions in the subcomponent the respondent responded to not including dont wish to answer or does not apply';")) 
+}
+
+for (i in unique_subcomponents) {            
+  dbSendQuery(con, paste0("COMMENT ON COLUMN youth_thriving.avg_scores.", i, "_sc_response_rate", 
+                          " IS 'the rate of questions (%) in the subcomponent the respondent responded to not including dont wish to answer or does not apply';")) 
 }
 
 dbDisconnect(con)
 
 # Qa
+# check NAs
+na_final_scores<-colSums(is.na(df_merged_final))%>%as.data.frame()
+# high number of youth who did not answer yes or no to sparks
+
+# likert values check
 qa_likert<-svy_dd %>%
   unite("likert_values_list", response_1:response_12, remove = FALSE)%>%
   select(variable,question,sub_question,variable_name,response_domain,likert,likert_type,likert_values_list)
+
 
