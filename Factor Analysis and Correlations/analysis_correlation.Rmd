@@ -1,0 +1,228 @@
+---
+title: Correlation Analysis by Subcomponent and Component  
+subtitle: Bold Vision Youth Thriving Survey 2024
+author: Catalyst California in collaboration with Bold Vision
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    number_sections: no
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+---
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(dplyr)
+library(RPostgreSQL)
+library(sf)
+library(tidyr)
+library(tidyverse)
+library(srvyr)
+library(survey)
+library(knitr)
+library(kableExtra)
+library(weights)
+library(corrplot)
+options(scipen=999)
+
+# connect to postgres and pull credentials
+source("W:\\RDA Team\\R\\credentials_source.R")
+con <- connect_to_db("bold_vision")
+
+dt_avg_scores <- dbGetQuery(con, "SELECT * FROM youth_thriving.avg_scores") %>%
+rename( 'Positive Emotions' = "positiveemotions_sc_score",
+'Self Efficacy' = "selfefficacy_sc_score",
+'Hope for the Future' = "hopeforthefuture_sc_score",
+'Growth Mindset' = "growthmindset_sc_score",
+'Psychological Distress' = "psychologicaldistress_sc_score",
+'Sparks' = "sparks_sc_score",
+'Relationships/Support' = "relationshipssupport_sc_score",
+'Freedom to Explore' = "freedomtoexploretheself_sc_score",
+'Connectedness' = "connectedness_sc_score",
+'Critical Action' = "criticalaction_sc_score",
+'Safe Access' = "safeaccesstopublicspacesforsocialculturalandliteraryopportuniti",
+'Cultural Identity & Connections' = "culturalidentityandconnection_sc_score",
+'Experiences of Racism' = "experiencesofracismanddiscrimination_sc_score",
+'Microaggressions' = "microaggressions_sc_score",
+'Structural Racism' = "structuralracism_sc_score",
+'Personal Safety' = "personalsafety_sc_score",
+'Strong Minds' = "strongminds_domain_score",
+'Positive Identity & Self Worth' = "positiveidentityandselfworth_domain_score",
+'Caring Families & Relationships' = "caringfamiliesandrelationships_domain_score",
+'Vibrant Communities' = "vibrantcommunities_domain_score",
+'Cultural Identity' = "culturalidentity_domain_score",
+'Racial Justice, Equity, & Inclusion' = "racialjusticeequityandinclusion_domain_score",
+'Safety' = "safety_domain_score"
+)
+
+```
+
+## Correlation Analysis by Subcomponent 
+
+### All Subcomponents 
+```{r}
+dt_select <-  dt_avg_scores %>%
+  select('Positive Emotions',
+'Self Efficacy',
+'Hope for the Future',
+'Growth Mindset',
+'Psychological Distress',
+'Sparks',
+'Relationships/Support',
+'Freedom to Explore',
+'Connectedness',
+'Critical Action',
+'Safe Access',
+'Cultural Identity & Connections',
+'Experiences of Racism',
+'Microaggressions',
+'Structural Racism',
+'Personal Safety',) %>%
+   na.omit()
+
+mydata.cor2 = round(cor(dt_select, method="spearman"),1)
+
+testRes2 = cor.mtest(dt_select, method="spearman", conf.level = 0.95,exact=FALSE)
+
+corrplot(round(mydata.cor2,1), type='full', p.mat=testRes2$p, insig='blank', diag=FALSE)
+
+```
+
+### Strong Minds 
+
+```{r}
+dt_select <-  dt_avg_scores %>%
+  select('Positive Emotions', 'Growth Mindset', 'Psychological Distress') %>%
+   na.omit()
+
+mydata.cor2 = round(cor(dt_select, method="spearman"),1)
+
+testRes2 = cor.mtest(dt_select, method="spearman", conf.level = 0.95,exact=FALSE)
+
+corrplot(round(mydata.cor2,1), type='full', p.mat=testRes2$p, insig='blank', diag=FALSE)
+
+```
+
+### Positive Identity and Self Worth 
+
+```{r}
+dt_select <-  dt_avg_scores %>%
+  select("Freedom to Explore",
+"Hope for the Future",
+"Critical Action",
+"Self Efficacy",
+"Sparks") %>%
+   na.omit()
+
+mydata.cor2 = round(cor(dt_select, method="spearman"),1)
+
+testRes2 = cor.mtest(dt_select, method="spearman", conf.level = 0.95,exact=FALSE)
+
+corrplot(round(mydata.cor2,1), type='full', p.mat=testRes2$p, insig='blank', diag=FALSE)
+
+```
+
+
+### Caring Families & Relationships
+
+```{r}
+dt_select <-  dt_avg_scores %>%
+  select("Connectedness",
+"Relationships/Support") %>%
+   na.omit()
+
+mydata.cor2 = round(cor(dt_select, method="spearman"),1)
+
+testRes2 = cor.mtest(dt_select, method="spearman", conf.level = 0.95,exact=FALSE)
+
+corrplot(round(mydata.cor2,1), type='full', p.mat=testRes2$p, insig='blank', diag=FALSE)
+
+```
+
+### Vibrant Communities 
+NO GRAPH FOR THIS ONE COMPARING SUBCOMPONENTS, ONLY ONE SUBCOMPONENT
+
+```{r}
+# dt_select <-  dt_avg_scores %>%
+#   select("Safe Access") %>%
+#    na.omit()
+# 
+# mydata.cor2 = round(cor(dt_select, method="spearman"),1)
+# 
+# testRes2 = cor.mtest(dt_select, method="spearman", conf.level = 0.95,exact=FALSE)
+# 
+# corrplot(round(mydata.cor2,1), type='full', p.mat=testRes2$p, insig='blank', diag=FALSE)
+
+```
+### Cultural Identity 
+NO GRAPH FOR THIS ONE COMPARING SUBCOMPONENTS, ONLY ONE SUBCOMPONENT
+
+```{r}
+# dt_select <-  dt_avg_scores %>%
+#   select("Cultural Identity & Connections") %>%
+#    na.omit()
+# 
+# mydata.cor2 = round(cor(dt_select, method="spearman"),1)
+# 
+# testRes2 = cor.mtest(dt_select, method="spearman", conf.level = 0.95,exact=FALSE)
+# 
+# corrplot(round(mydata.cor2,1), type='full', p.mat=testRes2$p, insig='blank', diag=FALSE)
+
+```
+
+### Racial Justice, Equity, & Inclusion
+
+```{r}
+dt_select <-  dt_avg_scores %>%
+  select("Microaggressions",
+"Experiences of Racism",
+"Structural Racism") %>%
+   na.omit()
+
+mydata.cor2 = round(cor(dt_select, method="spearman"),1)
+
+testRes2 = cor.mtest(dt_select, method="spearman", conf.level = 0.95,exact=FALSE)
+
+corrplot(round(mydata.cor2,1), type='full', p.mat=testRes2$p, insig='blank', diag=FALSE)
+
+```
+
+### Safety 
+NO GRAPH FOR THIS ONE COMPARING SUBCOMPONENTS, ONLY ONE SUBCOMPONENT
+
+```{r}
+# dt_select <-  dt_avg_scores %>%
+#   select("Personal Safety") %>%
+#    na.omit()
+# 
+# mydata.cor2 = round(cor(dt_select, method="spearman"),1)
+# 
+# testRes2 = cor.mtest(dt_select, method="spearman", conf.level = 0.95,exact=FALSE)
+# 
+# corrplot(round(mydata.cor2,1), type='full', p.mat=testRes2$p, insig='blank', diag=FALSE)
+
+```
+
+
+## Correlation Analysis by Components 
+
+```{r}
+dt_select <-  dt_avg_scores %>%
+  select('Strong Minds',
+'Positive Identity & Self Worth',
+'Caring Families & Relationships',
+'Vibrant Communities',
+'Cultural Identity',
+'Racial Justice, Equity, & Inclusion',
+'Safety') %>%
+   na.omit()
+
+mydata.cor2 = round(cor(dt_select, method="spearman"),1)
+
+testRes2 = cor.mtest(dt_select, method="spearman", conf.level = 0.95,exact=FALSE)
+
+corrplot(round(mydata.cor2,1), type='full', p.mat=testRes2$p, insig='blank', diag=FALSE)
+
+```
