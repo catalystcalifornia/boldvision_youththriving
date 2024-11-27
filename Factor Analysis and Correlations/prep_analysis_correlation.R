@@ -1,17 +1,13 @@
-## The following R script is created to run a correlation analysis to uderstand the relationship between the different variables measured in the Bold Vision Youth Thriving Survey.
+## The following R script is created to calculate average scores by component and subcomponent. 
+## It serves to prep for run correlation and factor analysis to understand the relationship between the different variables measured in the Bold Vision Youth Thriving Survey.
 
 ## Author: Maria Khan 
 
 #### Step 0: Setting Up Workspace ####
-library(data.table)
 library(dplyr)
 library(RPostgreSQL)
 library(tidyr)
-library(readxl)
 library(tidyverse)
-library(srvyr)
-library(survey)
-library(devtools) 
 options(scipen=999)
 
 # connect to postgres and source functions
@@ -23,7 +19,7 @@ con <- connect_to_db("bold_vision")
 svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
 #pulling data dictionary and filtering for just variables associated with component related questions
 svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 where response_domain !='Demographics' AND response_domain != 'Info'
-                     AND response_domain != 'Fun' AND response_domain != 'Weights'")
+                     AND response_domain != 'Fun' AND response_domain != 'Weights' AND likert_type is not null")
 #transforming names that will eventually be columns so there shouldn't be any spaces, slashes, etc.
 svy_dd <- svy_dd %>%
   mutate(variable_name = gsub("[ ,/-]", "", tolower(variable_name)),
@@ -150,7 +146,7 @@ dbWriteTable(con, c('youth_thriving', 'avg_scores'), df_merged_final,
 dbSendQuery(con, "COMMENT ON TABLE youth_thriving.avg_scores IS 'The following is a table of average scores across subcomponent (referred to as variable name in data dictionary) 
 and across component (referred to as response domain in data dictionary). We first converted the responses to factor levels, ranging from worst outcome to best outcome-
 the lower the score, the worst outcome this respondent reported and the higher the score, the better the outcome. Next, we averaged the scores per respondent to subcomponent and
-then to component. Learn more about the methodology here: [insert QA doc]'
+then to component. Learn more about the methodology here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_averaging_scores.docx'
 ")
 
 
@@ -169,3 +165,9 @@ for (i in unique_components) {
 }
 
 dbDisconnect(con)
+
+# Qa
+qa_likert<-svy_dd %>%
+  unite("likert_values_list", response_1:response_12, remove = FALSE)%>%
+  select(variable,question,sub_question,variable_name,response_domain,likert,likert_type,likert_values_list)
+
