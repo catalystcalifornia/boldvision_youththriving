@@ -196,11 +196,11 @@ df_merged_final<-df_merged_subcomponents_wide%>%left_join(df_merged_components)
 dbWriteTable(con, c('youth_thriving', 'avg_scores'), df_merged_final,
              overwrite = FALSE, row.names = FALSE)
 
-dbSendQuery(con, "COMMENT ON TABLE youth_thriving.avg_scores IS 'The following is a table of average scores across subcomponent (referred to as variable name in data dictionary) 
+dbSendQuery(con, paste0("COMMENT ON TABLE youth_thriving.avg_scores IS '(Created on ", Sys.Date(),") The following is a table of average scores across subcomponent (referred to as variable name in data dictionary) 
 and across component (referred to as response domain in data dictionary). We first converted the responses to factor levels, ranging from worst outcome to best outcome-
 the lower the score, the worst outcome this respondent reported and the higher the score, the better the outcome. Next, we averaged the scores per respondent to subcomponent and
-then to component. Learn more about the methodology here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_averaging_scores.docx'
-")
+then to component. Learn more about the methodology here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_averaging_scores.docx';
+"))
 
 unique_subcomponents<-gsub("safeaccesstopublicspacesforsocialculturalandliteraryopportunities", "safeaccesstopublicspaces",unique_subcomponents)
 
