@@ -61,6 +61,35 @@ rename( 'Positive Emotions' = "positiveemotions_sc_score",
 
 ## Correlation Analysis by Subcomponent 
 
+### All Subcomponents 
+```{r}
+dt_select <-  dt_avg_scores %>%
+  select('Positive Emotions',
+'Self Efficacy',
+'Hope for the Future',
+'Growth Mindset',
+'Psychological Distress',
+'Sparks',
+'Relationships/Support',
+'Freedom to Explore',
+'Connectedness',
+'Critical Action',
+'Safe Access',
+'Cultural Identity & Connections',
+'Experiences of Racism',
+'Microaggressions',
+'Structural Racism',
+'Personal Safety',) %>%
+   na.omit()
+
+mydata.cor2 = round(cor(dt_select, method="spearman"),1)
+
+testRes2 = cor.mtest(dt_select, method="spearman", conf.level = 0.95,exact=FALSE)
+
+corrplot(round(mydata.cor2,1), type='full', p.mat=testRes2$p, insig='blank', diag=FALSE)
+
+```
+
 ### Strong Minds 
 
 ```{r}
