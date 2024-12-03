@@ -1,0 +1,40 @@
+---
+title: "Factor Analysis"
+author: "Alicia Vo"
+date: "2024-12-2"
+output: html_document
+---
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+library(data.table)
+library(tidyverse)
+library(RPostgreSQL)
+
+# Connect to postgres
+source("W:\\RDA Team\\R\\credentials_source.R")
+con <- connect_to_db("bold_vision")
+# Pull in the survey data and data dictionary
+svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
+svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024")
+```
+
+```{r}
+# In the data dictionary, variable_name = subcomponent and response_domain = component
+subcomponent_list <- c("Positive Emotions", "Self-Efficacy", "Hope For The Future", "Growth Mindset", "Psychological Distress", "Sparks", "Relationships/Support", "Freedom To Explore The Self", "Connectedness", "Critical Action", "Safe Access To Public Spaces For Social, Cultural, And Literary Opportunities", "Cultural Identity And Connection", "Experiences Of Racism And Discrimination", "Microaggressions", "Structural Racism", "Personal Safety")
+
+component_list <- c("Strong Minds", "Positive Identity And Self-Worth", "Caring Families And Relationships", "Vibrant Communities", "Cultural Identity", "Racial Justice, Equity, And Inclusion", "Safety")
+
+# small_svy_dd only contains the likert questions needed for the factor analysis
+small_svy_dd <- svy_dd %>%
+  filter(response_domain %in% component_list & !(is.na(likert_type)))
+
+# small_svy_data only contains the columns of likert questions needed for the factor analysis
+small_svy_data <- svy_data %>%
+  select(all_of(small_svy_dd$variable))
+
+# Check that missing data is being eliminated from analysis (not adding zeros into analyses)
+# Check for “wild codes” or data values outside of the allowed range
+
+```
+
