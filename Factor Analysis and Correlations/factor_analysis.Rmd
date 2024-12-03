@@ -18,7 +18,7 @@ con <- connect_to_db("bold_vision")
 svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
 svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024")
 ```
-
+# Filter svy_dd and svy_data to only contain the likert questions needed for the factor analysis
 ```{r}
 # In the data dictionary, variable_name = subcomponent and response_domain = component
 subcomponent_list <- c("Positive Emotions", "Self-Efficacy", "Hope For The Future", "Growth Mindset", "Psychological Distress", "Sparks", "Relationships/Support", "Freedom To Explore The Self", "Connectedness", "Critical Action", "Safe Access To Public Spaces For Social, Cultural, And Literary Opportunities", "Cultural Identity And Connection", "Experiences Of Racism And Discrimination", "Microaggressions", "Structural Racism", "Personal Safety")
@@ -32,9 +32,78 @@ small_svy_dd <- svy_dd %>%
 # small_svy_data only contains the columns of likert questions needed for the factor analysis
 small_svy_data <- svy_data %>%
   select(all_of(small_svy_dd$variable))
+```
 
 # Check that missing data is being eliminated from analysis (not adding zeros into analyses)
 # Check for “wild codes” or data values outside of the allowed range
+# AV 12/3/24: columns eo-ey and q19 likely didn't include a "Don't wish to answer" 
+# response option in the actual survey
+```{r}
+# Step 1: Get unique counts for small_svy_data
+unique_counts <- sapply(small_svy_data, function(x) length(unique(x)))
+
+# Step 2: Filter relevant response columns dynamically
+# Identify columns in small_svy_dd that match the pattern "response_<number>"
+response_cols <- grep("^response_[0-9]+$", names(small_svy_dd), value = TRUE)
+
+# Count non-NA values in these columns for each row
+small_svy_dd$response_count <- rowSums(!is.na(small_svy_dd[, response_cols]))
+
+# Step 3: Match small_svy_data columns with small_svy_dd using the variable column
+comparison <- merge(
+  data.frame(variable = names(unique_counts), unique_count = unique_counts),
+  small_svy_dd[, c("variable", "response_count")],
+  by = "variable"
+)
+
+# Step 4: Check whether the counts match and print results
+comparison$match <- comparison$unique_count == comparison$response_count
+
+# Print mismatches
+cat("MISMATCHES:\n")
+for (i in 1:nrow(comparison)) {
+  if (!comparison$match[i]) {
+    column_name <- comparison$variable[i]
+    actual_unique_values <- unique(small_svy_data[[column_name]])
+    
+    # Replace NA with a string "NA" for printing
+    actual_unique_values <- ifelse(is.na(actual_unique_values), "NA", actual_unique_values)
+    
+    cat(
+      "Column:", column_name, 
+      "\nUnique Values Count:", comparison$unique_count[i], 
+      "\nUnique Values:", paste(sort(actual_unique_values), collapse = ", "), 
+      "\nExpected Values Count:", comparison$response_count[i], 
+      "\nMatch: No", 
+      "\n\n"
+    )
+  }
+}
+
+# Print matches
+cat("MATCHES:\n")
+for (i in 1:nrow(comparison)) {
+  if (comparison$match[i]) {
+    column_name <- comparison$variable[i]
+    actual_unique_values <- unique(small_svy_data[[column_name]])
+
+    # Replace NA with a string "NA" for printing
+    actual_unique_values <- ifelse(is.na(actual_unique_values), "NA", actual_unique_values)
+
+    cat(
+      "Column:", column_name,
+      "\nUnique Values Count:", comparison$unique_count[i],
+      "\nUnique Values:", paste(sort(actual_unique_values), collapse = ", "),
+      "\nExpected Values Count:", comparison$response_count[i],
+      "\nMatch: Yes",
+      "\n\n"
+    )
+  }
+}
+```
+
+```{r}
 
 ```
+
 
