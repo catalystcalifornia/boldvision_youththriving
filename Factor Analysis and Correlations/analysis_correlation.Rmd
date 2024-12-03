@@ -366,6 +366,9 @@ corrplot(
   addgrid.col = "black" # Add grid lines to emphasize group separation
 )
 
+# store data in a dataframe
+res_m<-rcorr(as.matrix(dt_select)) # run correlation matrix again
+corr_df_race_sc<-flattenCorrMatrix(res_m$r, res_m$P)
 
 ```
 
@@ -410,6 +413,9 @@ corrplot(
   addgrid.col = "black" # Add grid lines to emphasize group separation
 )
 
+# store data in a dataframe
+res_m<-rcorr(as.matrix(dt_select)) # run correlation matrix again
+corr_df_race_comp<-flattenCorrMatrix(res_m$r, res_m$P)
 
 
 ```
@@ -418,31 +424,34 @@ corrplot(
 
 ### Other Demographics by Subcomponents 
 
-```{r}
+```{r, fig.width=8, fig.height=8}
 
 dt_gender <- dbGetQuery(con, "SELECT response_id, cishet_lgbtqia FROM youth_thriving.gender_sexuality_data") %>%
   rename(LGBTQIA = cishet_lgbtqia) 
 
-dt_otherdemos <- dbGetQuery(con, "SELECT response_id, q24,q25, q26, q27, q28 FROM youth_thriving.raw_survey_data") 
+otherdemos <- dbGetQuery(con, "SELECT response_id, q24,q25, q26, q27, q28 FROM youth_thriving.raw_survey_data") 
 
-%>%
-  mutate('Systems Impacted' = ifelse(q24 == 1, 1, 0),
-         'Detained/Arrested' = ifelse(q25 == 1, 1, 0),
-         'Suspended' = ifelse(q26 == 1, 1, 0),
-         'Undocumented' = ifelse(q27 == 1, 1, 0),
-         'Unhoused' = ifelse(q28 == 1, 1, 0)) %>% 
+dt_otherdemos <- otherdemos%>%
+   mutate_at(vars(q24:q28), .funs=list(
+     ~case_when(
+       .==1 ~ 1,
+       .==2 ~ 0,
+       .>=3 ~ NA,
+       TRUE ~ NA)))%>%
+  rename('Systems Impacted' = q24,
+         'Detained/Arrested' = q25,
+         'Suspended' = q26 ,
+         'Undocumented' = q27 ,
+         'Unhoused' = q28 ) %>% 
   select('response_id', 'Systems Impacted',
          'Detained/Arrested',
          'Suspended',
          'Undocumented',
-         'Unhoused') %>%
-  mutate(across(everything(), ~replace(., is.na(.), 0))) 
-
+         'Unhoused') 
 
 dt_join <- left_join(dt_avg_scores, dt_gender, by = "response_id") 
 
-dt_join_2 <- left_join(dt_join, dt_otherdemos, by = "response_id") %>%
-     na.omit()
+dt_join_2 <- left_join(dt_join, dt_otherdemos, by = "response_id") 
 
 dt_select <-  dt_join_2 %>%
   select('LGBTQIA',
@@ -457,17 +466,17 @@ dt_select <-  dt_join_2 %>%
           'Self Efficacy',
           'Hope for the Future',
           # 'Sparks', too many NAs
-          'Freedom to Explore',
+          'Freedom to Explore Self',
           'Critical Action',
-          'Relationships/Support',
+          'Relationships & Support',
           'Connectedness',
-          'Safe Access',
-          'Cultural Identity & Connections',
+          'Access to Public Spaces',
+         'Personal Safety',
           'Experiences of Racism',
           'Microaggressions',
           'Structural Racism',
-          'Personal Safety',) %>%
-   na.omit()
+           'Cultural Identity & Connection') %>%
+   drop_na()
 
 
 # Compute Spearman correlation matrix (no need to reorder dt_select here)
@@ -484,16 +493,19 @@ corrplot(
   diag = FALSE,
   # addCoef.col = 'black',
   # col = COL2('PuOr', 10),
-  tl.col = c("black", "black", "black", "black", "black", "black", dark_pink,dark_pink, dark_pink, pink,pink,pink,pink,pink, yellow,yellow, dark_green, light_blue, blue, blue, blue, light_green), # Apply the custom group colors to the text labels
+  tl.col = c("black", "black", "black", "black", "black", "black", dark_pink,dark_pink, dark_pink, pink,pink,pink,pink, yellow,yellow, dark_green, light_green, blue, blue, blue, light_blue), # Apply the custom group colors to the text labels
   addgrid.col = "black" # Add grid lines to emphasize group separation
 )
 
+# store data in a dataframe
+res_m<-rcorr(as.matrix(dt_select)) # run correlation matrix again
+corr_df_other_sc<-flattenCorrMatrix(res_m$r, res_m$P)
 
 ```
 
 ### Other Demographics by Components 
 
-```{r}
+```{r, fig.width=8, fig.height=8}
 
 dt_select <-  dt_join_2 %>%
   select('LGBTQIA',
@@ -506,10 +518,10 @@ dt_select <-  dt_join_2 %>%
           'Positive Identity & Self Worth',
           'Caring Families & Relationships',
           'Vibrant Communities',
-          'Cultural Identity',
+          'Safety',
           'Racial Justice, Equity, & Inclusion',
-          'Safety') %>%
-   na.omit()
+          'Cultural Identity') %>%
+   drop_na()
 
 
 # Compute Spearman correlation matrix (no need to reorder dt_select here)
@@ -526,10 +538,13 @@ corrplot(
   diag = FALSE,
   # addCoef.col = 'black',
   # col = COL2('PuOr', 10),
-  tl.col = c("black", "black", "black", "black", "black", "black",dark_pink, pink, yellow, dark_green, light_blue, blue, light_green), # Apply the custom group colors to the text labels
+  tl.col = c("black", "black", "black", "black", "black", "black",dark_pink, pink, yellow, dark_green, light_green, blue, light_blue), # Apply the custom group colors to the text labels
   addgrid.col = "black" # Add grid lines to emphasize group separation
 )
 
+# store data in a dataframe
+res_m<-rcorr(as.matrix(dt_select)) # run correlation matrix again
+corr_df_other_comp<-flattenCorrMatrix(res_m$r, res_m$P)
 
 
 ```
