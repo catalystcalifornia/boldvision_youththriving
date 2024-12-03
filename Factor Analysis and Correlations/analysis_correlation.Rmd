@@ -551,7 +551,29 @@ corr_df_other_comp<-flattenCorrMatrix(res_m$r, res_m$P)
 
 
 ```{r, include=FALSE, echo=FALSE}
+# export to postgres
 
+corr_sc_c<-rbind(corr_df_sc%>%mutate(level='Subcomponents'),
+               corr_df_comp%>%mutate(level='Components'))
+
+race<-c('BIPOC','Black','Latine','Asian','SWANA','NHPI','White','AIAN')
+
+corr_sc_c_race<-rbind(corr_df_race_sc%>%mutate(level='Race and Subcomponents'),
+               corr_df_race_comp%>%mutate(level='Race and Components'))%>%
+              filter(var_1 %in% race | var_2 %in% race)
+
+other<-c('LGBTQIA',
+         'Systems Impacted',
+         'Detained/Arrested',
+         'Suspended',
+         'Undocumented',
+         'Unhoused')
+
+corr_sc_c_other<-rbind(corr_df_other_sc%>%mutate(level='Other Demographics and Subcomponents'),
+               corr_df_other_comp%>%mutate(level='Other Demographics and Components'))%>%
+                filter(var_1 %in% other | var_2 %in% other)
+
+  
 dbDisconnect(con)
 
 ```
