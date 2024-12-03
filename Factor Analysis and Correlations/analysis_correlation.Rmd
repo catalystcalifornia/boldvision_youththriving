@@ -71,9 +71,8 @@ blue  <- "#2A12B2"
 light_blue <- "#465adc"
 ```
 
-## Correlation Analysis by Subcomponent 
+## By Subcomponent 
 
-### All Subcomponents 
 ```{r, fig.width=8, fig.height=8}
 dt_select <-  dt_avg_scores %>%
   # order columns by component
@@ -144,7 +143,7 @@ flattenCorrMatrix <- function(cormat, pmat) {
     )
 }
 res_m<-rcorr(as.matrix(dt_select)) # run correlation matrix again
-corr_df<-flattenCorrMatrix(res_m$r, res_m$P)
+corr_df_sc<-flattenCorrMatrix(res_m$r, res_m$P)
 
 ```
 
@@ -263,68 +262,90 @@ corr_df<-flattenCorrMatrix(res_m$r, res_m$P)
 <!-- ``` -->
 
 
-## Correlation Analysis by Components 
-```{r}
+## By Component
+```{r, fig.width=8, fig.height=8}
 dt_select <-  dt_avg_scores %>%
   select('Strong Minds',
 'Positive Identity & Self Worth',
 'Caring Families & Relationships',
 'Vibrant Communities',
-'Cultural Identity',
+'Safety',
 'Racial Justice, Equity, & Inclusion',
-'Safety') %>%
-   na.omit()
+'Cultural Identity') %>%
+drop_na() # drop observations with NA
+
 
 mydata.cor2 = cor(dt_select, method="spearman")
 
 testRes2 = cor.mtest(dt_select, method="spearman", conf.level = 0.95,exact=FALSE)
 
-corrplot(round(mydata.cor2,1), type='full', p.mat=testRes2$p, insig='blank', diag=FALSE)
+# Create the correlation plot with custom group colors and grid
+corrplot(
+  mydata.cor2,
+  type = 'full',
+  p.mat = testRes2$p,
+  insig = 'blank',
+  diag = FALSE,
+  tl.col = c(dark_pink,pink,yellow, dark_green, light_green, blue, light_blue), # Apply the custom group colors to the text labels
+  addgrid.col = "black" # Add grid lines to emphasize group separation
+)
+
+
+# store data in a dataframe
+res_m<-rcorr(as.matrix(dt_select)) # run correlation matrix again
+corr_df_comp<-flattenCorrMatrix(res_m$r, res_m$P)
+
 
 ```
 
-## Correlation Analysis by Demographics
+## By Demographics
 
 ### Race by Subcomponents 
 
-```{r}
+```{r, fig.width=8, fig.height=8}
 dt_race <-  dbGetQuery(con, "SELECT * FROM youth_thriving.race_ethnicity_data") 
 
-dt_race_bipoc <- dt_race %>% select(response_id, race_black, race_aian, race_indigenous, race_latinx, race_asian, race_swana, race_nhpi, race_white) %>% 
-  mutate(bipoc = ifelse(race_white == 1, 0, 1))%>%
-  mutate(across(everything(), ~replace(., is.na(.), 0))) 
+dt_race_bipoc <- dt_race %>% 
+  select(response_id, nh_race,race_black, race_aian_indigenous, race_latinx, race_asian, race_swana, race_nhpi, race_white) %>% 
+  mutate(bipoc = ifelse(nh_race == 'nh_white', 0, 1))%>% # make anyone who is not non-Hispanic White alone, BIPOC
+  select(-nh_race)%>%
+  rename('BIPOC'='bipoc',
+         'Black'='race_black',
+         'AIAN'='race_aian_indigenous', 
+         'Latine'='race_latinx', 
+         'Asian'='race_asian', 
+         'SWANA'='race_swana', 
+         'NHPI'='race_nhpi', 
+         'White'='race_white')
 
-
-dt_join <- left_join(dt_avg_scores, dt_race_bipoc, by = "response_id") %>%
-  na.omit() 
+dt_join <- left_join(dt_avg_scores, dt_race_bipoc, by = "response_id")
 
 dt_select <-  dt_join %>%
-  select('bipoc',
-         'race_black',
-         'race_aian', 
-         'race_indigenous', 
-         'race_latinx', 
-         'race_asian', 
-         'race_swana', 
-         'race_nhpi', 
-         'race_white',
+  select('BIPOC',
+         'Black',
+         'AIAN', 
+         'Latine', 
+         'Asian', 
+         'SWANA', 
+         'NHPI', 
+         'White',
           'Positive Emotions',
           'Growth Mindset',
           'Psychological Distress',
           'Self Efficacy',
           'Hope for the Future',
-          # 'Sparks', too many NAs
-          'Freedom to Explore',
+        # 'Sparks', too many NAs
+          'Freedom to Explore Self',
           'Critical Action',
-          'Relationships/Support',
+          'Relationships & Support',
           'Connectedness',
-          'Safe Access',
-          'Cultural Identity & Connections',
+          'Access to Public Spaces',
+          'Personal Safety',
           'Experiences of Racism',
           'Microaggressions',
           'Structural Racism',
-          'Personal Safety',) %>%
-   na.omit()
+          'Cultural Identity & Connection') %>%
+          drop_na()
 
 
 # Compute Spearman correlation matrix (no need to reorder dt_select here)
@@ -341,7 +362,7 @@ corrplot(
   diag = FALSE,
   # addCoef.col = 'black',
   # col = COL2('PuOr', 10),
-  tl.col = c("black", "black", "black", "black", "black", "black", "black","black","black", dark_pink,dark_pink, dark_pink, pink,pink,pink,pink,pink, yellow,yellow, dark_green, light_blue, blue, blue, blue, light_green), # Apply the custom group colors to the text labels
+  tl.col = c("black", "black", "black", "black", "black", "black", "black","black", dark_pink,dark_pink, dark_pink, pink,pink,pink,pink,yellow,yellow, dark_green, light_green,blue, blue, blue, light_blue), # Apply the custom group colors to the text labels
   addgrid.col = "black" # Add grid lines to emphasize group separation
 )
 
@@ -350,26 +371,25 @@ corrplot(
 
 ### Race by Components 
 
-```{r}
+```{r, fig.width=8, fig.height=8}
 
 dt_select <-  dt_join %>%
-  select('bipoc',
-         'race_black',
-         'race_aian', 
-         'race_indigenous', 
-         'race_latinx', 
-         'race_asian', 
-         'race_swana', 
-         'race_nhpi', 
-         'race_white',
+  select('BIPOC',
+         'Black',
+         'AIAN', 
+         'Latine', 
+         'Asian', 
+         'SWANA', 
+         'NHPI', 
+         'White',
           'Strong Minds',
           'Positive Identity & Self Worth',
           'Caring Families & Relationships',
           'Vibrant Communities',
-          'Cultural Identity',
+         'Safety',
           'Racial Justice, Equity, & Inclusion',
-          'Safety') %>%
-   na.omit()
+          'Cultural Identity') %>%
+ drop_na()
 
 
 # Compute Spearman correlation matrix (no need to reorder dt_select here)
@@ -386,7 +406,7 @@ corrplot(
   diag = FALSE,
   # addCoef.col = 'black',
   # col = COL2('PuOr', 10),
-  tl.col = c("black", "black", "black", "black", "black", "black", "black","black","black",dark_pink, pink, yellow, dark_green, light_blue, blue, light_green), # Apply the custom group colors to the text labels
+  tl.col = c("black", "black", "black", "black", "black", "black", "black","black",dark_pink, pink, yellow, dark_green, light_green, blue, light_blue), # Apply the custom group colors to the text labels
   addgrid.col = "black" # Add grid lines to emphasize group separation
 )
 
@@ -401,10 +421,11 @@ corrplot(
 ```{r}
 
 dt_gender <- dbGetQuery(con, "SELECT response_id, cishet_lgbtqia FROM youth_thriving.gender_sexuality_data") %>%
-  rename(LGBTQIA = cishet_lgbtqia) %>%
-  mutate(across(everything(), ~replace(., is.na(.), 0))) 
+  rename(LGBTQIA = cishet_lgbtqia) 
 
-dt_otherdemos <- dbGetQuery(con, "SELECT response_id, q24,q25, q26, q27, q28 FROM youth_thriving.raw_survey_data") %>%
+dt_otherdemos <- dbGetQuery(con, "SELECT response_id, q24,q25, q26, q27, q28 FROM youth_thriving.raw_survey_data") 
+
+%>%
   mutate('Systems Impacted' = ifelse(q24 == 1, 1, 0),
          'Detained/Arrested' = ifelse(q25 == 1, 1, 0),
          'Suspended' = ifelse(q26 == 1, 1, 0),
