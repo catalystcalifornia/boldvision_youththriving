@@ -11,6 +11,10 @@ output:
     toc_float: yes
 ---
 
+The following graphs visualize the correlation analysis across the components and subcomponents measured in the Bold Vision Youth Thriving Survey. Prior to analysis, each question was converted into a numeric continuous scale and then scores were averaged by subcomponent and component. Graphs also include correlation analysis with racial categories and other demographic variables inquired about in the survey. 
+
+A correlation analysis helps us understand the relation between the variables of interest measured in our survey data. The darker purple indicates a  positive relationship- so as one variable increases so does the other. The lighter orange color indicates a negative relationship- as one variable increases, the other decreases. The size of the circles determine the strength of this relationship. The larger the circle, the stronger this relationship is and has a p-value closer to 0.9 or -0.9 as an example. The smaller the circle, the weaker the relationship measured is and can have a p value closer to 0.1 or -0.1 for example. 
+
 ```{r setup, include=FALSE, echo=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 
