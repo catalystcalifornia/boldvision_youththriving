@@ -7,9 +7,9 @@ output: html_document
 
 ```{r}
 knitr::opts_chunk$set(echo = TRUE)
-library(data.table)
 library(tidyverse)
 library(RPostgreSQL)
+library(lavaan)
 
 # Connect to postgres
 source("W:\\RDA Team\\R\\credentials_source.R")
@@ -102,8 +102,194 @@ for (i in 1:nrow(comparison)) {
 }
 ```
 
+## Start confirmatory factor analysis (CFA)
 ```{r}
+## Model treated as categorical
+scale.model <- 'scale = ~ Item.1 + Item.2 + Item.3 + Item.4 + Item.5 +Item.6'
+fit.cat <- cfa(scale.model, data=small_svy_data, mimic =c("MPlus"), std.lv = TRUE,
+               ordered = TRUE)
+```
+# Fit the data to a CFA model
+```{r}
+# Fit the microaggression items to a CFA model
+microaggressions_model <- 'microaggressions =~ eo + ep + eq + er'
+fit.cat <- cfa(microaggressions_model, data=small_svy_data, mimic =c("MPlus"), std.lv = TRUE,
+               ordered = TRUE)
+```
+
+# Assessing the fit of the CFA model using Chi-squared test, comparative fit index (CFI), and Root Mean Square Error of Approximation (RMSEA).
+
+There is not one but several indicators of fit:
+1. Chi-square test indicates the amount of difference between	the expected and observed covariance matrices. Somewhat 	counterintuitively a chi-square close to zero indicates little differences or good fit and should have a probability level greater than p < .05. IN OTHER WORDS, WE WANT	SMALL, INSIGNIFICANT CHI_SQUARE.
+2. Comparative Fit Index (CFI) is the discrepancy function adjusted for sample size. CFI ranges from 0 to 1 WITH LARGER VALUES INDICATING A BETTER FIT.
+3. Root Mean Square Error of Approximation (RMSEA) ranges from 0 to 1 WITH SMALLER RMSEAs indicating a better model fit, 0.06 or less (Hu and Bentler, 1999).
+
+## ARCHIVE
+# For this example, we used CFI >= .95 and srmr <= .08 as our threshold values.
+
+# Various interpretation RMSEA guidelines have been put forth — for this example
+# we used an RMSEA <= .05 as the cutoff for close fit; RMSEA = .05 – .08 as
+# reasonable fit; RMSEA >= .10 as poor fit.
+
+# Finally, it is worthwhile to look at correlation residuals. These pairwise 
+# coefficients provide detail about possible locations of model misfit. We use
+# a suggested threshold of >=0.10 to flag problematic coefficients
+cat("====Pairwise correlation residuals:\n")
+residuals(fit.cat)$cov
+cat("\n")
+
+```{r}
+# Extract fit measures
+chisq <- fitMeasures(fit.cat, "chisq.scaled")
+df <- fitMeasures(fit.cat, "df")
+pvalue <- fitMeasures(fit.cat, "pvalue.scaled")
+
+cfi <- fitMeasures(fit.cat, "cfi.scaled")
+
+rmsea <- fitMeasures(fit.cat, "rmsea.scaled")
+rmsea_lower <- fitMeasures(fit.cat, "rmsea.ci.lower.scaled")
+rmsea_upper <- fitMeasures(fit.cat, "rmsea.ci.upper.scaled")
+rmsea_pvalue <- fitMeasures(fit.cat, "rmsea.pvalue.scaled")
+
+# Set thresholds for fit measures
+threshold_chisq <- 0.05
+threshold_cfi <- 0.95
+threshold_rmsea <- 0.05
+
+# Evaluate and print interpretation
+cat("MODEL FIT MEASURES\n")
+
+# Chi-Square
+cat("====Chi square:\n")
+cat(
+  "Chi-squared:", chisq, 
+  "\nDegrees of Freedom:", df, 
+  "\nP-value:", pvalue, 
+  if (pvalue < 0.05) "\nPoor fit (significant at 0.05 level)\n" else "\nGood fit (not significant at 0.05 level)\n"
+)
+
+# CFI
+cat("====Comparative Fit Index (CFI):\n")
+cat(
+  "CFI:", cfi, 
+  "\nInterpretation:", if (cfi >= 0.95) "\nGood fit (CFI >= 0.95)\n" else "\nPoor fit (CFI < 0.95)\n"
+)
+
+# RMSEA
+cat("====Root Mean Square Error of Approximation (RMSEA):\n")
+cat(
+  "RMSEA:", rmsea, 
+  "\n90% CI:", rmsea_lower, "-", rmsea_upper, 
+  "\nP-value:", rmsea_pvalue, 
+  "\nInterpretation:", if (rmsea <= 0.06) "\nGood fit (RMSEA <= 0.06)\n" else "\nPoor fit (RMSEA > 0.06)\n"
+)
+
+# Determine overall model fit based on the 2/3 rule
+good_fit_count <- sum(pvalue >= 0.05, cfi >= 0.95, rmsea < 0.06)
+
+cat("\nMODEL FIT CONCLUSION\n")
+cat("Number of fit measures met:", good_fit_count, "out of 3.\n")
+
+if (good_fit_count >= 2) {
+  cat("Conclusion: The model is a good fit, based on meeting at least 2 out of 3 fit measures\n")
+} else {
+  cat("Conclusion: The model is not a good fit, as it met fewer than 2 out of 3 fit measures\n")
+}
+```
+
+```{r}
+# Extract fit measures
+chisq <- fitMeasures(fit.cat, "chisq.scaled")
+# df <- fitMeasures(fit.cat, "df")
+pvalue <- fitMeasures(fit.cat, "pvalue.scaled")
+
+cfi <- fitMeasures(fit.cat, "cfi.scaled")
+
+rmsea <- fitMeasures(fit.cat, "rmsea.scaled")
+# rmsea_lower <- fitMeasures(fit.cat, "rmsea.ci.lower.scaled")
+# rmsea_upper <- fitMeasures(fit.cat, "rmsea.ci.upper.scaled")
+# rmsea_pvalue <- fitMeasures(fit.cat, "rmsea.pvalue.scaled")
+
+# Set thresholds for fit measures
+threshold_chisq <- 0.05
+threshold_cfi <- 0.95
+threshold_rmsea <- 0.05
+
+# Evaluate and print interpretation
+cat("MODEL FIT MEASURES\n")
+
+# Chi-Square
+cat("====Chi square:\n")
+cat(
+  "Chi-squared:", chisq, 
+  # "\nDegrees of Freedom:", df, 
+  "\nP-value:", pvalue, 
+  "\nInterpretation: ", 
+  if (pvalue < threshold_chisq) 
+    paste0("Poor fit (significant at ", threshold_chisq, " level)\n") 
+  else 
+    paste0("Good fit (not significant at ", threshold_chisq, " level)\n")
+)
+
+# CFI
+cat("====Comparative Fit Index (CFI):\n")
+cat(
+  "CFI:", cfi, 
+  "\nInterpretation: ", 
+  if (cfi >= threshold_cfi) 
+    paste0("Good fit (CFI >= ", threshold_cfi, ")\n") 
+  else 
+    paste0("Poor fit (CFI < ", threshold_cfi, ")\n")
+)
+
+# RMSEA
+cat("====Root Mean Square Error of Approximation (RMSEA):\n")
+cat(
+  "RMSEA:", rmsea, 
+  # "\n90% CI:", rmsea_lower, "-", rmsea_upper, 
+  # "\nP-value:", rmsea_pvalue, 
+  "\nInterpretation: ", 
+  if (rmsea <= threshold_rmsea) 
+    paste0("Good fit (RMSEA <= ", threshold_rmsea, ")\n") 
+  else 
+    paste0("Poor fit (RMSEA > ", threshold_rmsea, ")\n")
+)
+
+# Determine overall model fit based on the 2/3 rule
+good_fit_count <- sum(pvalue >= threshold_chisq, cfi >= threshold_cfi, rmsea <= threshold_rmsea)
+
+cat("\nMODEL FIT CONCLUSION\n")
+cat("Number of fit measures met:", good_fit_count, "out of 3.\n")
+
+if (good_fit_count >= 2) {
+  cat("Conclusion: The model is a good fit, based on meeting at least 2 out of 3 fit measures.\n")
+} else {
+  cat("Conclusion: The model is not a good fit, as it met fewer than 2 out of 3 fit measures.\n")
+}
 
 ```
 
+# Output the standardized factor loadings and their standard errors for the 
+# model's items. Technically, we should only look at the factor loadings if the
+# other model fit measures indicate good model fit.
+TODO: make fit measures and factor loading a function
+```{r}
+# Define threshold for factor loadings
+threshold_factor_loading <- 0.8
+
+# Extract factor loadings and filter by threshold
+loadings_summary <- parameterEstimates(fit.cat, standardized = TRUE) %>% 
+  filter(op == "=~") %>% 
+  select(Item = rhs, Standardized = est, ci.lower, ci.upper, SE = se, Z = z, `p-value` = pvalue) %>%
+  mutate(met_threshold = abs(Standardized) >= threshold_factor_loading)
+
+# Count how many loadings met the threshold
+count_met_threshold <- loadings_summary %>%
+  filter(met_threshold) %>%
+  nrow()
+
+# Print results
+cat("Number of factor loadings meeting the threshold (≥", threshold_factor_loading, "):", count_met_threshold, "out of", nrow(loadings_summary), "factors", "\n")
+print(loadings_summary)
+```
 
