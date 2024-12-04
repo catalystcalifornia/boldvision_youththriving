@@ -120,10 +120,13 @@ testRes2 = cor.mtest(dt_select, method = "spearman", conf.level = 0.95, exact = 
 # # Create a vector of colors for each label
 # group_colors_assigned <- unlist(lapply(groups, function(x) rep(group_colors[which(unique(groups) == x)], length.out = sum(groups == x))))
 
-# Create the correlation plot with custom group colors and grid
+# Define a custom color ramp
+custom_colors <- colorRampPalette(c("#b35806", "#542788"))
+
 corrplot(
   mydata.cor2,
   type = 'full',
+  col = custom_colors(300),
   p.mat = testRes2$p,
   insig = 'blank',
   diag = FALSE,
@@ -164,10 +167,13 @@ mydata.cor2 = cor(dt_select, method="spearman")
 
 testRes2 = cor.mtest(dt_select, method="spearman", conf.level = 0.95,exact=FALSE)
 
-# Create the correlation plot with custom group colors and grid
+# Define a custom color ramp
+custom_colors <- colorRampPalette(c("#b35806", "#542788"))
+
 corrplot(
   mydata.cor2,
   type = 'full',
+  col = custom_colors(300),
   p.mat = testRes2$p,
   insig = 'blank',
   diag = FALSE,
@@ -239,9 +245,13 @@ mydata.cor2 = cor(dt_select, method = "spearman")
 # Statistical significance test for correlations
 testRes2 = cor.mtest(dt_select, method = "spearman", conf.level = 0.95, exact = FALSE)
 
+# Define a custom color ramp
+custom_colors <- colorRampPalette(c("#b35806", "#542788"))
+
 corrplot(
   mydata.cor2,
   type = 'full',
+  col = custom_colors(300),
   p.mat = testRes2$p,
   insig = 'blank',
   diag = FALSE,
@@ -286,9 +296,13 @@ mydata.cor2 = cor(dt_select, method = "spearman")
 # Statistical significance test for correlations
 testRes2 = cor.mtest(dt_select, method = "spearman", conf.level = 0.95, exact = FALSE)
 
+# Define a custom color ramp
+custom_colors <- colorRampPalette(c("#b35806", "#542788"))
+
 corrplot(
   mydata.cor2,
   type = 'full',
+  col = custom_colors(300),
   p.mat = testRes2$p,
   insig = 'blank',
   diag = FALSE,
@@ -370,9 +384,13 @@ mydata.cor2 = cor(dt_select, method = "spearman")
 # Statistical significance test for correlations
 testRes2 = cor.mtest(dt_select, method = "spearman", conf.level = 0.95, exact = FALSE)
 
+# Define a custom color ramp
+custom_colors <- colorRampPalette(c("#b35806", "#542788"))
+
 corrplot(
   mydata.cor2,
   type = 'full',
+  col = custom_colors(300),
   p.mat = testRes2$p,
   insig = 'blank',
   diag = FALSE,
@@ -415,9 +433,13 @@ mydata.cor2 = cor(dt_select, method = "spearman")
 # Statistical significance test for correlations
 testRes2 = cor.mtest(dt_select, method = "spearman", conf.level = 0.95, exact = FALSE)
 
+# Define a custom color ramp
+custom_colors <- colorRampPalette(c("#b35806", "#542788"))
+
 corrplot(
   mydata.cor2,
   type = 'full',
+  col = custom_colors(300),
   p.mat = testRes2$p,
   insig = 'blank',
   diag = FALSE,
