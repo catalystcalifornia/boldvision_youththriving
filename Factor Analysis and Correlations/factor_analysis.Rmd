@@ -4,7 +4,7 @@ author: "Alicia Vo"
 date: "2024-12-2"
 output: html_document
 ---
-
+# Pull in data from postgres database
 ```{r}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
@@ -34,10 +34,46 @@ small_svy_data <- svy_data %>%
   select(all_of(small_svy_dd$variable))
 ```
 
+## Data Preparation
+# Change the responses of "Don't wish to answer", "Not sure", "Not Sure", 
+# "Does not apply to me", "Don't know" into NA values.
+
+# AV 12/4/24: For q10a, the response_5 option of "Not Sure" in the data dictionary 
+# should be changed to "Not sure" to maintain consistency - not the biggest deal though.
+```{r}
+# List of responses that should be replaced with NA
+na_responses <- c("Don't wish to answer", "Not sure", "Not Sure", "Does not apply to me", "Don't know")
+
+# Iterate over each column in small_svy_data
+for (col in names(small_svy_data)) {
+  # Get the corresponding row in the data dictionary
+  dd_row <- small_svy_dd[small_svy_dd$variable == col, ]
+  
+  if (nrow(dd_row) > 0) { # Ensure there is a matching dictionary entry
+    # Get response_ columns
+    valid_responses <- dd_row[1, grepl("^response_[0-9]+$", names(dd_row))]
+    valid_responses <- valid_responses[!is.na(valid_responses)]  # Exclude NAs explicitly
+    # print(valid_responses)
+    # Create response_map only if valid responses exist
+    if (length(valid_responses) > 0) {
+      response_map <- setNames(as.list(valid_responses), seq_along(valid_responses))
+      # Replace values in the column based on the response map
+      small_svy_data[[col]] <- sapply(small_svy_data[[col]], function(x) {
+        if (!is.na(x) && response_map[[as.character(x)]] %in% na_responses) {
+          NA
+        } else {
+          x
+        }
+      })
+    }
+  }
+}
+```
+
 # Check that missing data is being eliminated from analysis (not adding zeros into analyses)
 # Check for “wild codes” or data values outside of the allowed range
-# AV 12/3/24: columns eo-ey and q19 likely didn't include a "Don't wish to answer" 
-# response option in the actual survey
+# Check that the responses of "Don't wish to answer", "Not sure", "Not Sure", 
+# "Does not apply to me", "Don't know" are NA values
 ```{r}
 # Step 1: Get unique counts for small_svy_data
 unique_counts <- sapply(small_svy_data, function(x) length(unique(x)))
@@ -46,71 +82,166 @@ unique_counts <- sapply(small_svy_data, function(x) length(unique(x)))
 # Identify columns in small_svy_dd that match the pattern "response_<number>"
 response_cols <- grep("^response_[0-9]+$", names(small_svy_dd), value = TRUE)
 
-# Count non-NA values in these columns for each row
-small_svy_dd$response_count <- rowSums(!is.na(small_svy_dd[, response_cols]))
-
 # Step 3: Match small_svy_data columns with small_svy_dd using the variable column
 comparison <- merge(
   data.frame(variable = names(unique_counts), unique_count = unique_counts),
-  small_svy_dd[, c("variable", "response_count")],
+  small_svy_dd,
   by = "variable"
 )
 
-# Step 4: Check whether the counts match and print results
-comparison$match <- comparison$unique_count == comparison$response_count
-
-# Print mismatches
-cat("MISMATCHES:\n")
+# Print 
 for (i in 1:nrow(comparison)) {
-  if (!comparison$match[i]) {
-    column_name <- comparison$variable[i]
-    actual_unique_values <- unique(small_svy_data[[column_name]])
-    
-    # Replace NA with a string "NA" for printing
-    actual_unique_values <- ifelse(is.na(actual_unique_values), "NA", actual_unique_values)
-    
-    cat(
-      "Column:", column_name, 
-      "\nUnique Values Count:", comparison$unique_count[i], 
-      "\nUnique Values:", paste(sort(actual_unique_values), collapse = ", "), 
-      "\nExpected Values Count:", comparison$response_count[i], 
-      "\nMatch: No", 
-      "\n\n"
-    )
-  }
-}
-
-# Print matches
-cat("MATCHES:\n")
-for (i in 1:nrow(comparison)) {
-  if (comparison$match[i]) {
-    column_name <- comparison$variable[i]
-    actual_unique_values <- unique(small_svy_data[[column_name]])
-
-    # Replace NA with a string "NA" for printing
-    actual_unique_values <- ifelse(is.na(actual_unique_values), "NA", actual_unique_values)
-
-    cat(
-      "Column:", column_name,
-      "\nUnique Values Count:", comparison$unique_count[i],
-      "\nUnique Values:", paste(sort(actual_unique_values), collapse = ", "),
-      "\nExpected Values Count:", comparison$response_count[i],
-      "\nMatch: Yes",
-      "\n\n"
-    )
-  }
+  column_name <- comparison$variable[i]
+  actual_unique_values <- unique(small_svy_data[[column_name]])
+  
+  # Replace NA with a string "NA" for printing
+  actual_unique_values <- ifelse(is.na(actual_unique_values), "NA", actual_unique_values)
+  
+  cat(
+    "Column:", column_name, 
+    "\nUnique Values Count:", comparison$unique_count[i], 
+    "\nUnique Values:", paste(sort(actual_unique_values), collapse = ", "), 
+    "\n\n"
+  )
 }
 ```
 
-## Start confirmatory factor analysis (CFA)
+# Create a function for the entire process of confirmatory factor analysis (CFA), 
+# including the model fit measures and factor analysis (only ran if the model is determined to be a good fit)
+
 ```{r}
-## Model treated as categorical
-scale.model <- 'scale = ~ Item.1 + Item.2 + Item.3 + Item.4 + Item.5 +Item.6'
-fit.cat <- cfa(scale.model, data=small_svy_data, mimic =c("MPlus"), std.lv = TRUE,
+run_model_fit_measures <- function(model_name) {
+  # Fit the data to a CFA model
+  fit.cat <- cfa(model_name, data=small_svy_data, mimic =c("MPlus"), std.lv = TRUE,
                ordered = TRUE)
+  # Extract fit measures
+  chisq <- fitMeasures(fit.cat, "chisq.scaled")
+  # df <- fitMeasures(fit.cat, "df")
+  pvalue <- fitMeasures(fit.cat, "pvalue.scaled")
+  
+  cfi <- fitMeasures(fit.cat, "cfi.scaled")
+  
+  rmsea <- fitMeasures(fit.cat, "rmsea.scaled")
+  # rmsea_lower <- fitMeasures(fit.cat, "rmsea.ci.lower.scaled")
+  # rmsea_upper <- fitMeasures(fit.cat, "rmsea.ci.upper.scaled")
+  # rmsea_pvalue <- fitMeasures(fit.cat, "rmsea.pvalue.scaled")
+  
+  # Set thresholds for fit measures
+  threshold_chisq <- 0.05
+  threshold_cfi <- 0.95
+  threshold_rmsea <- 0.05
+  
+  # Evaluate and print interpretation
+  cat("MODEL FIT MEASURES\n")
+  
+  # Chi-Square
+  # The null hypothesis in a CFA analysis is that the matrix implied or reproduced by the data and specified model is statistically the same as the input or analysis matrix. In our study, overall ”fit” refers to how well the specified model is able to reproduce the original polychoric correlation analysis matrix. Contrary to usual hypothesis testing, we hope to retain the null hypothesis that the two matrices are statistically the same. Note that chi-square is sensitive to sample size and that, given a large sample, even small departures will be significant.
+  cat("====Chi square:\n")
+  cat(
+    "Chi-squared:", chisq, 
+    # "\nDegrees of Freedom:", df, 
+    "\nP-value:", pvalue, 
+    "\nInterpretation: ", 
+    if (pvalue < threshold_chisq) 
+      paste0("Poor fit (significant at ", threshold_chisq, " level)\n") 
+    else 
+      paste0("Good fit (not significant at ", threshold_chisq, " level)\n")
+  )
+  
+  # CFI
+  # The CFI is a member of a family of incremental fit indexes that compare your model to a restricted baseline model. As the name implies, the srmr is based on the actual differences (discrepancies) between the model-based correlations and the actual correlations.
+  cat("====Comparative Fit Index (CFI):\n")
+  cat(
+    "CFI:", cfi, 
+    "\nInterpretation: ", 
+    if (cfi >= threshold_cfi) 
+      paste0("Good fit (CFI >= ", threshold_cfi, ")\n") 
+    else 
+      paste0("Poor fit (CFI < ", threshold_cfi, ")\n")
+  )
+  
+  # RMSEA
+  # The root mean square error of approximation (RMSEA) is a popular measure of the discrepancy between the model-based and observed correlation matrices. It makes adjustments based on model complexity (parsimony-adjusted) and has a known sampling distribution so it is possible to compute confidence intervals.
+  cat("====Root Mean Square Error of Approximation (RMSEA):\n")
+  cat(
+    "RMSEA:", rmsea, 
+    # "\n90% CI:", rmsea_lower, "-", rmsea_upper, 
+    # "\nP-value:", rmsea_pvalue, 
+    "\nInterpretation: ", 
+    if (rmsea <= threshold_rmsea) 
+      paste0("Good fit (RMSEA <= ", threshold_rmsea, ")\n") 
+    else 
+      paste0("Poor fit (RMSEA > ", threshold_rmsea, ")\n")
+  )
+  
+  # Determine overall model fit based on the 2/3 rule
+  good_fit_count <- sum(pvalue >= threshold_chisq, cfi >= threshold_cfi, rmsea <= threshold_rmsea)
+  
+  cat("\nMODEL FIT CONCLUSION\n")
+  cat("Number of fit measures met:", good_fit_count, "out of 3.\n")
+  
+  if (good_fit_count >= 2) {
+    cat("Conclusion: The model is a good fit, based on meeting at least 2 out of 3 fit measures.\n")
+    return(TRUE)
+  } 
+  else {
+    cat("Conclusion: The model is not a good fit, as it met fewer than 2 out of 3 fit measures.\n")
+    return(FALSE)
+  }  
+  
+}
 ```
-# Fit the data to a CFA model
+
 ```{r}
+# Factor loadings provide useful information to a researcher; they indicate how much scores on an item change with a one-unit       change in the latent factor. Items with higher loadings are more sensitive to changes in levels of the latent construct the items   measure and play a larger role in defining the construct than items will lower loadings.
+
+run_cfa <- function(model_name) {
+  # Validate the input
+  # if (!is.logical(run_model_fit_measures)) {
+  #   stop("run_model_fit_measures must be a logical value (TRUE or FALSE).")
+  # }
+  
+  # If the model is determined to be a good fit, then obtain the factor loadings
+  if(run_model_fit_measures(model_name)==TRUE) {
+  # Define threshold for factor loadings
+  threshold_factor_loading <- 0.8
+  
+  # Extract factor loadings and filter by threshold
+  loadings_summary <- parameterEstimates(fit.cat, standardized = TRUE) %>% 
+    filter(op == "=~") %>% 
+    select(Item = rhs, Standardized = est, ci.lower, ci.upper, SE = se, Z = z, `p-value` = pvalue) %>%
+    mutate(met_threshold = abs(Standardized) >= threshold_factor_loading)
+  
+  # Count how many loadings met the threshold
+  count_met_threshold <- loadings_summary %>%
+    filter(met_threshold) %>%
+    nrow()
+  
+  # Print results
+  cat("Number of factor loadings meeting the threshold (≥", threshold_factor_loading, "):", 
+      count_met_threshold, "out of", ... = nrow(loadings_summary), "factors", "\n")
+  print(loadings_summary)
+  }
+  
+}
+```
+
+=============================start: to be deleted
+```{r}
+# Fit the data to a CFA model
+
+# We indicate that our variables are ordinal with the ordered command. 
+# This lets lavann know that it should base the model on polychoric correlations.
+# Also, we ask lavaan to mimic MPlus which then uses the computational procedures 
+# used in the MPlus program and produces output similar to that generated in MPlus. 
+# For ordinal data, lavaan uses a weighted least square means and 
+# variances (WLSMV) fitting function. When ordered = TRUE, the cfa function automatically
+# adjusts for items on different scales and handles NA values with pairwise deletion.
+# Pairwise deletion: A case may contain 3 variables: VAR1, VAR2, and VAR3. A case 
+# may have a missing value for VAR1, but this does not prevent some statistical
+# procedures from using the same case to analyze variables VAR2 and VAR3. Pairwise
+# deletion allows you to use more of your data.
+
 # Fit the microaggression items to a CFA model
 microaggressions_model <- 'microaggressions =~ eo + ep + eq + er'
 fit.cat <- cfa(microaggressions_model, data=small_svy_data, mimic =c("MPlus"), std.lv = TRUE,
@@ -118,85 +249,6 @@ fit.cat <- cfa(microaggressions_model, data=small_svy_data, mimic =c("MPlus"), s
 ```
 
 # Assessing the fit of the CFA model using Chi-squared test, comparative fit index (CFI), and Root Mean Square Error of Approximation (RMSEA).
-
-There is not one but several indicators of fit:
-1. Chi-square test indicates the amount of difference between	the expected and observed covariance matrices. Somewhat 	counterintuitively a chi-square close to zero indicates little differences or good fit and should have a probability level greater than p < .05. IN OTHER WORDS, WE WANT	SMALL, INSIGNIFICANT CHI_SQUARE.
-2. Comparative Fit Index (CFI) is the discrepancy function adjusted for sample size. CFI ranges from 0 to 1 WITH LARGER VALUES INDICATING A BETTER FIT.
-3. Root Mean Square Error of Approximation (RMSEA) ranges from 0 to 1 WITH SMALLER RMSEAs indicating a better model fit, 0.06 or less (Hu and Bentler, 1999).
-
-## ARCHIVE
-# For this example, we used CFI >= .95 and srmr <= .08 as our threshold values.
-
-# Various interpretation RMSEA guidelines have been put forth — for this example
-# we used an RMSEA <= .05 as the cutoff for close fit; RMSEA = .05 – .08 as
-# reasonable fit; RMSEA >= .10 as poor fit.
-
-# Finally, it is worthwhile to look at correlation residuals. These pairwise 
-# coefficients provide detail about possible locations of model misfit. We use
-# a suggested threshold of >=0.10 to flag problematic coefficients
-cat("====Pairwise correlation residuals:\n")
-residuals(fit.cat)$cov
-cat("\n")
-
-```{r}
-# Extract fit measures
-chisq <- fitMeasures(fit.cat, "chisq.scaled")
-df <- fitMeasures(fit.cat, "df")
-pvalue <- fitMeasures(fit.cat, "pvalue.scaled")
-
-cfi <- fitMeasures(fit.cat, "cfi.scaled")
-
-rmsea <- fitMeasures(fit.cat, "rmsea.scaled")
-rmsea_lower <- fitMeasures(fit.cat, "rmsea.ci.lower.scaled")
-rmsea_upper <- fitMeasures(fit.cat, "rmsea.ci.upper.scaled")
-rmsea_pvalue <- fitMeasures(fit.cat, "rmsea.pvalue.scaled")
-
-# Set thresholds for fit measures
-threshold_chisq <- 0.05
-threshold_cfi <- 0.95
-threshold_rmsea <- 0.05
-
-# Evaluate and print interpretation
-cat("MODEL FIT MEASURES\n")
-
-# Chi-Square
-cat("====Chi square:\n")
-cat(
-  "Chi-squared:", chisq, 
-  "\nDegrees of Freedom:", df, 
-  "\nP-value:", pvalue, 
-  if (pvalue < 0.05) "\nPoor fit (significant at 0.05 level)\n" else "\nGood fit (not significant at 0.05 level)\n"
-)
-
-# CFI
-cat("====Comparative Fit Index (CFI):\n")
-cat(
-  "CFI:", cfi, 
-  "\nInterpretation:", if (cfi >= 0.95) "\nGood fit (CFI >= 0.95)\n" else "\nPoor fit (CFI < 0.95)\n"
-)
-
-# RMSEA
-cat("====Root Mean Square Error of Approximation (RMSEA):\n")
-cat(
-  "RMSEA:", rmsea, 
-  "\n90% CI:", rmsea_lower, "-", rmsea_upper, 
-  "\nP-value:", rmsea_pvalue, 
-  "\nInterpretation:", if (rmsea <= 0.06) "\nGood fit (RMSEA <= 0.06)\n" else "\nPoor fit (RMSEA > 0.06)\n"
-)
-
-# Determine overall model fit based on the 2/3 rule
-good_fit_count <- sum(pvalue >= 0.05, cfi >= 0.95, rmsea < 0.06)
-
-cat("\nMODEL FIT CONCLUSION\n")
-cat("Number of fit measures met:", good_fit_count, "out of 3.\n")
-
-if (good_fit_count >= 2) {
-  cat("Conclusion: The model is a good fit, based on meeting at least 2 out of 3 fit measures\n")
-} else {
-  cat("Conclusion: The model is not a good fit, as it met fewer than 2 out of 3 fit measures\n")
-}
-```
-
 ```{r}
 # Extract fit measures
 chisq <- fitMeasures(fit.cat, "chisq.scaled")
@@ -219,6 +271,7 @@ threshold_rmsea <- 0.05
 cat("MODEL FIT MEASURES\n")
 
 # Chi-Square
+# The null hypothesis in a CFA analysis is that the matrix implied or reproduced by the data and specified model is statistically the same as the input or analysis matrix. In our study, overall ”fit” refers to how well the specified model is able to reproduce the original polychoric correlation analysis matrix. Contrary to usual hypothesis testing, we hope to retain the null hypothesis that the two matrices are statistically the same. Note that chi-square is sensitive to sample size and that, given a large sample, even small departures will be significant.
 cat("====Chi square:\n")
 cat(
   "Chi-squared:", chisq, 
@@ -232,6 +285,7 @@ cat(
 )
 
 # CFI
+# The CFI is a member of a family of incremental fit indexes that compare your model to a restricted baseline model. As the name implies, the srmr is based on the actual differences (discrepancies) between the model-based correlations and the actual correlations.
 cat("====Comparative Fit Index (CFI):\n")
 cat(
   "CFI:", cfi, 
@@ -243,6 +297,7 @@ cat(
 )
 
 # RMSEA
+# The root mean square error of approximation (RMSEA) is a popular measure of the discrepancy between the model-based and observed correlation matrices. It makes adjustments based on model complexity (parsimony-adjusted) and has a known sampling distribution so it is possible to compute confidence intervals.
 cat("====Root Mean Square Error of Approximation (RMSEA):\n")
 cat(
   "RMSEA:", rmsea, 
@@ -266,14 +321,15 @@ if (good_fit_count >= 2) {
 } else {
   cat("Conclusion: The model is not a good fit, as it met fewer than 2 out of 3 fit measures.\n")
 }
-
 ```
 
 # Output the standardized factor loadings and their standard errors for the 
 # model's items. Technically, we should only look at the factor loadings if the
 # other model fit measures indicate good model fit.
-TODO: make fit measures and factor loading a function
+TODO: make fit measures and factor loading into a function
 ```{r}
+# Factor loadings provide useful information to a researcher; they indicate how much scores on an item change with a one-unit change in the latent factor. Items with higher loadings are more sensitive to changes in levels of the latent construct the items measure and play a larger role in defining the construct than items will lower loadings.
+
 # Define threshold for factor loadings
 threshold_factor_loading <- 0.8
 
@@ -292,4 +348,60 @@ count_met_threshold <- loadings_summary %>%
 cat("Number of factor loadings meeting the threshold (≥", threshold_factor_loading, "):", count_met_threshold, "out of", nrow(loadings_summary), "factors", "\n")
 print(loadings_summary)
 ```
+
+=============================end: to be deleted
+
+# Create the string names for the subcomponent and component CFA models based on the data dictionary
+```{r}
+# Group variables by subcomponents and components
+subcomponents <- small_svy_dd %>%
+  group_by(variable_name) %>%
+  summarize(variables = paste(variable, collapse = " + "), .groups = "drop")
+
+components <- small_svy_dd %>%
+  group_by(response_domain) %>%
+  summarize(variables = paste(variable, collapse = " + "), .groups = "drop")
+
+# Create model strings
+subcomponent_models <- subcomponents %>%
+  mutate(model_string = paste0(
+    "subcomponent_", 
+    gsub(",", "", tolower(gsub(" ", "_", variable_name))), 
+    "_model <- '", 
+    tolower(gsub(" ", "_", variable_name)), 
+    " =~ ", 
+    variables, "'"
+  ))
+
+component_models <- components %>%
+  mutate(model_string = paste0(
+    "component_", 
+    gsub(",", "", tolower(gsub(" ", "_", response_domain))), 
+    "_model <- '", 
+    tolower(gsub(" ", "_", gsub(",|and", "", response_domain))), 
+    " =~ ", 
+    variables, "'"
+  ))
+
+all_models_list <- c(
+  subcomponent_models$model_string,
+  component_models$model_string
+)
+
+# Display the models
+# cat("# Component models\n")
+# cat(paste(component_models$model_string, collapse = "\n"), "\n\n")
+# 
+# cat("# Subcomponent models\n")
+# cat(paste(subcomponent_models$model_string, collapse = "\n"), "\n")
+```
+
+```{r}
+# Apply to all_models_list
+lapply(all_models_list, run_cfa)
+
+
+```
+
+
 
