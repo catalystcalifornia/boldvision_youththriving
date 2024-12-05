@@ -108,7 +108,6 @@ for (i in 1:nrow(comparison)) {
 
 # Create a function for the entire process of confirmatory factor analysis (CFA), 
 # including the model fit measures and factor analysis (only ran if the model is determined to be a good fit)
-
 ```{r}
 run_model_fit_measures <- function(model_name) {
   # Fit the data to a CFA model
@@ -131,8 +130,10 @@ run_model_fit_measures <- function(model_name) {
   threshold_cfi <- 0.95
   threshold_rmsea <- 0.05
   
+  # Extract the part before the =~
+  short_model_name <- sub(" =~.*", "", model_name)
   # Evaluate and print interpretation
-  cat("MODEL FIT MEASURES\n")
+  cat("========MODEL FIT MEASURES:", short_model_name,"\n")
   
   # Chi-Square
   # The null hypothesis in a CFA analysis is that the matrix implied or reproduced by the data and specified model is statistically the same as the input or analysis matrix. In our study, overall ”fit” refers to how well the specified model is able to reproduce the original polychoric correlation analysis matrix. Contrary to usual hypothesis testing, we hope to retain the null hypothesis that the two matrices are statistically the same. Note that chi-square is sensitive to sample size and that, given a large sample, even small departures will be significant.
@@ -193,163 +194,39 @@ run_model_fit_measures <- function(model_name) {
 ```
 
 ```{r}
-# Factor loadings provide useful information to a researcher; they indicate how much scores on an item change with a one-unit       change in the latent factor. Items with higher loadings are more sensitive to changes in levels of the latent construct the items   measure and play a larger role in defining the construct than items will lower loadings.
+# Factor loadings provide useful information to a researcher; they indicate how much scores on an item change with a one-unit change in the latent factor. Items with higher loadings are more sensitive to changes in levels of the latent construct the items   measure and play a larger role in defining the construct than items will lower loadings.
 
 run_cfa <- function(model_name) {
-  # Validate the input
-  # if (!is.logical(run_model_fit_measures)) {
-  #   stop("run_model_fit_measures must be a logical value (TRUE or FALSE).")
-  # }
-  
   # If the model is determined to be a good fit, then obtain the factor loadings
-  if(run_model_fit_measures(model_name)==TRUE) {
-  # Define threshold for factor loadings
-  threshold_factor_loading <- 0.8
-  
-  # Extract factor loadings and filter by threshold
-  loadings_summary <- parameterEstimates(fit.cat, standardized = TRUE) %>% 
-    filter(op == "=~") %>% 
-    select(Item = rhs, Standardized = est, ci.lower, ci.upper, SE = se, Z = z, `p-value` = pvalue) %>%
-    mutate(met_threshold = abs(Standardized) >= threshold_factor_loading)
-  
-  # Count how many loadings met the threshold
-  count_met_threshold <- loadings_summary %>%
-    filter(met_threshold) %>%
-    nrow()
-  
-  # Print results
-  cat("Number of factor loadings meeting the threshold (≥", threshold_factor_loading, "):", 
-      count_met_threshold, "out of", ... = nrow(loadings_summary), "factors", "\n")
-  print(loadings_summary)
-  }
-  
-}
-```
-
-=============================start: to be deleted
-```{r}
-# Fit the data to a CFA model
-
-# We indicate that our variables are ordinal with the ordered command. 
-# This lets lavann know that it should base the model on polychoric correlations.
-# Also, we ask lavaan to mimic MPlus which then uses the computational procedures 
-# used in the MPlus program and produces output similar to that generated in MPlus. 
-# For ordinal data, lavaan uses a weighted least square means and 
-# variances (WLSMV) fitting function. When ordered = TRUE, the cfa function automatically
-# adjusts for items on different scales and handles NA values with pairwise deletion.
-# Pairwise deletion: A case may contain 3 variables: VAR1, VAR2, and VAR3. A case 
-# may have a missing value for VAR1, but this does not prevent some statistical
-# procedures from using the same case to analyze variables VAR2 and VAR3. Pairwise
-# deletion allows you to use more of your data.
-
-# Fit the microaggression items to a CFA model
-microaggressions_model <- 'microaggressions =~ eo + ep + eq + er'
-fit.cat <- cfa(microaggressions_model, data=small_svy_data, mimic =c("MPlus"), std.lv = TRUE,
+#  if(run_model_fit_measures(model_name)==TRUE) {
+    # Fit the data to a CFA model
+    fit.cat <- cfa(model_name, data=small_svy_data, mimic =c("MPlus"), std.lv = TRUE,
                ordered = TRUE)
-```
-
-# Assessing the fit of the CFA model using Chi-squared test, comparative fit index (CFI), and Root Mean Square Error of Approximation (RMSEA).
-```{r}
-# Extract fit measures
-chisq <- fitMeasures(fit.cat, "chisq.scaled")
-# df <- fitMeasures(fit.cat, "df")
-pvalue <- fitMeasures(fit.cat, "pvalue.scaled")
-
-cfi <- fitMeasures(fit.cat, "cfi.scaled")
-
-rmsea <- fitMeasures(fit.cat, "rmsea.scaled")
-# rmsea_lower <- fitMeasures(fit.cat, "rmsea.ci.lower.scaled")
-# rmsea_upper <- fitMeasures(fit.cat, "rmsea.ci.upper.scaled")
-# rmsea_pvalue <- fitMeasures(fit.cat, "rmsea.pvalue.scaled")
-
-# Set thresholds for fit measures
-threshold_chisq <- 0.05
-threshold_cfi <- 0.95
-threshold_rmsea <- 0.05
-
-# Evaluate and print interpretation
-cat("MODEL FIT MEASURES\n")
-
-# Chi-Square
-# The null hypothesis in a CFA analysis is that the matrix implied or reproduced by the data and specified model is statistically the same as the input or analysis matrix. In our study, overall ”fit” refers to how well the specified model is able to reproduce the original polychoric correlation analysis matrix. Contrary to usual hypothesis testing, we hope to retain the null hypothesis that the two matrices are statistically the same. Note that chi-square is sensitive to sample size and that, given a large sample, even small departures will be significant.
-cat("====Chi square:\n")
-cat(
-  "Chi-squared:", chisq, 
-  # "\nDegrees of Freedom:", df, 
-  "\nP-value:", pvalue, 
-  "\nInterpretation: ", 
-  if (pvalue < threshold_chisq) 
-    paste0("Poor fit (significant at ", threshold_chisq, " level)\n") 
-  else 
-    paste0("Good fit (not significant at ", threshold_chisq, " level)\n")
-)
-
-# CFI
-# The CFI is a member of a family of incremental fit indexes that compare your model to a restricted baseline model. As the name implies, the srmr is based on the actual differences (discrepancies) between the model-based correlations and the actual correlations.
-cat("====Comparative Fit Index (CFI):\n")
-cat(
-  "CFI:", cfi, 
-  "\nInterpretation: ", 
-  if (cfi >= threshold_cfi) 
-    paste0("Good fit (CFI >= ", threshold_cfi, ")\n") 
-  else 
-    paste0("Poor fit (CFI < ", threshold_cfi, ")\n")
-)
-
-# RMSEA
-# The root mean square error of approximation (RMSEA) is a popular measure of the discrepancy between the model-based and observed correlation matrices. It makes adjustments based on model complexity (parsimony-adjusted) and has a known sampling distribution so it is possible to compute confidence intervals.
-cat("====Root Mean Square Error of Approximation (RMSEA):\n")
-cat(
-  "RMSEA:", rmsea, 
-  # "\n90% CI:", rmsea_lower, "-", rmsea_upper, 
-  # "\nP-value:", rmsea_pvalue, 
-  "\nInterpretation: ", 
-  if (rmsea <= threshold_rmsea) 
-    paste0("Good fit (RMSEA <= ", threshold_rmsea, ")\n") 
-  else 
-    paste0("Poor fit (RMSEA > ", threshold_rmsea, ")\n")
-)
-
-# Determine overall model fit based on the 2/3 rule
-good_fit_count <- sum(pvalue >= threshold_chisq, cfi >= threshold_cfi, rmsea <= threshold_rmsea)
-
-cat("\nMODEL FIT CONCLUSION\n")
-cat("Number of fit measures met:", good_fit_count, "out of 3.\n")
-
-if (good_fit_count >= 2) {
-  cat("Conclusion: The model is a good fit, based on meeting at least 2 out of 3 fit measures.\n")
-} else {
-  cat("Conclusion: The model is not a good fit, as it met fewer than 2 out of 3 fit measures.\n")
+    # Define threshold for factor loadings
+    threshold_factor_loading <- 0.8
+    
+    # Extract factor loadings and filter by threshold
+    loadings_summary <- parameterEstimates(fit.cat, standardized = TRUE) %>% 
+      filter(op == "=~") %>% 
+      select(Item = rhs, Standardized = est, ci.lower, ci.upper, SE = se, Z = z, `p-value` = pvalue) %>%
+      mutate(met_threshold = abs(Standardized) >= threshold_factor_loading)
+    
+    # Count how many loadings met the threshold
+    count_met_threshold <- loadings_summary %>%
+      filter(met_threshold) %>%
+      nrow()
+    
+    # Extract the part before the =~
+    short_model_name <- sub(" =~.*", "", model_name)
+    
+    # Print results
+    cat("Number of factor loadings meeting the threshold (>=", threshold_factor_loading, "):", 
+        count_met_threshold, "out of", ... = nrow(loadings_summary), "factors,", short_model_name, "\n")
+    print(loadings_summary)
+#  }
+  
 }
 ```
-
-# Output the standardized factor loadings and their standard errors for the 
-# model's items. Technically, we should only look at the factor loadings if the
-# other model fit measures indicate good model fit.
-TODO: make fit measures and factor loading into a function
-```{r}
-# Factor loadings provide useful information to a researcher; they indicate how much scores on an item change with a one-unit change in the latent factor. Items with higher loadings are more sensitive to changes in levels of the latent construct the items measure and play a larger role in defining the construct than items will lower loadings.
-
-# Define threshold for factor loadings
-threshold_factor_loading <- 0.8
-
-# Extract factor loadings and filter by threshold
-loadings_summary <- parameterEstimates(fit.cat, standardized = TRUE) %>% 
-  filter(op == "=~") %>% 
-  select(Item = rhs, Standardized = est, ci.lower, ci.upper, SE = se, Z = z, `p-value` = pvalue) %>%
-  mutate(met_threshold = abs(Standardized) >= threshold_factor_loading)
-
-# Count how many loadings met the threshold
-count_met_threshold <- loadings_summary %>%
-  filter(met_threshold) %>%
-  nrow()
-
-# Print results
-cat("Number of factor loadings meeting the threshold (≥", threshold_factor_loading, "):", count_met_threshold, "out of", nrow(loadings_summary), "factors", "\n")
-print(loadings_summary)
-```
-
-=============================end: to be deleted
 
 # Create the string names for the subcomponent and component CFA models based on the data dictionary
 ```{r}
@@ -362,46 +239,105 @@ components <- small_svy_dd %>%
   group_by(response_domain) %>%
   summarize(variables = paste(variable, collapse = " + "), .groups = "drop")
 
-# Create model strings
+# Create model strings for subcomponents
 subcomponent_models <- subcomponents %>%
   mutate(model_string = paste0(
-    "subcomponent_", 
-    gsub(",", "", tolower(gsub(" ", "_", variable_name))), 
-    "_model <- '", 
-    tolower(gsub(" ", "_", variable_name)), 
-    " =~ ", 
+    "subcomponent_",
+    gsub("-", "_", gsub(",", "", gsub("/", "_", tolower(gsub(" ", "_", variable_name))))),
+    "_model <- 'subcomponent_",
+    gsub("-", "_", gsub(",", "", tolower(gsub("/", "_", gsub(" ", "_", variable_name))))),
+    " =~ ",
     variables, "'"
   ))
 
+# Create model strings for components
 component_models <- components %>%
   mutate(model_string = paste0(
-    "component_", 
-    gsub(",", "", tolower(gsub(" ", "_", response_domain))), 
-    "_model <- '", 
-    tolower(gsub(" ", "_", gsub(",|and", "", response_domain))), 
-    " =~ ", 
+    "component_",
+    gsub("-", "_", gsub(",", "", tolower(gsub(" ", "_", response_domain)))),
+    "_model <- 'component_",
+    gsub("-", "_", gsub(",", "", tolower(gsub(" ", "_", gsub(",|and", "", response_domain))))),
+    " =~ ",
     variables, "'"
   ))
 
-all_models_list <- c(
+
+all_model_strings <- c(
   subcomponent_models$model_string,
   component_models$model_string
 )
 
-# Display the models
-# cat("# Component models\n")
-# cat(paste(component_models$model_string, collapse = "\n"), "\n\n")
-# 
-# cat("# Subcomponent models\n")
-# cat(paste(subcomponent_models$model_string, collapse = "\n"), "\n")
+# all_model_strings
 ```
 
+# Create the subcomponent and component CFA models
 ```{r}
-# Apply to all_models_list
-lapply(all_models_list, run_cfa)
-
-
+subcomponent_connectedness_model <- 'subcomponent_connectedness =~ dk + dl'
+subcomponent_critical_action_model <- 'subcomponent_critical_action =~ dm'
+subcomponent_cultural_identity_and_connection_model <- 'subcomponent_cultural_identity_and_connection =~ dx + dy + dz + ea + eb + ec'
+subcomponent_experiences_of_racism_and_discrimination_model <- 'subcomponent_experiences_of_racism_and_discrimination =~ ef + eg + eh + ei + ej + ek + el + em + en'
+subcomponent_freedom_to_explore_the_self_model <- 'subcomponent_freedom_to_explore_the_self =~ dd + de + df'
+subcomponent_growth_mindset_model <- 'subcomponent_growth_mindset =~ cr + cs'
+subcomponent_hope_for_the_future_model <- 'subcomponent_hope_for_the_future =~ co + cp'
+subcomponent_microaggressions_model <- 'subcomponent_microaggressions =~ eo + ep + eq + er'
+subcomponent_personal_safety_model <- 'subcomponent_personal_safety =~ q19'
+subcomponent_positive_emotions_model <- 'subcomponent_positive_emotions =~ ck + cl + cm'
+subcomponent_psychological_distress_model <- 'subcomponent_psychological_distress =~ ct + cu + cv + cw + cx + cy'
+subcomponent_relationships_support_model <- 'subcomponent_relationships_support =~ q10a + q12a + dn'
+subcomponent_safe_access_to_public_spaces_for_social_cultural_and_literary_opportunities_model <- 'subcomponent_safe_access_to_public_spaces_for_social_cultural_and_literary_opportunities =~ do + dp + dq + dr + ds + dt + du + dv'
+subcomponent_self_efficacy_model <- 'subcomponent_self_efficacy =~ cn + cq'
+subcomponent_sparks_model <- 'subcomponent_sparks =~ q10'
+subcomponent_structural_racism_model <- 'subcomponent_structural_racism =~ es + et + eu + ev + ew + ex + ey'
+component_caring_families_and_relationships_model <- 'component_caring_families_and_relationships =~ q10a + q12a + dk + dl + dn'
+component_cultural_identity_model <- 'component_cultural_identity =~ dx + dy + dz + ea + eb + ec'
+component_positive_identity_and_self_worth_model <- 'component_positive_identity_and_self_worth =~ cn + co + cp + cq + q10 + dd + de + df + dm'
+component_racial_justice_equity_and_inclusion_model <- 'component_racial_justice_equity_and_inclusion =~ ef + eg + eh + ei + ej + ek + el + em + en + eo + ep + eq + er + es + et + eu + ev + ew + ex + ey'
+component_safety_model <- 'component_safety =~ q19'
+component_strong_minds_model <- 'component_strong_minds =~ ck + cl + cm + cr + cs + ct + cu + cv + cw + cx + cy'
+component_vibrant_communities_model <- 'component_vibrant_communities =~ do + dp + dq + dr + ds + dt + du + dv'
 ```
 
+# Apply function run_cfa to the models
+```{r}
+all_models <- c(
+  component_caring_families_and_relationships_model,
+  component_cultural_identity_model,
+  component_positive_identity_and_self_worth_model,
+  component_racial_justice_equity_and_inclusion_model,
+  # component_safety_model,
+  component_strong_minds_model,
+  component_vibrant_communities_model
+)
 
+cfa_results <- lapply(all_models, run_cfa)
+```
 
+# ARCHIVE OF MODELS
+```{r}
+all_models <- c(
+  # subcomponent_connectedness_model,
+  # subcomponent_critical_action_model,
+  subcomponent_cultural_identity_and_connection_model,
+  subcomponent_experiences_of_racism_and_discrimination_model,
+  # subcomponent_freedom_to_explore_the_self_model,
+  # subcomponent_growth_mindset_model,
+  # subcomponent_hope_for_the_future_model,
+  subcomponent_microaggressions_model,
+  # subcomponent_personal_safety_model,
+  # subcomponent_positive_emotions_model,
+  subcomponent_psychological_distress_model,
+  # subcomponent_relationships_support_model,
+  # The model below is exactly the same as component_vibrant_communities_model
+  # subcomponent_safe_access_to_public_spaces_for_social_cultural_and_literary_opportunities_model, 
+  # subcomponent_self_efficacy_model,
+  # subcomponent_sparks_model,
+  subcomponent_structural_racism_model,
+  component_caring_families_and_relationships_model,
+  component_cultural_identity_model,
+  component_positive_identity_and_self_worth_model,
+  component_racial_justice_equity_and_inclusion_model,
+  # component_safety_model,
+  component_strong_minds_model,
+  component_vibrant_communities_model
+)
+```
