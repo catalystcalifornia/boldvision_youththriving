@@ -11,9 +11,9 @@ output:
     toc_float: yes
 ---
 
-The following graphs visualize the correlation analysis across the components and subcomponents measured in the Bold Vision Youth Thriving Survey. Prior to analysis, each question was converted into a numeric continuous scale and then scores were averaged by subcomponent and component. Graphs also include correlation analysis with racial categories and other demographic variables inquired about in the survey. 
+The following graphs visualize the correlation between the components and subcomponents measured in the Bold Vision Youth Thriving Survey. Prior to analysis, each question was converted into a numeric continuous scale and then scores were averaged by subcomponent and component. In that process, subcomponents and components were converted to all move in the same direction, meaning a higher score on a subcompoment means a more positive outcome for example. Graphs also include correlation analysis with racial categories and other demographic variables asked about in the survey. 
 
-A correlation analysis helps us understand the relation between the variables of interest measured in our survey data. The darker purple indicates a  positive relationship- so as one variable increases so does the other. The lighter orange color indicates a negative relationship- as one variable increases, the other decreases. The size of the circles determine the strength of this relationship. The larger the circle, the stronger this relationship is and has a p-value closer to 0.9 or -0.9 as an example. The smaller the circle, the weaker the relationship measured is and can have a p value closer to 0.1 or -0.1 for example. 
+A correlation analysis helps us understand the relation between the variables of interest measured in our survey data. The darker purple indicates a  positive relationship- so as one variable increases so does the other. The lighter orange color indicates a negative relationship- as one variable increases, the other decreases. The size of the circles determine the strength of this relationship. The larger the circle, the stronger this relationship is and has a correlation closer to 1 or -1 as an example. The smaller the circle, the weaker the relationship measured is with a correlation value closer to 0 for example. Missing squares indicator relationships that were not statistically significant at the .05 level.
 
 ```{r setup, include=FALSE, echo=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
@@ -124,13 +124,13 @@ testRes2 = cor.mtest(dt_select, method = "spearman", conf.level = 0.95, exact = 
 # # Create a vector of colors for each label
 # group_colors_assigned <- unlist(lapply(groups, function(x) rep(group_colors[which(unique(groups) == x)], length.out = sum(groups == x))))
 
-# Define a custom color ramp
-custom_colors <- colorRampPalette(c("#b35806", "#542788"))
+# # Define a custom color ramp
+custom_colors <- colorRampPalette(c("#F62d2d", "#ffffbf","#1034A6"))
 
 corrplot(
   mydata.cor2,
   type = 'full',
-  col = custom_colors(300),
+  col = custom_colors(10),
   p.mat = testRes2$p,
   insig = 'blank',
   diag = FALSE,
@@ -171,13 +171,10 @@ mydata.cor2 = cor(dt_select, method="spearman")
 
 testRes2 = cor.mtest(dt_select, method="spearman", conf.level = 0.95,exact=FALSE)
 
-# Define a custom color ramp
-custom_colors <- colorRampPalette(c("#b35806", "#542788"))
-
 corrplot(
   mydata.cor2,
   type = 'full',
-  col = custom_colors(300),
+  col = custom_colors(10),
   p.mat = testRes2$p,
   insig = 'blank',
   diag = FALSE,
@@ -249,18 +246,16 @@ mydata.cor2 = cor(dt_select, method = "spearman")
 # Statistical significance test for correlations
 testRes2 = cor.mtest(dt_select, method = "spearman", conf.level = 0.95, exact = FALSE)
 
-# Define a custom color ramp
-custom_colors <- colorRampPalette(c("#b35806", "#542788"))
-
 corrplot(
   mydata.cor2,
   type = 'full',
-  col = custom_colors(300),
+  col = custom_colors(10),
   p.mat = testRes2$p,
   insig = 'blank',
   diag = FALSE,
+  # outline=TRUE,
   # addCoef.col = 'black',
-  # col = COL2('PuOr', 10),
+  # col = COL2('PiYG',10),
   tl.col = c("black", "black", "black", "black", "black", "black", "black","black", dark_pink,dark_pink, dark_pink, pink,pink,pink,pink,yellow,yellow, dark_green, light_green,blue, blue, blue, light_blue), # Apply the custom group colors to the text labels
   addgrid.col = "black" # Add grid lines to emphasize group separation
 )
@@ -300,13 +295,10 @@ mydata.cor2 = cor(dt_select, method = "spearman")
 # Statistical significance test for correlations
 testRes2 = cor.mtest(dt_select, method = "spearman", conf.level = 0.95, exact = FALSE)
 
-# Define a custom color ramp
-custom_colors <- colorRampPalette(c("#b35806", "#542788"))
-
 corrplot(
   mydata.cor2,
   type = 'full',
-  col = custom_colors(300),
+  col = custom_colors(10),
   p.mat = testRes2$p,
   insig = 'blank',
   diag = FALSE,
@@ -388,13 +380,10 @@ mydata.cor2 = cor(dt_select, method = "spearman")
 # Statistical significance test for correlations
 testRes2 = cor.mtest(dt_select, method = "spearman", conf.level = 0.95, exact = FALSE)
 
-# Define a custom color ramp
-custom_colors <- colorRampPalette(c("#b35806", "#542788"))
-
 corrplot(
   mydata.cor2,
   type = 'full',
-  col = custom_colors(300),
+  col = custom_colors(10),
   p.mat = testRes2$p,
   insig = 'blank',
   diag = FALSE,
@@ -437,13 +426,10 @@ mydata.cor2 = cor(dt_select, method = "spearman")
 # Statistical significance test for correlations
 testRes2 = cor.mtest(dt_select, method = "spearman", conf.level = 0.95, exact = FALSE)
 
-# Define a custom color ramp
-custom_colors <- colorRampPalette(c("#b35806", "#542788"))
-
 corrplot(
   mydata.cor2,
   type = 'full',
-  col = custom_colors(300),
+  col = custom_colors(10),
   p.mat = testRes2$p,
   insig = 'blank',
   diag = FALSE,
