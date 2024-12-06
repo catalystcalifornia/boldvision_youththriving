@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(RPostgreSQL)
 library(lavaan)
+library(psych)
 
 # Connect to postgres
 source("W:\\RDA Team\\R\\credentials_source.R")
@@ -18,6 +19,8 @@ con <- connect_to_db("bold_vision")
 svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
 svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024")
 ```
+
+## Data Preparation
 # Filter svy_dd and svy_data to only contain the likert questions needed for the factor analysis
 ```{r}
 # In the data dictionary, variable_name = subcomponent and response_domain = component
@@ -34,8 +37,7 @@ small_svy_data <- svy_data %>%
   select(all_of(small_svy_dd$variable))
 ```
 
-## Data Preparation
-# Change the responses of "Don't wish to answer", "Not sure", "Not Sure", 
+# In the survey data, change the responses of "Don't wish to answer", "Not sure", "Not Sure", 
 # "Does not apply to me", "Don't know" into NA values.
 
 # AV 12/4/24: For q10a, the response_5 option of "Not Sure" in the data dictionary 
@@ -50,10 +52,9 @@ for (col in names(small_svy_data)) {
   dd_row <- small_svy_dd[small_svy_dd$variable == col, ]
   
   if (nrow(dd_row) > 0) { # Ensure there is a matching dictionary entry
-    # Get response_ columns
+    # Get response_# columns
     valid_responses <- dd_row[1, grepl("^response_[0-9]+$", names(dd_row))]
     valid_responses <- valid_responses[!is.na(valid_responses)]  # Exclude NAs explicitly
-    # print(valid_responses)
     # Create response_map only if valid responses exist
     if (length(valid_responses) > 0) {
       response_map <- setNames(as.list(valid_responses), seq_along(valid_responses))
@@ -70,6 +71,21 @@ for (col in names(small_svy_data)) {
 }
 ```
 
+# Reverse the likert scales in the survey data for the scales that need reversing
+```{r}
+# Identify columns to reverse
+columns_to_reverse <- small_svy_dd$variable[grep("_rev$", small_svy_dd$likert_type)]
+
+# Loop through each column to reverse
+for (col in columns_to_reverse) {
+  # Get the maximum scale value from the 'likert' column
+  scale_max <- as.numeric(sub("pt_scale", "", small_svy_dd$likert[small_svy_dd$variable == col]))
+  
+  # Reverse the scale in small_svy_data
+  small_svy_data[[col]] <- scale_max + 1 - small_svy_data[[col]]
+}
+```
+## Data Checks
 # Check that missing data is being eliminated from analysis (not adding zeros into analyses)
 # Check for “wild codes” or data values outside of the allowed range
 # Check that the responses of "Don't wish to answer", "Not sure", "Not Sure", 
@@ -106,8 +122,7 @@ for (i in 1:nrow(comparison)) {
 }
 ```
 
-# Create a function for the entire process of confirmatory factor analysis (CFA), 
-# including the model fit measures and factor analysis (only ran if the model is determined to be a good fit)
+# Create a function to run model fit measures
 ```{r}
 run_model_fit_measures <- function(model_name) {
   # Fit the data to a CFA model
@@ -134,9 +149,6 @@ run_model_fit_measures <- function(model_name) {
   short_model_name <- sub(" =~.*", "", model_name)
   # Evaluate and print interpretation
   cat("========MODEL FIT MEASURES:", short_model_name,"\n")
-  
-  # Chi-Square
-  # The null hypothesis in a CFA analysis is that the matrix implied or reproduced by the data and specified model is statistically the same as the input or analysis matrix. In our study, overall ”fit” refers to how well the specified model is able to reproduce the original polychoric correlation analysis matrix. Contrary to usual hypothesis testing, we hope to retain the null hypothesis that the two matrices are statistically the same. Note that chi-square is sensitive to sample size and that, given a large sample, even small departures will be significant.
   cat("====Chi square:\n")
   cat(
     "Chi-squared:", chisq, 
@@ -149,8 +161,6 @@ run_model_fit_measures <- function(model_name) {
       paste0("Good fit (not significant at ", threshold_chisq, " level)\n")
   )
   
-  # CFI
-  # The CFI is a member of a family of incremental fit indexes that compare your model to a restricted baseline model. As the name implies, the srmr is based on the actual differences (discrepancies) between the model-based correlations and the actual correlations.
   cat("====Comparative Fit Index (CFI):\n")
   cat(
     "CFI:", cfi, 
@@ -160,9 +170,7 @@ run_model_fit_measures <- function(model_name) {
     else 
       paste0("Poor fit (CFI < ", threshold_cfi, ")\n")
   )
-  
-  # RMSEA
-  # The root mean square error of approximation (RMSEA) is a popular measure of the discrepancy between the model-based and observed correlation matrices. It makes adjustments based on model complexity (parsimony-adjusted) and has a known sampling distribution so it is possible to compute confidence intervals.
+
   cat("====Root Mean Square Error of Approximation (RMSEA):\n")
   cat(
     "RMSEA:", rmsea, 
@@ -189,16 +197,17 @@ run_model_fit_measures <- function(model_name) {
     cat("Conclusion: The model is not a good fit, as it met fewer than 2 out of 3 fit measures.\n")
     return(FALSE)
   }  
-  
 }
 ```
 
+# Create a function for the entire process of confirmatory factor analysis (CFA), 
+# including the model fit measures and factor analysis (only ran if the model is determined to be a good fit)
 ```{r}
-# Factor loadings provide useful information to a researcher; they indicate how much scores on an item change with a one-unit change in the latent factor. Items with higher loadings are more sensitive to changes in levels of the latent construct the items   measure and play a larger role in defining the construct than items will lower loadings.
-
 run_cfa <- function(model_name) {
-  # If the model is determined to be a good fit, then obtain the factor loadings
-#  if(run_model_fit_measures(model_name)==TRUE) {
+  # If the model is determined to be a good fit, then obtain the factor loadings. 
+  # AV 12/6/24: The if statement is commented out for now as we conduct more research on model fit measures
+  
+ #if(run_model_fit_measures(model_name)==TRUE) {
     # Fit the data to a CFA model
     fit.cat <- cfa(model_name, data=small_svy_data, mimic =c("MPlus"), std.lv = TRUE,
                ordered = TRUE)
@@ -223,49 +232,48 @@ run_cfa <- function(model_name) {
     cat("Number of factor loadings meeting the threshold (>=", threshold_factor_loading, "):", 
         count_met_threshold, "out of", ... = nrow(loadings_summary), "factors,", short_model_name, "\n")
     print(loadings_summary)
-#  }
-  
+ # }
 }
 ```
 
 # Create the string names for the subcomponent and component CFA models based on the data dictionary
 ```{r}
-# Group variables by subcomponents and components
-subcomponents <- small_svy_dd %>%
-  group_by(variable_name) %>%
-  summarize(variables = paste(variable, collapse = " + "), .groups = "drop")
-
-components <- small_svy_dd %>%
-  group_by(response_domain) %>%
-  summarize(variables = paste(variable, collapse = " + "), .groups = "drop")
-
-# Create model strings for subcomponents
-subcomponent_models <- subcomponents %>%
-  mutate(model_string = paste0(
-    "subcomponent_",
-    gsub("-", "_", gsub(",", "", gsub("/", "_", tolower(gsub(" ", "_", variable_name))))),
-    "_model <- 'subcomponent_",
-    gsub("-", "_", gsub(",", "", tolower(gsub("/", "_", gsub(" ", "_", variable_name))))),
-    " =~ ",
-    variables, "'"
-  ))
-
-# Create model strings for components
-component_models <- components %>%
-  mutate(model_string = paste0(
-    "component_",
-    gsub("-", "_", gsub(",", "", tolower(gsub(" ", "_", response_domain)))),
-    "_model <- 'component_",
-    gsub("-", "_", gsub(",", "", tolower(gsub(" ", "_", gsub(",|and", "", response_domain))))),
-    " =~ ",
-    variables, "'"
-  ))
-
-
-all_model_strings <- c(
-  subcomponent_models$model_string,
-  component_models$model_string
-)
+# # Group variables by subcomponents and components
+# subcomponents <- small_svy_dd %>%
+#   group_by(variable_name) %>%
+#   summarize(variables = paste(variable, collapse = " + "), .groups = "drop")
+# 
+# components <- small_svy_dd %>%
+#   group_by(response_domain) %>%
+#   summarize(variables = paste(variable, collapse = " + "), .groups = "drop")
+# 
+# # Create model strings for subcomponents
+# subcomponent_models <- subcomponents %>%
+#   mutate(model_string = paste0(
+#     "subcomponent_",
+#     gsub("-", "_", gsub(",", "", gsub("/", "_", tolower(gsub(" ", "_", variable_name))))),
+#     "_model <- 'subcomponent_",
+#     gsub("-", "_", gsub(",", "", tolower(gsub("/", "_", gsub(" ", "_", variable_name))))),
+#     " =~ ",
+#     variables, "'"
+#   ))
+# 
+# # Create model strings for components
+# component_models <- components %>%
+#   mutate(model_string = paste0(
+#     "component_",
+#     gsub("-", "_", gsub(",", "", tolower(gsub(" ", "_", response_domain)))),
+#     "_model <- 'component_",
+#     gsub("-", "_", gsub(",", "", tolower(gsub(" ", "_", gsub(",|and", "", response_domain))))),
+#     " =~ ",
+#     variables, "'"
+#   ))
+# 
+# 
+# all_model_strings <- c(
+#   subcomponent_models$model_string,
+#   component_models$model_string
+# )
 
 # all_model_strings
 ```
@@ -297,7 +305,7 @@ component_strong_minds_model <- 'component_strong_minds =~ ck + cl + cm + cr + c
 component_vibrant_communities_model <- 'component_vibrant_communities =~ do + dp + dq + dr + ds + dt + du + dv'
 ```
 
-# Apply function run_cfa to the models
+# all_models contains all the models we want to run factor analysis on
 ```{r}
 all_models <- c(
   component_caring_families_and_relationships_model,
@@ -308,11 +316,15 @@ all_models <- c(
   component_strong_minds_model,
   component_vibrant_communities_model
 )
+```
 
+# Apply function run_cfa to the models
+```{r}
 cfa_results <- lapply(all_models, run_cfa)
 ```
 
-# ARCHIVE OF MODELS
+################################## ARCHIVE #####################################
+# These are the models that have 3 or more question items per subcomponent or component
 ```{r}
 all_models <- c(
   # subcomponent_connectedness_model,
