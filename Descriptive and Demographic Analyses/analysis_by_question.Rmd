@@ -120,7 +120,7 @@ The following summarizes how all youth responded to each question in the Bold Vi
 
 A total of 3,444 youth ages 15-24 in Los Angeles County completed the survey.
 
-For a corresponding analysis by race, see [Trends by Race and Question](https://catalystcalifornia.github.io/boldvision_youththriving/Descriptive%20and%20Demographic%20Analyses/visual_analysis_race).
+For a corresponding analysis by race, see [Trends by Race and Question](https://catalystcalifornia.github.io/boldvision_youththriving/Descriptive%20and%20Demographic%20Analyses/analysis_by_race).
 
 # Strong Minds (and Bodies)
 
@@ -232,8 +232,8 @@ df_table<-sparks%>%rename_with(toupper)%>%rename(PERCENT=WEIGHTED_PERCENT)%>%
   colnames(df_table)<-gsub("_", " ", colnames(df_table))
 
   # assign a title
-  title<-unique(sparks$question)
-
+  title<-sparks%>%distinct(question,sub_question)
+  
 kable(as.data.frame(df_table)%>%
    mutate_if(is.numeric, format, digits=2),
    caption=toString(title)) %>%
@@ -281,7 +281,7 @@ pi_action<-question_sum(svy_df,svy_dd,domain="Positive Identity And Self-Worth",
     select(-c(1,2,6:9))
   colnames(df_table)<-gsub("_", " ", colnames(df_table))
   
-  title<-unique(pi_action$question)
+  title<-pi_action%>%distinct(question,sub_question)
 
 kable(as.data.frame(df_table)%>%
    mutate_if(is.numeric, format, digits=2),
