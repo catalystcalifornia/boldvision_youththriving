@@ -78,7 +78,7 @@ addmargins(table(ys_data$q24, useNA = "ifany")) %>%
   as.data.frame(.) %>%
   View()
 
-# q24a/ga - 1 or NA
+# q24a/ga - 1 or NA; sums to 3444
 addmargins(table(ys_data$ga, useNA = "ifany")) %>%
   as.data.frame(.) %>%
   View()
@@ -86,62 +86,98 @@ addmargins(table(ys_data$ga, useNA = "ifany")) %>%
 # make copy of ys_data for QA checks
 ys_data_corrected <- ys_data
 
-# Make the corrections:
+
+# Check if skip logic failures are present. If so, make the correction.
+
 # Q7: if bv != 1 and bw != 1 then ca:cf are null
-# any cases of this: 81 responses (e.g., response_id == 136135266)
-q6_cols_logiccheck <- c("bv", "bw")
-q7_cols_tocorrect <- c("ca", "cb", "cc", "cd", "ce", "cf")
+# In other words, if you are not a full-time (bv=NA) or part-time (bw=NA) student you should not answer Q7 (all Q7 cols should be NA)
+# any cases of this: 81 responses (e.g., response_id == 136135266) - will need to correct
+q6_cols <- c("bv", "bw")
+q7_cols <- c("ca", "cb", "cc", "cd", "ce", "cf")
+
 check_q6_q7 <- ys_data_corrected %>%
-  select(response_id, all_of(q6_cols_logiccheck), all_of(q7_cols_tocorrect)) %>%
-  # take sum of q7 columns (1 or NA) to gauge if respondent answered q7
-  mutate(q7_response = select(., all_of(q7_cols_tocorrect)) %>% 
-           rowSums(na.rm = TRUE)) %>%
-  filter(is.na(bv) & is.na(bw) & q7_response > 0)
+  unite("pattern", c(all_of(q6_cols), all_of(q7_cols)), sep = "/") %>%
+  count(pattern, name = "frequency") %>%
+  arrange(desc(frequency))
+
+View(check_q6_q7)
 
 # make the q6/q7 correction
 ys_data_corrected <- ys_data_corrected %>%
-  mutate(across(all_of(q7_cols_tocorrect), ~ifelse((is.na(bv) & is.na(bw)), NA, .)))
+  mutate(across(all_of(q7_cols), ~ifelse((is.na(bv) & is.na(bw)), NA, .)))
+
+# qa check
+qa_q7_correction <- ys_data_corrected %>%
+  unite("pattern", c(all_of(q6_cols), all_of(q7_cols)), sep = "/") %>%
+  count(pattern, name = "frequency") %>%
+  arrange(desc(frequency))
+
+View(qa_q7_correction)
   
 
-# Q10a: if q10 == 2 (No) - in other words q10 != 1 (Yes) & q10 != 3 (Not sure) & q10 != 4 (Don't wish to answer) then q10a is null
-# any cases of this: None - not addressed
+# Q10a: if q10 == 2 (No) then q10a should be null
+# any cases of this: None - no need to correct, move on to Q10b
 check_q10_q10a <- ys_data_corrected %>%
-  select(response_id, q10, q10a) %>%
-  filter((q10 == 2) & !is.na(q10a))
+  unite("pattern", c(q10, q10a), sep = "/") %>%
+  count(pattern, name = "frequency") %>%
+  arrange(desc(frequency))
 
+View(check_q10_q10a)
 
 # Q10b: if q10 != 2 (No) then q10b is null
-# any cases of this: None - not addressed
+# any cases of this: None - no need to correct, move on to Q12a
 check_q10_q10b <- ys_data_corrected %>%
-  select(response_id, q10, q10b) %>%
-  filter(q10 != 2 & !is.na(q10b))
+  unite("pattern", c(q10, q10b), sep = "/") %>%
+  count(pattern, name = "frequency") %>%
+  arrange(desc(frequency))
+
+View(check_q10_q10b)
 
 
 # Q12a: if q12 != 1 (Yes) then q12a is null
-# any cases of this: 61 responses (e.g., response_id == 136183460)
+# any cases of this: Yes, 61 observations - will need to correct
 check_q12_q12a <- ys_data_corrected %>%
-  select(response_id, q12, q12a) %>%
-  filter(q12 != 1 & !is.na(q12a))
+  unite("pattern", c(q12, q12a), sep = "/") %>%
+  count(pattern, name = "frequency") %>%
+  arrange(desc(frequency))
+
+View(check_q12_q12a)
 
 # make the q12/q12a correction
 ys_data_corrected <- ys_data_corrected %>%
-  mutate(q12a = ifelse(q12 != 1, NA, .))
+  mutate(q12a = ifelse(q12 != 1, NA, q12a))
+
+# qa check
+qa_q12a_correction <- ys_data_corrected %>%
+  unite("pattern", c(q12, q12a), sep = "/") %>%
+  count(pattern, name = "frequency") %>%
+  arrange(desc(frequency))
+  
+View(qa_q12a_correction)
 
 
 # Q24a: if q24 != 1 (Yes) then q24a is null 
-# any cases of this: None - not addressed
-q24a_cols_tocorrect <- c("ga", "gb", "gc", "gd", "ge", "gf", "gg")
+# any cases of this: Yes, 9 observations - will need to correct 
+q24a_cols <- c("ga", "gb", "gc", "gd", "ge", "gf", "gg")
+
 check_q24_q24a <- ys_data_corrected %>%
-  select(response_id, q24, all_of(q24a_cols_tocorrect)) %>%
-  mutate(
-    # convert gg (other write-in) to 1/NA to take row sums 
-    gg = ifelse(is.na(gg) == TRUE, as.numeric(NA), as.numeric(1))) %>%
-  mutate(
-    gg = as.numeric(gg),
-    # take sum of q24a columns (1 or NA) to gauge if respondent answered q24a
-    q24a_response = select(., all_of(q24a_cols_tocorrect)) %>% 
-           rowSums(na.rm = TRUE)) %>%
-  filter(q24 != 1 & q24a_response > 0)
+  unite("pattern", c("q24", all_of(q24a_cols)), sep = "/") %>%
+  count(pattern, name = "frequency") %>%
+  arrange(desc(frequency))
+
+View(check_q24_q24a)
+
+# make the q24a correction
+ys_data_corrected <- ys_data_corrected %>%
+  mutate(across(all_of(q24a_cols), ~ifelse(q24 != 1, NA, .)))
+
+# qa check
+qa_q24a_correction <- ys_data_corrected %>%
+  unite("pattern", c("q24", all_of(q24a_cols)), sep = "/") %>%
+  count(pattern, name = "frequency") %>%
+  arrange(desc(frequency))
+
+View(qa_q24a_correction)
 
 
 #### Step 3: Add adjusted weights ####
