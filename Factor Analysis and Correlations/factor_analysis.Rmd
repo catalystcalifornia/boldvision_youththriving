@@ -1,0 +1,355 @@
+---
+title: "Factor Analysis"
+author: "Alicia Vo"
+date: "2024-12-2"
+output: html_document
+---
+# Pull in data from postgres database
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(RPostgreSQL)
+library(lavaan)
+library(psych)
+
+# Connect to postgres
+source("W:\\RDA Team\\R\\credentials_source.R")
+con <- connect_to_db("bold_vision")
+# Pull in the survey data and data dictionary
+svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
+svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024")
+```
+
+## Data Preparation
+# Filter svy_dd and svy_data to only contain the likert questions needed for the factor analysis
+```{r}
+# In the data dictionary, variable_name = subcomponent and response_domain = component
+subcomponent_list <- c("Positive Emotions", "Self-Efficacy", "Hope For The Future", "Growth Mindset", "Psychological Distress", "Sparks", "Relationships/Support", "Freedom To Explore The Self", "Connectedness", "Critical Action", "Safe Access To Public Spaces For Social, Cultural, And Literary Opportunities", "Cultural Identity And Connection", "Experiences Of Racism And Discrimination", "Microaggressions", "Structural Racism", "Personal Safety")
+
+component_list <- c("Strong Minds", "Positive Identity And Self-Worth", "Caring Families And Relationships", "Vibrant Communities", "Cultural Identity", "Racial Justice, Equity, And Inclusion", "Safety")
+
+# small_svy_dd only contains the likert questions needed for the factor analysis
+small_svy_dd <- svy_dd %>%
+  filter(response_domain %in% component_list & !(is.na(likert_type)))
+
+# small_svy_data only contains the columns of likert questions needed for the factor analysis
+small_svy_data <- svy_data %>%
+  select(all_of(small_svy_dd$variable))
+```
+
+# In the survey data, change the responses of "Don't wish to answer", "Not sure", "Not Sure", 
+# "Does not apply to me", "Don't know" into NA values.
+
+# AV 12/4/24: For q10a, the response_5 option of "Not Sure" in the data dictionary 
+# should be changed to "Not sure" to maintain consistency - not the biggest deal though.
+```{r}
+# List of responses that should be replaced with NA
+na_responses <- c("Don't wish to answer", "Not sure", "Not Sure", "Does not apply to me", "Don't know")
+
+# Iterate over each column in small_svy_data
+for (col in names(small_svy_data)) {
+  # Get the corresponding row in the data dictionary
+  dd_row <- small_svy_dd[small_svy_dd$variable == col, ]
+  
+  if (nrow(dd_row) > 0) { # Ensure there is a matching dictionary entry
+    # Get response_# columns
+    valid_responses <- dd_row[1, grepl("^response_[0-9]+$", names(dd_row))]
+    valid_responses <- valid_responses[!is.na(valid_responses)]  # Exclude NAs explicitly
+    # Create response_map only if valid responses exist
+    if (length(valid_responses) > 0) {
+      response_map <- setNames(as.list(valid_responses), seq_along(valid_responses))
+      # Replace values in the column based on the response map
+      small_svy_data[[col]] <- sapply(small_svy_data[[col]], function(x) {
+        if (!is.na(x) && response_map[[as.character(x)]] %in% na_responses) {
+          NA
+        } else {
+          x
+        }
+      })
+    }
+  }
+}
+```
+
+# Reverse the likert scales in the survey data for the scales that need reversing
+```{r}
+# Identify columns to reverse
+columns_to_reverse <- small_svy_dd$variable[grep("_rev$", small_svy_dd$likert_type)]
+
+# Loop through each column to reverse
+for (col in columns_to_reverse) {
+  # Get the maximum scale value from the 'likert' column
+  scale_max <- as.numeric(sub("pt_scale", "", small_svy_dd$likert[small_svy_dd$variable == col]))
+  
+  # Reverse the scale in small_svy_data
+  small_svy_data[[col]] <- scale_max + 1 - small_svy_data[[col]]
+}
+```
+## Data Checks
+# Check that missing data is being eliminated from analysis (not adding zeros into analyses)
+# Check for “wild codes” or data values outside of the allowed range
+# Check that the responses of "Don't wish to answer", "Not sure", "Not Sure", 
+# "Does not apply to me", "Don't know" are NA values
+```{r}
+# Step 1: Get unique counts for small_svy_data
+unique_counts <- sapply(small_svy_data, function(x) length(unique(x)))
+
+# Step 2: Filter relevant response columns dynamically
+# Identify columns in small_svy_dd that match the pattern "response_<number>"
+response_cols <- grep("^response_[0-9]+$", names(small_svy_dd), value = TRUE)
+
+# Step 3: Match small_svy_data columns with small_svy_dd using the variable column
+comparison <- merge(
+  data.frame(variable = names(unique_counts), unique_count = unique_counts),
+  small_svy_dd,
+  by = "variable"
+)
+
+# Print 
+for (i in 1:nrow(comparison)) {
+  column_name <- comparison$variable[i]
+  actual_unique_values <- unique(small_svy_data[[column_name]])
+  
+  # Replace NA with a string "NA" for printing
+  actual_unique_values <- ifelse(is.na(actual_unique_values), "NA", actual_unique_values)
+  
+  cat(
+    "Column:", column_name, 
+    "\nUnique Values Count:", comparison$unique_count[i], 
+    "\nUnique Values:", paste(sort(actual_unique_values), collapse = ", "), 
+    "\n\n"
+  )
+}
+```
+
+# Create a function to run model fit measures
+```{r}
+run_model_fit_measures <- function(model_name) {
+  # Fit the data to a CFA model
+  fit.cat <- cfa(model_name, data=small_svy_data, mimic =c("MPlus"), std.lv = TRUE,
+               ordered = TRUE)
+  # Extract fit measures
+  chisq <- fitMeasures(fit.cat, "chisq.scaled")
+  # df <- fitMeasures(fit.cat, "df")
+  pvalue <- fitMeasures(fit.cat, "pvalue.scaled")
+  
+  cfi <- fitMeasures(fit.cat, "cfi.scaled")
+  
+  rmsea <- fitMeasures(fit.cat, "rmsea.scaled")
+  # rmsea_lower <- fitMeasures(fit.cat, "rmsea.ci.lower.scaled")
+  # rmsea_upper <- fitMeasures(fit.cat, "rmsea.ci.upper.scaled")
+  # rmsea_pvalue <- fitMeasures(fit.cat, "rmsea.pvalue.scaled")
+  
+  # Set thresholds for fit measures
+  threshold_chisq <- 0.05
+  threshold_cfi <- 0.95
+  threshold_rmsea <- 0.05
+  
+  # Extract the part before the =~
+  short_model_name <- sub(" =~.*", "", model_name)
+  # Evaluate and print interpretation
+  cat("========MODEL FIT MEASURES:", short_model_name,"\n")
+  cat("====Chi square:\n")
+  cat(
+    "Chi-squared:", chisq, 
+    # "\nDegrees of Freedom:", df, 
+    "\nP-value:", pvalue, 
+    "\nInterpretation: ", 
+    if (pvalue < threshold_chisq) 
+      paste0("Poor fit (significant at ", threshold_chisq, " level)\n") 
+    else 
+      paste0("Good fit (not significant at ", threshold_chisq, " level)\n")
+  )
+  
+  cat("====Comparative Fit Index (CFI):\n")
+  cat(
+    "CFI:", cfi, 
+    "\nInterpretation: ", 
+    if (cfi >= threshold_cfi) 
+      paste0("Good fit (CFI >= ", threshold_cfi, ")\n") 
+    else 
+      paste0("Poor fit (CFI < ", threshold_cfi, ")\n")
+  )
+
+  cat("====Root Mean Square Error of Approximation (RMSEA):\n")
+  cat(
+    "RMSEA:", rmsea, 
+    # "\n90% CI:", rmsea_lower, "-", rmsea_upper, 
+    # "\nP-value:", rmsea_pvalue, 
+    "\nInterpretation: ", 
+    if (rmsea <= threshold_rmsea) 
+      paste0("Good fit (RMSEA <= ", threshold_rmsea, ")\n") 
+    else 
+      paste0("Poor fit (RMSEA > ", threshold_rmsea, ")\n")
+  )
+  
+  # Determine overall model fit based on the 2/3 rule
+  good_fit_count <- sum(pvalue >= threshold_chisq, cfi >= threshold_cfi, rmsea <= threshold_rmsea)
+  
+  cat("\nMODEL FIT CONCLUSION\n")
+  cat("Number of fit measures met:", good_fit_count, "out of 3.\n")
+  
+  if (good_fit_count >= 2) {
+    cat("Conclusion: The model is a good fit, based on meeting at least 2 out of 3 fit measures.\n")
+    return(TRUE)
+  } 
+  else {
+    cat("Conclusion: The model is not a good fit, as it met fewer than 2 out of 3 fit measures.\n")
+    return(FALSE)
+  }  
+}
+```
+
+# Create a function for the entire process of confirmatory factor analysis (CFA), 
+# including the model fit measures and factor analysis (only ran if the model is determined to be a good fit)
+```{r}
+run_cfa <- function(model_name) {
+  # If the model is determined to be a good fit, then obtain the factor loadings. 
+  # AV 12/6/24: The if statement is commented out for now as we conduct more research on model fit measures
+  
+ #if(run_model_fit_measures(model_name)==TRUE) {
+    # Fit the data to a CFA model
+    fit.cat <- cfa(model_name, data=small_svy_data, mimic =c("MPlus"), std.lv = TRUE,
+               ordered = TRUE)
+    # Define threshold for factor loadings
+    threshold_factor_loading <- 0.8
+    
+    # Extract factor loadings and filter by threshold
+    loadings_summary <- parameterEstimates(fit.cat, standardized = TRUE) %>% 
+      filter(op == "=~") %>% 
+      select(Item = rhs, Standardized = est, ci.lower, ci.upper, SE = se, Z = z, `p-value` = pvalue) %>%
+      mutate(met_threshold = abs(Standardized) >= threshold_factor_loading)
+    
+    # Count how many loadings met the threshold
+    count_met_threshold <- loadings_summary %>%
+      filter(met_threshold) %>%
+      nrow()
+    
+    # Extract the part before the =~
+    short_model_name <- sub(" =~.*", "", model_name)
+    
+    # Print results
+    cat("Number of factor loadings meeting the threshold (>=", threshold_factor_loading, "):", 
+        count_met_threshold, "out of", ... = nrow(loadings_summary), "factors,", short_model_name, "\n")
+    print(loadings_summary)
+ # }
+}
+```
+
+# Create the string names for the subcomponent and component CFA models based on the data dictionary
+```{r}
+# # Group variables by subcomponents and components
+# subcomponents <- small_svy_dd %>%
+#   group_by(variable_name) %>%
+#   summarize(variables = paste(variable, collapse = " + "), .groups = "drop")
+# 
+# components <- small_svy_dd %>%
+#   group_by(response_domain) %>%
+#   summarize(variables = paste(variable, collapse = " + "), .groups = "drop")
+# 
+# # Create model strings for subcomponents
+# subcomponent_models <- subcomponents %>%
+#   mutate(model_string = paste0(
+#     "subcomponent_",
+#     gsub("-", "_", gsub(",", "", gsub("/", "_", tolower(gsub(" ", "_", variable_name))))),
+#     "_model <- 'subcomponent_",
+#     gsub("-", "_", gsub(",", "", tolower(gsub("/", "_", gsub(" ", "_", variable_name))))),
+#     " =~ ",
+#     variables, "'"
+#   ))
+# 
+# # Create model strings for components
+# component_models <- components %>%
+#   mutate(model_string = paste0(
+#     "component_",
+#     gsub("-", "_", gsub(",", "", tolower(gsub(" ", "_", response_domain)))),
+#     "_model <- 'component_",
+#     gsub("-", "_", gsub(",", "", tolower(gsub(" ", "_", gsub(",|and", "", response_domain))))),
+#     " =~ ",
+#     variables, "'"
+#   ))
+# 
+# 
+# all_model_strings <- c(
+#   subcomponent_models$model_string,
+#   component_models$model_string
+# )
+
+# all_model_strings
+```
+
+# Create the subcomponent and component CFA models
+```{r}
+subcomponent_connectedness_model <- 'subcomponent_connectedness =~ dk + dl'
+subcomponent_critical_action_model <- 'subcomponent_critical_action =~ dm'
+subcomponent_cultural_identity_and_connection_model <- 'subcomponent_cultural_identity_and_connection =~ dx + dy + dz + ea + eb + ec'
+subcomponent_experiences_of_racism_and_discrimination_model <- 'subcomponent_experiences_of_racism_and_discrimination =~ ef + eg + eh + ei + ej + ek + el + em + en'
+subcomponent_freedom_to_explore_the_self_model <- 'subcomponent_freedom_to_explore_the_self =~ dd + de + df'
+subcomponent_growth_mindset_model <- 'subcomponent_growth_mindset =~ cr + cs'
+subcomponent_hope_for_the_future_model <- 'subcomponent_hope_for_the_future =~ co + cp'
+subcomponent_microaggressions_model <- 'subcomponent_microaggressions =~ eo + ep + eq + er'
+subcomponent_personal_safety_model <- 'subcomponent_personal_safety =~ q19'
+subcomponent_positive_emotions_model <- 'subcomponent_positive_emotions =~ ck + cl + cm'
+subcomponent_psychological_distress_model <- 'subcomponent_psychological_distress =~ ct + cu + cv + cw + cx + cy'
+subcomponent_relationships_support_model <- 'subcomponent_relationships_support =~ q10a + q12a + dn'
+subcomponent_safe_access_to_public_spaces_for_social_cultural_and_literary_opportunities_model <- 'subcomponent_safe_access_to_public_spaces_for_social_cultural_and_literary_opportunities =~ do + dp + dq + dr + ds + dt + du + dv'
+subcomponent_self_efficacy_model <- 'subcomponent_self_efficacy =~ cn + cq'
+subcomponent_sparks_model <- 'subcomponent_sparks =~ q10'
+subcomponent_structural_racism_model <- 'subcomponent_structural_racism =~ es + et + eu + ev + ew + ex + ey'
+component_caring_families_and_relationships_model <- 'component_caring_families_and_relationships =~ q10a + q12a + dk + dl + dn'
+component_cultural_identity_model <- 'component_cultural_identity =~ dx + dy + dz + ea + eb + ec'
+component_positive_identity_and_self_worth_model <- 'component_positive_identity_and_self_worth =~ cn + co + cp + cq + q10 + dd + de + df + dm'
+component_racial_justice_equity_and_inclusion_model <- 'component_racial_justice_equity_and_inclusion =~ ef + eg + eh + ei + ej + ek + el + em + en + eo + ep + eq + er + es + et + eu + ev + ew + ex + ey'
+component_safety_model <- 'component_safety =~ q19'
+component_strong_minds_model <- 'component_strong_minds =~ ck + cl + cm + cr + cs + ct + cu + cv + cw + cx + cy'
+component_vibrant_communities_model <- 'component_vibrant_communities =~ do + dp + dq + dr + ds + dt + du + dv'
+```
+
+# all_models contains all the models we want to run factor analysis on
+```{r}
+all_models <- c(
+  component_caring_families_and_relationships_model,
+  component_cultural_identity_model,
+  component_positive_identity_and_self_worth_model,
+  component_racial_justice_equity_and_inclusion_model,
+  # component_safety_model,
+  component_strong_minds_model,
+  component_vibrant_communities_model
+)
+```
+
+# Apply function run_cfa to the models
+```{r}
+cfa_results <- lapply(all_models, run_cfa)
+```
+
+################################## ARCHIVE #####################################
+# These are the models that have 3 or more question items per subcomponent or component
+```{r}
+all_models <- c(
+  # subcomponent_connectedness_model,
+  # subcomponent_critical_action_model,
+  subcomponent_cultural_identity_and_connection_model,
+  subcomponent_experiences_of_racism_and_discrimination_model,
+  # subcomponent_freedom_to_explore_the_self_model,
+  # subcomponent_growth_mindset_model,
+  # subcomponent_hope_for_the_future_model,
+  subcomponent_microaggressions_model,
+  # subcomponent_personal_safety_model,
+  # subcomponent_positive_emotions_model,
+  subcomponent_psychological_distress_model,
+  # subcomponent_relationships_support_model,
+  # The model below is exactly the same as component_vibrant_communities_model
+  # subcomponent_safe_access_to_public_spaces_for_social_cultural_and_literary_opportunities_model, 
+  # subcomponent_self_efficacy_model,
+  # subcomponent_sparks_model,
+  subcomponent_structural_racism_model,
+  component_caring_families_and_relationships_model,
+  component_cultural_identity_model,
+  component_positive_identity_and_self_worth_model,
+  component_racial_justice_equity_and_inclusion_model,
+  # component_safety_model,
+  component_strong_minds_model,
+  component_vibrant_communities_model
+)
+```
