@@ -3,10 +3,7 @@
 
 
 ####Step 1: Set Up ####
-
-
 packages <- c("dplyr", "RPostgreSQL", "usethis", "readxl", "janitor", "stringr") 
-
 
 for(pkg in packages){
   library(pkg, character.only = TRUE)
@@ -19,7 +16,7 @@ source("W:\\RDA Team\\R\\credentials_source.R")
 con_bv <- connect_to_db("bold_vision") 
 
 
-#### Step 2: Read in dataset and clean column names ####
+#### Step 2a: Read in dataset and clean column names ####
 ## Read in data
 ys_data <- read_excel("W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Updated - 09252024\\BVYTSDatabase_Updated.xlsx", sheet="Data Base")
 
@@ -38,9 +35,154 @@ colnames(ys_data)[grepl('q12a_how_true_is_this_about_you',colnames(ys_data))] <-
 colnames(ys_data)[grepl('q10b_which_of_the_following_',colnames(ys_data))] <- 'q10b'
 colnames(ys_data)[grepl('q10a_how_many_adults_really_',colnames(ys_data))] <- 'q10a'
 
+
+#### Step 2b: Correct skip-logic failures ####
+# Using paper survey as reference: 
+# W:\Project\OSI\Bold Vision\Youth Thriving Survey\Data\Survey responses\Updated - 09252024\BVYTS_PaperSurvey_Updated.pdf
+# Responses to correct: q7 (from q6), q10a and 10b (from q10), q12a (from q12), q24a (from q24) 
+# Note: q4 and q5 corrections are addressed in race recode script
+
+# Before correcting, check that no other values are possible (i.e., only those in the in the paper survey or data dictionary)
+# q6/bv (Full-time student) - 1 or NA; sums to 3444
+addmargins(table(ys_data$bv, useNA = "ifany")) %>%
+  as.data.frame(.) %>%
+  View()
+
+# q6/bw (Part-time student) - 1 or NA; sums to 3444
+addmargins(table(ys_data$bw, useNA = "ifany")) %>%
+  as.data.frame(.) %>%
+  View()
+
+# q10 - 1, 2, 3, or 4; sums to 3444
+addmargins(table(ys_data$q10, useNA = "ifany")) %>%
+  as.data.frame(.) %>%
+  View()
+
+# q10a - 1, 2, 3, 4, 5, 6, or NA; sums to 3444
+addmargins(table(ys_data$q10a, useNA = "ifany")) %>%
+  as.data.frame(.) %>%
+  View()
+
+# q10b - 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, or NA; sums to 3444
+addmargins(table(ys_data$q10b, useNA = "ifany")) %>%
+  as.data.frame(.) %>%
+  View()
+
+# q12 - 1 or 2; sums to 3444
+addmargins(table(ys_data$q12, useNA = "ifany")) %>%
+  as.data.frame(.) %>%
+  View()
+
+# q24 - 1, 2, 3, 4, or NA; sums to 3444
+addmargins(table(ys_data$q24, useNA = "ifany")) %>%
+  as.data.frame(.) %>%
+  View()
+
+# q24a/ga - 1 or NA; sums to 3444
+addmargins(table(ys_data$ga, useNA = "ifany")) %>%
+  as.data.frame(.) %>%
+  View()
+
+# make copy of ys_data for QA checks
+ys_data_corrected <- ys_data
+
+
+# Check if skip logic failures are present. If so, make the correction.
+
+# Q7: if bv != 1 and bw != 1 then ca:cf are null
+# In other words, if you are not a full-time (bv=NA) or part-time (bw=NA) student you should not answer Q7 (all Q7 cols should be NA)
+# any cases of this: 81 responses (e.g., response_id == 136135266) - will need to correct
+q6_cols <- c("bv", "bw")
+q7_cols <- c("ca", "cb", "cc", "cd", "ce", "cf")
+
+check_q6_q7 <- ys_data_corrected %>%
+  unite("pattern", c(all_of(q6_cols), all_of(q7_cols)), sep = "/") %>%
+  count(pattern, name = "frequency") %>%
+  arrange(desc(frequency))
+
+View(check_q6_q7)
+
+# make the q6/q7 correction
+ys_data_corrected <- ys_data_corrected %>%
+  mutate(across(all_of(q7_cols), ~ifelse((is.na(bv) & is.na(bw)), NA, .)))
+
+# qa check
+qa_q7_correction <- ys_data_corrected %>%
+  unite("pattern", c(all_of(q6_cols), all_of(q7_cols)), sep = "/") %>%
+  count(pattern, name = "frequency") %>%
+  arrange(desc(frequency))
+
+View(qa_q7_correction)
+  
+
+# Q10a: if q10 == 2 (No) then q10a should be null
+# any cases of this: None - no need to correct, move on to Q10b
+check_q10_q10a <- ys_data_corrected %>%
+  unite("pattern", c(q10, q10a), sep = "/") %>%
+  count(pattern, name = "frequency") %>%
+  arrange(desc(frequency))
+
+View(check_q10_q10a)
+
+# Q10b: if q10 != 2 (No) then q10b is null
+# any cases of this: None - no need to correct, move on to Q12a
+check_q10_q10b <- ys_data_corrected %>%
+  unite("pattern", c(q10, q10b), sep = "/") %>%
+  count(pattern, name = "frequency") %>%
+  arrange(desc(frequency))
+
+View(check_q10_q10b)
+
+
+# Q12a: if q12 != 1 (Yes) then q12a is null
+# any cases of this: Yes, 61 observations - will need to correct
+check_q12_q12a <- ys_data_corrected %>%
+  unite("pattern", c(q12, q12a), sep = "/") %>%
+  count(pattern, name = "frequency") %>%
+  arrange(desc(frequency))
+
+View(check_q12_q12a)
+
+# make the q12/q12a correction
+ys_data_corrected <- ys_data_corrected %>%
+  mutate(q12a = ifelse(q12 != 1, NA, q12a))
+
+# qa check
+qa_q12a_correction <- ys_data_corrected %>%
+  unite("pattern", c(q12, q12a), sep = "/") %>%
+  count(pattern, name = "frequency") %>%
+  arrange(desc(frequency))
+  
+View(qa_q12a_correction)
+
+
+# Q24a: if q24 != 1 (Yes) then q24a is null 
+# any cases of this: Yes, 9 observations - will need to correct 
+q24a_cols <- c("ga", "gb", "gc", "gd", "ge", "gf", "gg")
+
+check_q24_q24a <- ys_data_corrected %>%
+  unite("pattern", c("q24", all_of(q24a_cols)), sep = "/") %>%
+  count(pattern, name = "frequency") %>%
+  arrange(desc(frequency))
+
+View(check_q24_q24a)
+
+# make the q24a correction
+ys_data_corrected <- ys_data_corrected %>%
+  mutate(across(all_of(q24a_cols), ~ifelse(q24 != 1, NA, .)))
+
+# qa check
+qa_q24a_correction <- ys_data_corrected %>%
+  unite("pattern", c("q24", all_of(q24a_cols)), sep = "/") %>%
+  count(pattern, name = "frequency") %>%
+  arrange(desc(frequency))
+
+View(qa_q24a_correction)
+
+
 #### Step 3: Add adjusted weights ####
 # remove original weighting cols from vendor (note: will reuse column names in table exported to pg)
-ys_data <- ys_data %>%
+ys_data_corrected <- ys_data_corrected %>%
   select(-c(weights_a1, weights_a2, weights_a3, weights_final))
 
 # read in acs population weights (age, sex, SPA)
@@ -55,7 +197,7 @@ acs_age_pop <- acs_pop_weights %>%
 acs_age_pop$variable <- str_replace(acs_age_pop$variable, "15-17","1")
 acs_age_pop$variable <- str_replace(acs_age_pop$variable, "18-24", "2")
 
-acs_age_sample <- ys_data %>%
+acs_age_sample <- ys_data_corrected %>%
   select(age_minor_adult) %>%
   table(., useNA = "ifany") %>%
   as.data.frame() %>%
@@ -72,7 +214,7 @@ age_weights <- acs_age_pop %>%
     variable = as.numeric(variable)
   )
 
-ys_data_agewts <- ys_data %>%
+ys_data_agewts <- ys_data_corrected %>%
   left_join(select(age_weights, variable, weights), by=c("age_minor_adult"="variable")) %>%
   rename(age_wt = weights)
 
@@ -129,7 +271,7 @@ acs_sex_pop <- acs_pop_weights %>%
 acs_sex_pop$variable <- str_replace(acs_sex_pop$variable, "Male","1")
 acs_sex_pop$variable <- str_replace(acs_sex_pop$variable, "Female", "2")
 
-acs_sex_sample <- ys_data %>%
+acs_sex_sample <- ys_data_corrected %>%
   select(q22) %>%
   table(., useNA = "ifany") %>%
   as.data.frame() %>%
@@ -158,7 +300,7 @@ acs_spa_pop <- acs_pop_weights %>%
          pop_rate = percent) %>%
   mutate(variable = as.numeric(str_replace_all(variable, "SPA ", "")))
 
-acs_spa_sample <- ys_data %>%
+acs_spa_sample <- ys_data_corrected %>%
   select(spa_final_respondent) %>%
   table(.) %>%
   as.data.frame() %>%
@@ -203,14 +345,14 @@ ys_data_finalwts <- ys_data_finalwts %>%
 # dbWriteTable(con_bv, c('youth_thriving', 'raw_survey_data'), ys_data_finalwts,
 #                           overwrite = FALSE, row.names = FALSE)
 
-# dbSendQuery(con_bv, "COMMENT ON TABLE youth_thriving.raw_survey_data IS
+# dbSendQuery(con_bv, paste0("COMMENT ON TABLE youth_thriving.raw_survey_data IS
 #             'The following dataset are responses from the Youth Thriving Survey conducted by Bold Vision in 2024. The data dictionary explaining each variable is here: youth_thriving.bvys_datadictionary_2024 .
 #             Steps explaining data cleaning can be found here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Updated - 09252024\\BVYTSPopulationWeighting_DataCleaning.pdf
 #             Original Dataset is here: a)	W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Data\\Survey responses\\Updated - 09252024\\BVYTSWeightSummary_Database.xlsx
 #             The process for cleaning and uploading the data is explained in the QA Documentation here: W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_dataimport_datadictionary.docx
-#             Script for cleaning data and recalculating sample weights can be found here Data Prep and Quality/importing_data.R'")
+#             Script for cleaning data and recalculating sample weights can be found here Data Prep and Quality/importing_data.R. ", "Table last updated: ", Sys.Date(), "'"))
 
-# UPDATE THIS LINE EVERY TIME DATA IS REPUSHED Survey data update date in postgres 11-12-24
+# UPDATE THIS LINE EVERY TIME DATA IS REPUSHED Survey data update date in postgres 11-25-24-
 
 ####Step 5: Read in data dictionary and send to database comments ####
 
