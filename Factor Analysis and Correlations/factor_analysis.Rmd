@@ -232,9 +232,9 @@ run_cfa <- function(model_name) {
       arrange(desc(Standardized)) # Reorder by Item in descending order
 
     # Create question_strings by matching 'Item' in loadings_summary with 'variable' in svy_dd
-    question_strings <- svy_dd %>%
-      filter(variable %in% loadings_summary$Item) %>%
-      select(variable, question)
+    # question_strings <- svy_dd %>%
+    #   filter(variable %in% loadings_summary$Item) %>%
+    #   select(variable, question)
           
     # Count how many loadings met the threshold
     count_met_threshold <- loadings_summary %>%
