@@ -303,6 +303,11 @@ gender_sexuality_data <- gender_sexuality_data %>%
       TRUE ~ NA_character_  # Assign NA if no conditions match
     )
   ) 
+
+qa_check <- gender_sexuality_data %>%
+  group_by(cis_mf_trans_gnc, cisgender_mf, fl, cis_trans_gnc, detailed_gender, q22)%>%
+  summarise(count=n())
+
 ```
 
 ## 5.	Straight vs LGBQA
@@ -322,6 +327,10 @@ gender_sexuality_data <- gender_sexuality_data %>%
       TRUE ~ NA_integer_  # Everyone else as NA
     )
   )
+
+qa_check <- gender_sexuality_data %>%
+  select(straight_lgbqa, sexuality_count, detailed_sexuality, fx)
+  
 ```
 
 ## 6.	Cisgender heterosexual vs LGBTQIA+ 
@@ -342,6 +351,11 @@ gender_sexuality_data <- gender_sexuality_data %>%
       TRUE ~ NA_integer_  # Everyone else as NA
     )
   )
+
+qa_check <- gender_sexuality_data %>%
+  group_by(cishet_lgbtqia, straight_lgbqa, cisgender_mf, cis_trans_gnc)%>%
+  summarise(count=n())
+
 ```
 
 ## 7.	LGBTQIA+ white vs LGBTQIA+ BIPOC
@@ -365,6 +379,12 @@ gender_sexuality_data <- gender_sexuality_data %>%
       TRUE ~ NA_integer_  # Everyone else as NA
     )
   )
+
+
+qa_check <- gender_sexuality_data %>%
+  group_by(cishet_lgbtqia, lgbtqia_white_bipoc, nh_race)%>%
+  summarise(count=n())
+
 ```
 
 ## Get frequencies
@@ -401,7 +421,8 @@ gender_sexuality_data %>%
 # Get relevant columns from gender_sexuality_data to put into a table in the database
 final_df<-gender_sexuality_data%>%
   select(response_id, cisgender_mf, cisgender_tgnc, cis_trans_gnc, 
-         cis_mf_trans_gnc, straight_lgbqa, cishet_lgbtqia, lgbtqia_white_bipoc) 
+         cis_mf_trans_gnc, straight_lgbqa, cishet_lgbtqia, lgbtqia_white_bipoc, detailed_gender,
+         detailed_sexuality, fc:fl, fo:fx)
 
 # Write table with metadata
 table_name <- "gender_sexuality_data"
