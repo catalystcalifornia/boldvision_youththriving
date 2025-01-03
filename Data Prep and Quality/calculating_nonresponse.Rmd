@@ -314,23 +314,23 @@ column_comments <- c(
 # Write table nonresp_by_question with metadata
 table_name <- "nonresponse_by_question"
 schema <- "youth_thriving"
-indicator <- "A question-level table with nonresponse rates for each question"
-source <- " See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_nonresponse.docx
-Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/calculating_nonresponse.Rmd"
+indicator <- "A question-level table with nonresponse rates for each question. Nonresponse only includes respondents who skipped a question. Dont wish to answer or Dont know is counted as a response "
+source <- " Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/calculating_nonresponse.Rmd "
+qa_filepath<-" See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_nonresponse.docx "
 table_comment <- paste0(indicator, source)
-dbWriteTable(con, c(schema, table_name), nonresp_by_question,
-             overwrite = TRUE, row.names = FALSE)
+# dbWriteTable(con, c(schema, table_name), nonresp_by_question,
+#              overwrite = FALSE, row.names = FALSE)
 
 # Add metadata for nonresp_by_question
 column_names <- colnames(nonresp_by_question) # Get column names
 column_comments <- c(
   'The question number',
-  'The count of NAs for this question',
-  'The % of NAs for this question out of all the respondents who participated in the survey and had valid, eligible responses',
+  'The count of NAs or number of respondents who were eligible to answer the question and did not',
+  'The % of NAs or nonresponses for this question out of all the respondents who participated in the survey and had valid, eligible responses',
   'The count of responses for this question',
   'the % of responses for this question out of all the respondents who participated the survey and had valid, eligible responses')
 
-add_table_comments(con, schema, table_name, indicator, source, column_names, column_comments)
+add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
 
 dbDisconnect(con)
 ```
