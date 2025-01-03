@@ -201,6 +201,10 @@ gender_sexuality_data <- gender_sexuality_data %>%
       svy_dd$response_1[svy_dd$variable %in% matching_sexuality_cols]),
     detailed_sexuality = paste(svydd_sexuality_vals, collapse = "; ")) %>%
   ungroup()
+
+# replace Something Else. Please Write In
+gender_sexuality_data$detailed_sexuality <- gsub("Something Else. Please Write In", "Something Else", gender_sexuality_data$detailed_sexuality)
+
 ```
 
 ## 1.	Cisgender male vs cisgender female
