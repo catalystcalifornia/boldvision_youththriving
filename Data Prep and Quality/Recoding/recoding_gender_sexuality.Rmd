@@ -171,7 +171,7 @@ gender_sexuality_data <- gender_sexuality_data %>%
   mutate(
     matching_gender_cols = list({
       vals <- across(all_of(gender_columns))  
-      names(vals)[!is.na(vals) & vals == 1]}),
+      names(vals)[!is.na(vals)]}),
     svydd_gender_vals = list(
       svy_dd$response_1[svy_dd$variable %in% matching_gender_cols]),
     detailed_gender = paste(svydd_gender_vals, collapse = "; ")) %>%
@@ -196,7 +196,7 @@ gender_sexuality_data <- gender_sexuality_data %>%
   mutate(
     matching_sexuality_cols = list({
       vals <- across(all_of(sexuality_columns))  
-      names(vals)[!is.na(vals) & vals == 1]}),
+      names(vals)[!is.na(vals)]}),
     svydd_sexuality_vals = list(
       svy_dd$response_1[svy_dd$variable %in% matching_sexuality_cols]),
     detailed_sexuality = paste(svydd_sexuality_vals, collapse = "; ")) %>%
