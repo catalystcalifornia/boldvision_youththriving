@@ -1,8 +1,7 @@
-#source script
+# Code for running visuals for rates by question and rates by question and race
 
-# source('W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\GitHub\\MK\\boldvision_youththriving\\Visuals\\visual_functions.R')
-
-source('visual_functions.R')
+# source script
+source('Visuals\\visual_functions.R')
 
 # ####visualizing key findings for Youth Council presentation 10/19/24 (NOTE: Charts are archived since data has been updated since then)#### 
 # 
