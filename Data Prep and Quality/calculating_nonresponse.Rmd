@@ -16,9 +16,11 @@ library(purrr)
 library(stringr)
 library(tibble)
 
-# Connect to postgres
+# Connect to postgres and functions
 source("W:\\RDA Team\\R\\credentials_source.R")
 con <- connect_to_db("bold_vision")
+
+source("W:\\RDA Team\\R\\Github\\RDA Functions\\main\\RDA-Functions\\Utility_Functions.R")
 
 # Pull in the raw survey data and data dictionary
 raw_svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
@@ -156,8 +158,8 @@ for (q_num in grouped_response_types$question_number)
     nonresponse_by_respondent_df[[new_col_name]] <- ifelse(
       (q_num == '4' & svy_data$av == 1) |  # The respondent is Asian, tf
       (q_num == '5' & svy_data$aw == 1) |  # The respondent is NHPI, tf
-      (q_num == '7' & (svy_data$bu == 1 | svy_data$by == 1)) | # The respondent is a full-time or part-time student, tf
-      (q_num == '10a' & svy_data$q10 == 1) |  # The respondent has sparks in their life, mc
+      (q_num == '7' & (svy_data$bv == 1 | svy_data$bw == 1)) | # The respondent is a full-time or part-time student, tf
+      (q_num == '10a' & (svy_data$q10 == 1 | svy_data$q10 == 3 | svy_data$q10 == 4)) |  # The respondent has sparks in their life, mc
       (q_num == '10b' & svy_data$q10 == 2) |  # The respondent does not have sparks in their life, mc
       (q_num == '12a' & svy_data$q12 == 1) |  # The respondent has been in school in the past 12 months, mc
       (q_num == '24a' & svy_data$q24 == 1), # The respondent is system-involved, tf
@@ -233,28 +235,35 @@ for (q_num in grouped_response_types$question_number)
 # For each respondent, calculate their counts and rates of nonresponse and response 
 ```{r}
 # Get the number of survey questions. Subtract 1 from the number of columns in order to not include response_id
-num_questions = ncol(nonresponse_by_respondent_df) - 1
+nonresponse_by_respondent_df$questions_asked = rowSums(!is.na(nonresponse_by_respondent_df[-1]))
   
-nonresp_by_respondent <- nonresponse_by_respondent_df %>%
+nonresponse_by_respondent_df <- nonresponse_by_respondent_df %>%
   mutate(
-      nonresponse_count = rowSums(select(., -response_id), na.rm = TRUE), # na.rm=TRUE skips the NA values to calculate the sums
-      nonresponse_rate = round((nonresponse_count / num_questions) * 100, 1),
-      response_count = num_questions - nonresponse_count,
+      # na.rm=TRUE skips the NA values to calculate the sums
+      nonresponse_count = rowSums(select(., -response_id, -questions_asked), na.rm = TRUE), 
+      nonresponse_rate = (nonresponse_count / questions_asked) * 100,
+      response_count = questions_asked - nonresponse_count,
       response_rate = 100 - nonresponse_rate)  %>%
-   relocate(c(nonresponse_count, nonresponse_rate, response_count, response_rate), .after = response_id)
+   relocate(c(questions_asked, nonresponse_count, nonresponse_rate, response_count, response_rate), .after = response_id)
 ```
 
 # For each question, calculate the counts and rates of nonresponse and response
 ```{r}
-# Calculate the nonresponse_flag_qnums' column sums excluding response_id and convert to data frame
-nonresp_by_question <- as.data.frame(colSums(select(nonresponse_by_respondent_df, -response_id), na.rm = TRUE))
-# Rename the column to 'nonresponse_counts'
+# Calculate the nonresponse_flag_qnums' column sums and convert to data frame
+nonresp_by_question <- as.data.frame(
+  colSums(select(nonresponse_by_respondent_df, 
+                 -response_id, -questions_asked, -nonresponse_count, 
+                 -nonresponse_rate, -response_count, -response_rate), 
+          na.rm = TRUE))
+# Rename the 1 column to 'nonresponse_counts'
 colnames(nonresp_by_question) <- "nonresponse_counts"
 # Remove the prefix 'nonresponse_flag_' from the row names
 rownames(nonresp_by_question) <- gsub("nonresponse_flag_", "", rownames(nonresp_by_question))
 
 # Calculate the number of non-NA values (i.e. 0s and 1s) per question column for use as the denominator in calculating nonresponse rates for each question. Some questions have an NA value because they weren't asked of the respondent based on skip logic (i.e. q4, q5, q7, q24a).
-non_na_counts <- as.data.frame(colSums(!is.na(select(nonresponse_by_respondent_df, -response_id))))
+non_na_counts <- as.data.frame(colSums(!is.na(select(nonresponse_by_respondent_df, 
+                 -response_id, -questions_asked, -nonresponse_count, 
+                 -nonresponse_rate, -response_count, -response_rate))))
 colnames(non_na_counts) <- "non_na_counts"
 
 # Bind non_na_counts to nonresp_by_question
@@ -264,7 +273,7 @@ nonresp_by_question <- cbind(nonresp_by_question, non_na_counts)
 nonresp_by_question <- nonresp_by_question %>%
   rownames_to_column(var = "question") %>% # Convert row names to a column named 'question'
   mutate(
-    nonresponse_rate = round(nonresponse_counts / non_na_counts * 100, 1),  # Use non_na_counts as denominator
+    nonresponse_rate = nonresponse_counts / non_na_counts * 100,  # Use non_na_counts as denominator
     response_count = non_na_counts - nonresponse_counts,
     response_rate = 100 - nonresponse_rate
   )
@@ -273,68 +282,55 @@ nonresp_by_question <- nonresp_by_question %>%
 nonresp_by_question <- nonresp_by_question %>% select(-non_na_counts)
 ```
 
-# Export nonresp_by_respondent dataframe as a table with comments
+# Export nonresponse_by_respondent_df dataframe as a table with comments
 ```{r}
 # Write table nonresp_by_respondent with metadata
-table_name <- "nonresp_by_respondent"
+table_name <- "nonresponse_by_respondent"
 schema <- "youth_thriving"
 indicator <- "A respondent-level table with nonresponse rates for each person, including dummy columns indicating whether each question had a response"
-source <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_nonresponse.docx
-Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/calculating_nonresponse.Rmd"
+source <- " Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/calculating_nonresponse.Rmd "
+qa_filepath<-" See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_nonresponse.docx "
 table_comment <- paste0(indicator, source)
-dbWriteTable(con, c(schema, table_name), nonresp_by_respondent,
-             overwrite = TRUE, row.names = FALSE)
-
-add_table_comments <- function(con, schema, table_name, indicator, source, column_names, column_comments) 
-{
-  comments <- character()
-  comments <- c(comments, paste0("
-    COMMENT ON TABLE ", schema, ".", table_name, " IS '", table_comment, "';"))
-  for (i in seq_along(column_names)) {
-    comment <- paste0("
-      COMMENT ON COLUMN ", schema, ".", table_name, '."', column_names[i], '" IS \'', column_comments[i], "';
-      ")
-    comments <- c(comments, comment)
-  }
-  sql_commands <- paste(comments, collapse = "")
-  dbSendQuery(con, sql_commands)
-}
+# dbWriteTable(con, c(schema, table_name), nonresponse_by_respondent_df,
+#              overwrite = FALSE, row.names = FALSE)
 
 # Add metadata for nonresp_by_respondent
-column_names <- colnames(nonresp_by_respondent) # Get column names
+column_names <- colnames(nonresponse_by_respondent_df) # Get column names
 column_comments <- c(
   'The unique ID of the respondent',
-  'The count of NAs for this respondent',
-  'The % of NAs for this respondent out of all the questions in the survey',
+  'The number of questions the respondent was asked',
+  'The count of NAs or valid questions without a response for this respondent',
+  'The % of NAs or nonresponses for this respondent out of all the questions they were asked in the survey',
   'The count of responses for this respondent',
-  'The % for this respondent out of all the questions in the survey',
+  'The % of responses for this respondent out of all the questions they were asked in the survey',
   'All nonresponse_flag_question_number columns are dummy columns indicating the nonresponse (1) or response (0) of the respondent')
 
-add_table_comments(con, schema, table_name, indicator, source, column_names, column_comments)
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
 ```
 
 # Export nonresp_by_question dataframe as a table with comments
 ```{r}
 # Write table nonresp_by_question with metadata
-table_name <- "nonresp_by_question"
+table_name <- "nonresponse_by_question"
 schema <- "youth_thriving"
-indicator <- "A question-level table with nonresponse rates for each question"
-source <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_nonresponse.docx
-Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/calculating_nonresponse.Rmd"
+indicator <- "A question-level table with nonresponse rates for each question. Nonresponse only includes respondents who skipped a question. Dont wish to answer or Dont know is counted as a response "
+source <- " Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/calculating_nonresponse.Rmd "
+qa_filepath<-" See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_nonresponse.docx "
 table_comment <- paste0(indicator, source)
-dbWriteTable(con, c(schema, table_name), nonresp_by_question,
-             overwrite = TRUE, row.names = FALSE)
+# dbWriteTable(con, c(schema, table_name), nonresp_by_question,
+#              overwrite = FALSE, row.names = FALSE)
 
 # Add metadata for nonresp_by_question
 column_names <- colnames(nonresp_by_question) # Get column names
 column_comments <- c(
   'The question number',
-  'The count of NAs for this question',
-  'The % of NAs for this question out of all the respondents who participated in the survey and had valid, eligible responses',
+  'The count of NAs or number of respondents who were eligible to answer the question and did not',
+  'The % of NAs or nonresponses for this question out of all the respondents who participated in the survey and had valid, eligible responses',
   'The count of responses for this question',
   'the % of responses for this question out of all the respondents who participated the survey and had valid, eligible responses')
 
-add_table_comments(con, schema, table_name, indicator, source, column_names, column_comments)
+add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
 
 dbDisconnect(con)
 ```
