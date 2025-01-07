@@ -103,8 +103,8 @@ fx_grouped_barchart <- function(question_number_i, sub_question_i, #these are th
          y = "",
          caption= paste(str_wrap(paste0("Question: ", unique(df_filter$question), " ",
                                         unique(df_filter$sub_question), ".\n",
-                                        " Component: ", unique(df_filter$response_domain), "\n",
-                                        " Subcomponent: ", unique(df_filter$variable_name), "\n",
+                                        " Component: ", unique(df_filter$response_domain), ",\n",
+                                        " Subcomponent: ", unique(df_filter$variable_name), ".\n",
                                         " Data Source: Bold Vision Youth Thriving Survey, 2024."),
                                  whitespace_only = TRUE, width = 120), collapse = "\n")) +
     #theme/aesthetics
@@ -228,8 +228,8 @@ fx_stacked_barchart <- function(question_number_i, sub_question_i, #these are th
          y = "",
          caption= paste(str_wrap(paste0("Question: ", unique(df_filter$question), " ",
                                         unique(df_filter$sub_question), ".\n",
-                                        " Component: ", unique(df_filter$response_domain), "\n",
-                                        " Subcomponent: ", unique(df_filter$variable_name), "\n",
+                                        " Component: ", unique(df_filter$response_domain), ",\n",
+                                        " Subcomponent: ", unique(df_filter$variable_name), ".\n",
                                         " Data Source: Bold Vision Youth Thriving Survey, 2024."),
                                  whitespace_only = TRUE, width = 120), collapse = "\n")) +
     #theme/aesthetics

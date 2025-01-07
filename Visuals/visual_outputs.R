@@ -63,7 +63,7 @@ source('Visuals\\visual_functions.R')
 #RAN
 fx_single_barchart(question_number_i = '18', sub_question_i = 'Contact with the police', #these are the inputs, i stands for insert/input of the variable of interest we want to look at
                    response_label_1 = 'Sometimes', response_label_2 = 'Most of the time', response_label_3 = 'All of the time', #insert the responses we want to capture data for, up to 3
-                   title_text = 'Contact with police is interfering with NHPI and Black youth at a rate higher than most groups', x_axis_text = 'Rate of youth reporting contact in police getting in the way of living their best life' #insert text on graph that is customized
+                   title_text = 'Contact with police is interfering with NHPI and Black youth at a rate higher than most groups', x_axis_text = 'Rate of youth reporting contact with police is getting in the way of living their best life at least sometimes' #insert text on graph that is customized
 )  
 
 #RAN
@@ -89,7 +89,7 @@ fx_single_barchart(question_number_i = '9', sub_question_i = 'Nervous', #these a
 #RAN
 fx_single_barchart(question_number_i = '11', sub_question_i = 'I feel I have time to figure out what I like', #these are the inputs, i stands for insert/input of the variable of interest we want to look at
                    response_label_1 = '', response_label_2 = '', response_label_3 = 'Always true', #insert the responses we want to capture data for, up to 3
-                   title_text = 'Over 30% of White and SWANA youth feel they have time to figure out what tehy like while less than 20% of Latine and AIAN youth rated this statement as always true', x_axis_text = 'Rate of youth reporting they have time to figure out what they like as always true' #insert text on graph that is customized
+                   title_text = 'Over 30% of White and SWANA youth feel they have time to figure out what they like while less than 20% of Latine and AIAN youth rated this statement as always true', x_axis_text = 'Rate of youth reporting they have time to figure out what they like as always true' #insert text on graph that is customized
 )  
 
 #RAN
