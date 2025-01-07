@@ -60,13 +60,14 @@ for (col in names(small_svy_data)) {
     if (length(valid_responses) > 0) {
       response_map <- setNames(as.list(valid_responses), seq_along(valid_responses))
       # Replace values in the column based on the response map
-      small_svy_data[[col]] <- sapply(small_svy_data[[col]], function(x) {
+      #small_svy_data[[col]] <- sapply(small_svy_data[[col]], function(x) {
+      small_svy_data[[col]] <- unlist(lapply(small_svy_data[[col]], function(x) {
         if (!is.na(x) && response_map[[as.character(x)]] %in% na_responses) {
           NA
         } else {
           x
         }
-      })
+      }))
     }
   }
 }
@@ -78,14 +79,44 @@ for (col in names(small_svy_data)) {
 # Identify columns to reverse
 columns_to_reverse <- small_svy_dd$variable[grep("_rev$", small_svy_dd$likert_type)]
 
+# q10 is a special case of scale reversal; swap values 1 and 2
+columns_to_reverse <- columns_to_reverse[columns_to_reverse != "q10"]
+small_svy_data$q10 <- ifelse(
+  is.na(small_svy_data$q10), 
+  NA, 
+  ifelse(small_svy_data$q10 == 1, 2, 
+         ifelse(small_svy_data$q10 == 2, 1, small_svy_data$q10))
+)
+
 # Loop through each column to reverse
 for (col in columns_to_reverse) {
   # Get the maximum scale value from the 'likert' column
   scale_max <- as.numeric(sub("pt_scale", "", small_svy_dd$likert[small_svy_dd$variable == col]))
-  
+
   # Reverse the scale in small_svy_data
-  small_svy_data[[col]] <- scale_max + 1 - small_svy_data[[col]]
+  #small_svy_data[[col]] <- scale_max + 1 - small_svy_data[[col]]
+  small_svy_data[[col]] <- ifelse(is.na(small_svy_data[[col]]),
+                                NA,
+                                scale_max + 1 - small_svy_data[[col]])
 }
+unique(small_svy_data$q10)
+# for (col in columns_to_reverse) {
+#   # Get the maximum scale value from the 'likert' column
+#   scale_max <- as.numeric(sub("pt_scale", "", small_svy_dd$likert[small_svy_dd$variable == col]))
+#   
+#   # Reverse the scale and ensure numeric conversion
+#   small_svy_data[[col]] <- ifelse(
+#     is.na(small_svy_data[[col]]), 
+#     NA, 
+#     scale_max + 1 - as.numeric(small_svy_data[[col]])
+#   )
+# }
+
+
+
+
+
+
 ```
 
 ```{r, include=FALSE, echo=FALSE}
@@ -255,7 +286,6 @@ run_cfa <- function(model_name) {
 ```
 
 ```{r, include=FALSE, echo=FALSE}
-
 # # Create the string names for the subcomponent and component CFA models based on the data dictionary
 
 # # Group variables by subcomponents and components
@@ -327,13 +357,11 @@ component_vibrant_communities_model <- 'component_vibrant_communities =~ do + dp
 ```
 
 ```{r, include=FALSE, echo=FALSE}
-test_component_models <- c(component_caring_families_and_relationships_model)
-
 # Contains all the component models we want to run factor analysis on
 component_models <- c(
   component_caring_families_and_relationships_model,
   component_cultural_identity_model,
-  component_positive_identity_and_self_worth_model,
+  component_positive_identity_and_self_worth_model, 
   component_racial_justice_equity_and_inclusion_model,
   # component_safety_model, # component doesn't have enough at least 3 items, can't run factor analysis
   component_strong_minds_model,
@@ -369,8 +397,10 @@ subcomponent_models <- c(
 ```
 
 ```{r}
-# Apply function run_cfa to the models
-# test_component_results <- lapply(test_component_models, run_cfa)
+# Run confirmatory factor analysis (CFA) on the models
+
+# Get factor loadings for all components
 component_results <- lapply(component_models, run_cfa)
+# Get factor loadings for all subcomponents
 subcomponent_results <- lapply(subcomponent_models, run_cfa)
 ```
