@@ -450,8 +450,8 @@ corr_sc_c<-rbind(corr_df_sc%>%mutate(level='Subcomponents'),
 # 
 # dbSendQuery(con, "COMMENT ON COLUMN youth_thriving.corr_analysis_components.var_1 IS 'variable of interest';
 #                   COMMENT ON COLUMN youth_thriving.corr_analysis_components.var_2 IS 'comparable variable of interest';
-#                   COMMENT ON COLUMN youth_thriving.corr_analysis_components.cor IS 'the correlation value defines the strength and directin of the linear relationship between var_1 and var_2. A correlation value below 0.3 is generally considered weak and one of greater than 0.7 is considered strong. A positive value indicates that as one variable increase so does the other. A negative value indicates that as one variable increases, the other decreases.';
-#                   COMMENT ON COLUMN youth_thriving.corr_analysis_components.p IS 'the p value measures the statistical significance of the output. A number less than 0.05 indicates a starticially significant correlation and anything greater than 0.05 is believed the relationship can be due to random chance.';
+#                   COMMENT ON COLUMN youth_thriving.corr_analysis_components.cor IS 'the correlation value defines the strength and direction of the linear relationship between var_1 and var_2. A correlation value below 0.3 is generally considered weak and one of greater than 0.7 is considered strong. A positive value indicates that as one variable increase so does the other. A negative value indicates that as one variable increases, the other decreases.';
+#                   COMMENT ON COLUMN youth_thriving.corr_analysis_components.p IS 'the p value measures the statistical significance of the output. A number less than 0.05 indicates a statistically significant correlation and anything greater than 0.05 is believed the relationship can be due to random chance.';
 #                   COMMENT ON COLUMN youth_thriving.corr_analysis_components.level IS 'indicates what type of variables are being measured';
 #             ")
 
@@ -472,8 +472,8 @@ corr_sc_c_race<-rbind(corr_df_race_sc%>%mutate(level='Race and Subcomponents'),
 # 
 # dbSendQuery(con, "COMMENT ON COLUMN youth_thriving.corr_analysis_race.var_1 IS 'variable of interest';
 #                   COMMENT ON COLUMN youth_thriving.corr_analysis_race.var_2 IS 'comparable variable of interest';
-#                   COMMENT ON COLUMN youth_thriving.corr_analysis_race.cor IS 'the correlation value defines the strength and directin of the linear relationship between var_1 and var_2. A correlation value below 0.3 is generally considered weak and one of greater than 0.7 is considered strong. A positive value indicates that as one variable increase so does the other. A negative value indicates that as one variable increases, the other decreases.';
-#                   COMMENT ON COLUMN youth_thriving.corr_analysis_race.p IS 'the p value measures the statistical significance of the output. A number less than 0.05 indicates a starticially significant correlation and anything greater than 0.05 is believed the relationship can be due to random chance.';
+#                   COMMENT ON COLUMN youth_thriving.corr_analysis_race.cor IS 'the correlation value defines the strength and direction of the linear relationship between var_1 and var_2. A correlation value below 0.3 is generally considered weak and one of greater than 0.7 is considered strong. A positive value indicates that as one variable increase so does the other. A negative value indicates that as one variable increases, the other decreases.';
+#                   COMMENT ON COLUMN youth_thriving.corr_analysis_race.p IS 'the p value measures the statistical significance of the output. A number less than 0.05 indicates a statistically significant correlation and anything greater than 0.05 is believed the relationship can be due to random chance.';
 #                   COMMENT ON COLUMN youth_thriving.corr_analysis_race.level IS 'indicates what type of variables are being measured';
 #             ")
 
@@ -499,8 +499,8 @@ corr_sc_c_other<-rbind(corr_df_other_sc%>%mutate(level='Other Demographics and S
 # 
 # dbSendQuery(con, "COMMENT ON COLUMN youth_thriving.corr_analysis_demographics.var_1 IS 'variable of interest';
 #                   COMMENT ON COLUMN youth_thriving.corr_analysis_demographics.var_2 IS 'comparable variable of interest';
-#                   COMMENT ON COLUMN youth_thriving.corr_analysis_demographics.cor IS 'the correlation value defines the strength and directin of the linear relationship between var_1 and var_2. A correlation value below 0.3 is generally considered weak and one of greater than 0.7 is considered strong. A positive value indicates that as one variable increase so does the other. A negative value indicates that as one variable increases, the other decreases.';
-#                   COMMENT ON COLUMN youth_thriving.corr_analysis_demographics.p IS 'the p value measures the statistical significance of the output. A number less than 0.05 indicates a starticially significant correlation and anything greater than 0.05 is believed the relationship can be due to random chance.';
+#                   COMMENT ON COLUMN youth_thriving.corr_analysis_demographics.cor IS 'the correlation value defines the strength and direction of the linear relationship between var_1 and var_2. A correlation value below 0.3 is generally considered weak and one of greater than 0.7 is considered strong. A positive value indicates that as one variable increase so does the other. A negative value indicates that as one variable increases, the other decreases.';
+#                   COMMENT ON COLUMN youth_thriving.corr_analysis_demographics.p IS 'the p value measures the statistical significance of the output. A number less than 0.05 indicates a statistically significant correlation and anything greater than 0.05 is believed the relationship can be due to random chance.';
 #                   COMMENT ON COLUMN youth_thriving.corr_analysis_demographics.level IS 'indicates what type of variables are being measured';
 #             ")
 
