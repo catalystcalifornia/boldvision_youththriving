@@ -225,7 +225,7 @@ run_model_fit_measures <- function(model_name) {
 
 run_cfa <- function(model_name) {
   # If the model is determined to be a good fit, then obtain the factor loadings. 
-  # AV 12/6/24: The if statement is commented out for now as we conduct more research on model fit measures
+  # AV 12/6/24: The if statement is commented out for now, in order to see the factor loading scores regardless of the results of the model fit measures
   
  #if(run_model_fit_measures(model_name)==TRUE) {
     # Fit the data to a CFA model
@@ -445,6 +445,6 @@ add_table_comments <- function(con, schema, table_name, indicator, source, colum
 
 add_table_comments(con, schema, table_name, indicator, source, column_names, column_comments)
 
-#dbDisconnect(con)
+dbDisconnect(con)
 ```
 
