@@ -11,9 +11,9 @@ output:
     toc_float: yes
 ---
 
-The following graphs visualize the correlation between the components and subcomponents measured in the Bold Vision Youth Thriving Survey. Prior to analysis, each question was converted into a numeric continuous scale and then scores were averaged by subcomponent and component. In that process, subcomponents and components were converted to all move in the same direction, meaning a higher score on a subcompoment means a more positive outcome for example. Graphs also include correlation analysis with racial categories and other demographic variables asked about in the survey. 
+The following graphs visualize the correlation between the components and subcomponents measured in the Bold Vision Youth Thriving Survey. Prior to analysis, each question was converted into a numeric continuous scale and then scores were averaged by subcomponent and component. In that process, subcomponents and components were converted to all move in the same direction, meaning a higher score on a subcomponent means a more positive outcome for example. Graphs also include correlation analysis with racial categories and other demographic variables asked about in the survey. 
 
-A correlation analysis helps us understand the relation between the variables of interest measured in our survey data. The darker purple indicates a  positive relationship- so as one variable increases so does the other. The lighter orange color indicates a negative relationship- as one variable increases, the other decreases. The size of the circles determine the strength of this relationship. The larger the circle, the stronger this relationship is and has a correlation closer to 1 or -1 as an example. The smaller the circle, the weaker the relationship measured is with a correlation value closer to 0 for example. Missing squares indicator relationships that were not statistically significant at the .05 level.
+A correlation analysis helps us understand the relation between the variables of interest measured in our survey data. The light to dark blue color indicates a  positive relationship- so as one variable increases so does the other. The light to dark red color indicates a negative relationship- as one variable increases, the other decreases. The depth of the color and size of the circle highlight the strength of this relationship. The larger the circle and deeper the color, the stronger this relationship is and has a correlation closer to 1 or -1 as an example. The smaller the circle and lighter the color, the weaker the relationship measured is with a correlation value closer to 0 for example. Missing squares indicate relationships that were not statistically significant at the .05 level.
 
 ```{r setup, include=FALSE, echo=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
@@ -36,6 +36,7 @@ options(scipen=999)
 source("W:\\RDA Team\\R\\credentials_source.R")
 con <- connect_to_db("bold_vision")
 
+# pull average scores by subcomponent and component by respondent and rename columns
 dt_avg_scores <- dbGetQuery(con, "SELECT * FROM youth_thriving.avg_scores") %>%
 rename( 'Positive Emotions' = "positiveemotions_sc_score",
 'Self Efficacy' = "selfefficacy_sc_score",
@@ -98,31 +99,12 @@ dt_select <-  dt_avg_scores %>%
 'Cultural Identity & Connection') %>%
 drop_na() # drop observations with NA
 
-# # Custom colors for the group headers
-# group_colors <- c(dark_pink, pink, yellow, dark_green, light_blue, blue, light_green)
-# 
-# # Create a grouping vector for headers/dividers
-# groups <- c(
-#   rep("Strong Minds", 3),         # Group 1
-#   rep("Positive Identity & Self Worth", 5),           # Group 2
-#   rep("Caring Families & Relationships", 2), # Group 3
-#   rep("Vibrant Communities", 1), # Group 4
-#   rep("Cultural Identity", 1),         # Group 5
-#   rep("Racial Justice, Equity, & Inclusion", 3),          # Group 6
-#   rep("Safety", 1) # Group 7 
-# )
-
 # Compute Spearman correlation matrix (no need to reorder dt_select here)
 mydata.cor2 = cor(dt_select, method = "spearman")
 
 # Statistical significance test for correlations
 testRes2 = cor.mtest(dt_select, method = "spearman", conf.level = 0.95, exact = FALSE)
 
-# Assign colors to variables according to their group directly
-# We will match the color based on the group the variable belongs to
-
-# # Create a vector of colors for each label
-# group_colors_assigned <- unlist(lapply(groups, function(x) rep(group_colors[which(unique(groups) == x)], length.out = sum(groups == x))))
 
 # # Define a custom color ramp
 custom_colors <- colorRampPalette(c("#F62d2d", "#ffffbf","#1034A6"))
@@ -140,6 +122,7 @@ corrplot(
 
 
 # store data in a dataframe
+# function to help convert matric to dataframe
 flattenCorrMatrix <- function(cormat, pmat) {
   ut <- upper.tri(cormat)
   data.frame(
@@ -150,7 +133,7 @@ flattenCorrMatrix <- function(cormat, pmat) {
     )
 }
 res_m<-rcorr(as.matrix(dt_select)) # run correlation matrix again
-corr_df_sc<-flattenCorrMatrix(res_m$r, res_m$P)
+corr_df_sc<-flattenCorrMatrix(res_m$r, res_m$P) # convert to dataframe
 
 ```
 
@@ -195,8 +178,10 @@ corr_df_comp<-flattenCorrMatrix(res_m$r, res_m$P)
 ### Race by Subcomponents 
 
 ```{r, fig.width=8, fig.height=8}
+# pull recoded race data by respondent
 dt_race <-  dbGetQuery(con, "SELECT * FROM youth_thriving.race_ethnicity_data") 
 
+# reorder columns and rename
 dt_race_bipoc <- dt_race %>% 
   select(response_id, nh_race,race_black, race_aian_indigenous, race_latinx, race_asian, race_swana, race_nhpi, race_white) %>% 
   mutate(bipoc = ifelse(nh_race == 'nh_white', 0, 1))%>% # make anyone who is not non-Hispanic White alone, BIPOC
@@ -210,6 +195,7 @@ dt_race_bipoc <- dt_race %>%
          'NHPI'='race_nhpi', 
          'White'='race_white')
 
+# join to average scores
 dt_join <- left_join(dt_avg_scores, dt_race_bipoc, by = "response_id")
 
 dt_select <-  dt_join %>%
@@ -253,9 +239,6 @@ corrplot(
   p.mat = testRes2$p,
   insig = 'blank',
   diag = FALSE,
-  # outline=TRUE,
-  # addCoef.col = 'black',
-  # col = COL2('PiYG',10),
   tl.col = c("black", "black", "black", "black", "black", "black", "black","black", dark_pink,dark_pink, dark_pink, pink,pink,pink,pink,yellow,yellow, dark_green, light_green,blue, blue, blue, light_blue), # Apply the custom group colors to the text labels
   addgrid.col = "black" # Add grid lines to emphasize group separation
 )
@@ -269,7 +252,7 @@ corr_df_race_sc<-flattenCorrMatrix(res_m$r, res_m$P)
 ### Race by Components 
 
 ```{r, fig.width=8, fig.height=8}
-
+# run correlation by component and race now
 dt_select <-  dt_join %>%
   select('BIPOC',
          'Black',
@@ -320,12 +303,14 @@ corr_df_race_comp<-flattenCorrMatrix(res_m$r, res_m$P)
 ### Other Demographics by Subcomponents 
 
 ```{r, fig.width=8, fig.height=8}
-
+# pull in recoded gender data
 dt_gender <- dbGetQuery(con, "SELECT response_id, cishet_lgbtqia FROM youth_thriving.gender_sexuality_data") %>%
   rename(LGBTQIA = cishet_lgbtqia) 
 
+# pull in systems impacted variables
 otherdemos <- dbGetQuery(con, "SELECT response_id, q24,q25, q26, q27, q28 FROM youth_thriving.raw_survey_data") 
 
+# convert systems impacted variables into 0/1 where 1 means yes and 0 means no, dont knows and dont wish to answer recoded to NA
 dt_otherdemos <- otherdemos%>%
    mutate_at(vars(q24:q28), .funs=list(
      ~case_when(
@@ -344,6 +329,7 @@ dt_otherdemos <- otherdemos%>%
          'Undocumented',
          'Unhoused') 
 
+# join together demographics and average scores
 dt_join <- left_join(dt_avg_scores, dt_gender, by = "response_id") 
 
 dt_join_2 <- left_join(dt_join, dt_otherdemos, by = "response_id") 
@@ -402,7 +388,7 @@ corr_df_other_sc<-flattenCorrMatrix(res_m$r, res_m$P)
 ### Other Demographics by Components 
 
 ```{r, fig.width=8, fig.height=8}
-
+# rerun for correlations by component
 dt_select <-  dt_join_2 %>%
   select('LGBTQIA',
          'Systems Impacted',
@@ -450,6 +436,7 @@ corr_df_other_comp<-flattenCorrMatrix(res_m$r, res_m$P)
 ```{r, include=FALSE, echo=FALSE}
 # export to postgres
 
+# Correlation table by subcomponent and component only
 corr_sc_c<-rbind(corr_df_sc%>%mutate(level='Subcomponents'),
                corr_df_comp%>%mutate(level='Components'))
 
@@ -463,11 +450,12 @@ corr_sc_c<-rbind(corr_df_sc%>%mutate(level='Subcomponents'),
 # 
 # dbSendQuery(con, "COMMENT ON COLUMN youth_thriving.corr_analysis_components.var_1 IS 'variable of interest';
 #                   COMMENT ON COLUMN youth_thriving.corr_analysis_components.var_2 IS 'comparable variable of interest';
-#                   COMMENT ON COLUMN youth_thriving.corr_analysis_components.cor IS 'the correlation value defines the strength and directin of the linear relationship between var_1 and var_2. A correlation value below 0.3 is generally considered weak and one of greater than 0.7 is considered strong. A positive value indicates that as one variable increase so does the other. A negative value indicates that as one variable increases, the other decreases.';
-#                   COMMENT ON COLUMN youth_thriving.corr_analysis_components.p IS 'the p value measures the statistical significance of the output. A number less than 0.05 indicates a starticially significant correlation and anything greater than 0.05 is believed the relationship can be due to random chance.';
+#                   COMMENT ON COLUMN youth_thriving.corr_analysis_components.cor IS 'the correlation value defines the strength and direction of the linear relationship between var_1 and var_2. A correlation value below 0.3 is generally considered weak and one of greater than 0.7 is considered strong. A positive value indicates that as one variable increase so does the other. A negative value indicates that as one variable increases, the other decreases.';
+#                   COMMENT ON COLUMN youth_thriving.corr_analysis_components.p IS 'the p value measures the statistical significance of the output. A number less than 0.05 indicates a statistically significant correlation and anything greater than 0.05 is believed the relationship can be due to random chance.';
 #                   COMMENT ON COLUMN youth_thriving.corr_analysis_components.level IS 'indicates what type of variables are being measured';
 #             ")
 
+# Correlation table by race and subcomponent/component
 race<-c('BIPOC','Black','Latine','Asian','SWANA','NHPI','White','AIAN')
 
 corr_sc_c_race<-rbind(corr_df_race_sc%>%mutate(level='Race and Subcomponents'),
@@ -484,11 +472,12 @@ corr_sc_c_race<-rbind(corr_df_race_sc%>%mutate(level='Race and Subcomponents'),
 # 
 # dbSendQuery(con, "COMMENT ON COLUMN youth_thriving.corr_analysis_race.var_1 IS 'variable of interest';
 #                   COMMENT ON COLUMN youth_thriving.corr_analysis_race.var_2 IS 'comparable variable of interest';
-#                   COMMENT ON COLUMN youth_thriving.corr_analysis_race.cor IS 'the correlation value defines the strength and directin of the linear relationship between var_1 and var_2. A correlation value below 0.3 is generally considered weak and one of greater than 0.7 is considered strong. A positive value indicates that as one variable increase so does the other. A negative value indicates that as one variable increases, the other decreases.';
-#                   COMMENT ON COLUMN youth_thriving.corr_analysis_race.p IS 'the p value measures the statistical significance of the output. A number less than 0.05 indicates a starticially significant correlation and anything greater than 0.05 is believed the relationship can be due to random chance.';
+#                   COMMENT ON COLUMN youth_thriving.corr_analysis_race.cor IS 'the correlation value defines the strength and direction of the linear relationship between var_1 and var_2. A correlation value below 0.3 is generally considered weak and one of greater than 0.7 is considered strong. A positive value indicates that as one variable increase so does the other. A negative value indicates that as one variable increases, the other decreases.';
+#                   COMMENT ON COLUMN youth_thriving.corr_analysis_race.p IS 'the p value measures the statistical significance of the output. A number less than 0.05 indicates a statistically significant correlation and anything greater than 0.05 is believed the relationship can be due to random chance.';
 #                   COMMENT ON COLUMN youth_thriving.corr_analysis_race.level IS 'indicates what type of variables are being measured';
 #             ")
 
+# Correlation table by other demographics and subcomponent/component
 other<-c('LGBTQIA',
          'Systems Impacted',
          'Detained/Arrested',
@@ -510,8 +499,8 @@ corr_sc_c_other<-rbind(corr_df_other_sc%>%mutate(level='Other Demographics and S
 # 
 # dbSendQuery(con, "COMMENT ON COLUMN youth_thriving.corr_analysis_demographics.var_1 IS 'variable of interest';
 #                   COMMENT ON COLUMN youth_thriving.corr_analysis_demographics.var_2 IS 'comparable variable of interest';
-#                   COMMENT ON COLUMN youth_thriving.corr_analysis_demographics.cor IS 'the correlation value defines the strength and directin of the linear relationship between var_1 and var_2. A correlation value below 0.3 is generally considered weak and one of greater than 0.7 is considered strong. A positive value indicates that as one variable increase so does the other. A negative value indicates that as one variable increases, the other decreases.';
-#                   COMMENT ON COLUMN youth_thriving.corr_analysis_demographics.p IS 'the p value measures the statistical significance of the output. A number less than 0.05 indicates a starticially significant correlation and anything greater than 0.05 is believed the relationship can be due to random chance.';
+#                   COMMENT ON COLUMN youth_thriving.corr_analysis_demographics.cor IS 'the correlation value defines the strength and direction of the linear relationship between var_1 and var_2. A correlation value below 0.3 is generally considered weak and one of greater than 0.7 is considered strong. A positive value indicates that as one variable increase so does the other. A negative value indicates that as one variable increases, the other decreases.';
+#                   COMMENT ON COLUMN youth_thriving.corr_analysis_demographics.p IS 'the p value measures the statistical significance of the output. A number less than 0.05 indicates a statistically significant correlation and anything greater than 0.05 is believed the relationship can be due to random chance.';
 #                   COMMENT ON COLUMN youth_thriving.corr_analysis_demographics.level IS 'indicates what type of variables are being measured';
 #             ")
 
