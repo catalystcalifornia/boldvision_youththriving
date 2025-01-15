@@ -158,13 +158,20 @@ setDT(gender_sexuality_data)
 
 ## Create columns detailed_gender and detailed_sexuality. Note that detailed_gender is not updated if the respondent needs to be labelled as transgender.
 ```{r}
+# create column for count of identities selected to help with recoding later
+gender_sexuality_data <- gender_sexuality_data %>%
+  mutate(
+    gender_count = rowSums(!is.na(select(., any_of(gender_columns)))),
+    sexuality_count = rowSums(!is.na(select(., any_of(sexuality_columns)))),
+    )
+         
 # Create column detailed_gender
 gender_sexuality_data <- gender_sexuality_data %>%
   rowwise() %>%
   mutate(
     matching_gender_cols = list({
       vals <- across(all_of(gender_columns))  
-      names(vals)[!is.na(vals) & vals == 1]}),
+      names(vals)[!is.na(vals)]}),
     svydd_gender_vals = list(
       svy_dd$response_1[svy_dd$variable %in% matching_gender_cols]),
     detailed_gender = paste(svydd_gender_vals, collapse = "; ")) %>%
@@ -172,13 +179,16 @@ gender_sexuality_data <- gender_sexuality_data %>%
 
 # If the respondent's sex assigned at birth (Male, Female) does not match their gender identity (Girl or Woman, Boy or Man), label them as transgender
 gender_sexuality_data <- gender_sexuality_data %>%
-  mutate(
+  mutate(fe_original=fe,
     fe = if_else(
-      (str_detect(detailed_gender, "Boy or Man") & q22==2) | (str_detect(detailed_gender, "Girl or Woman") & q22==1),
+      (str_detect(detailed_gender, "Boy or Man") & q22==2 & gender_count==1) | (str_detect(detailed_gender, "Girl or Woman") & q22==1 & gender_count==1),
       1,
-      fe
+      fe_original
     )
   )
+
+qa_check <- gender_sexuality_data %>%
+  select(response_id, q22, detailed_gender, fe, fe_original, fc, fd, gender_count)
 
 # Create column detailed_sexuality
 gender_sexuality_data <- gender_sexuality_data %>%
@@ -186,25 +196,33 @@ gender_sexuality_data <- gender_sexuality_data %>%
   mutate(
     matching_sexuality_cols = list({
       vals <- across(all_of(sexuality_columns))  
-      names(vals)[!is.na(vals) & vals == 1]}),
+      names(vals)[!is.na(vals)]}),
     svydd_sexuality_vals = list(
       svy_dd$response_1[svy_dd$variable %in% matching_sexuality_cols]),
     detailed_sexuality = paste(svydd_sexuality_vals, collapse = "; ")) %>%
   ungroup()
+
+# replace Something Else. Please Write In
+gender_sexuality_data$detailed_sexuality <- gsub("Something Else. Please Write In", "Something Else", gender_sexuality_data$detailed_sexuality)
+
 ```
 
 ## 1.	Cisgender male vs cisgender female
 a.	Possible values will be 0 = cisgender male, 1 = cisgender female, NA = everyone else
 ```{r}
 # Create the cisgender_mf column
-gender_sexuality_data <- svy_data %>%
+gender_sexuality_data <- gender_sexuality_data %>%
   mutate(
     cisgender_mf = case_when(
-      !is.na(fc) & fc == 1 & !is.na(q22) & q22 == 2 ~ 1,  # Cisgender female      
-      !is.na(fd) & fd == 1 & !is.na(q22) & q22 == 1 ~ 0,  # Cisgender male
+      !is.na(fc) & fc == 1 & !is.na(q22) & q22 == 2 & gender_count==1 ~ 1,  # Cisgender female      
+      !is.na(fd) & fd == 1 & !is.na(q22) & q22 == 1 & gender_count==1 ~ 0,  # Cisgender male
       TRUE ~ NA_integer_  # Everyone else or missing values
     )
   )
+
+qa_check <- gender_sexuality_data %>%
+  select(response_id, q22, detailed_gender, fc, fd, cisgender_mf, gender_count)
+
 ```
 
 ## 2.	Cisgender vs TGNC (transgender, gender nonconforming)
@@ -223,6 +241,24 @@ gender_sexuality_data <- gender_sexuality_data %>%
       !is.na(cisgender_mf) ~ 0,  # Cisgender
       TRUE ~ NA_integer_)  # Everyone else as NA
     )
+
+qa_check <- gender_sexuality_data %>%
+  select(response_id, q22, detailed_gender, fl, cisgender_mf, cisgender_tgnc, gender_count)
+
+qa_check <- gender_sexuality_data %>%
+  group_by(cisgender_tgnc, cisgender_mf, fl, detailed_gender, q22)%>%
+  summarise(count=n())
+
+# a few select Girl or Woman; Boy or Man but do not answer q22, safe to recode as tgnc
+sum(gender_sexuality_data$cisgender_tgnc,na.rm=TRUE) # 206 to start
+
+gender_sexuality_data <- gender_sexuality_data %>%
+  mutate(
+    cisgender_tgnc = ifelse(
+      detailed_gender=='Girl or Woman; Boy or Man',1, cisgender_tgnc))
+
+sum(gender_sexuality_data$cisgender_tgnc,na.rm=TRUE) # 213 to end
+
 ```
 
 ## 3.	Cisgender, transgender, gender nonconforming 
@@ -242,6 +278,19 @@ gender_sexuality_data <- gender_sexuality_data %>%
       TRUE ~ NA_character_  # Everyone else as NA
     )
   )
+
+qa_check <- gender_sexuality_data %>%
+  group_by(cis_trans_gnc, cisgender_mf, fl, detailed_gender, q22)%>%
+  summarise(count=n())
+
+# a few select Girl or Woman; Boy or Man but do not answer q22, safe to recode as gender nonconforming
+gender_sexuality_data <- gender_sexuality_data %>%
+  mutate(
+    cis_trans_gnc = ifelse(
+      detailed_gender=='Girl or Woman; Boy or Man',"gender nonconforming", cis_trans_gnc))
+
+
+
 ```
 
 ## 4.	Cisgender male, cisgender female, transgender, gender nonconforming
@@ -258,6 +307,11 @@ gender_sexuality_data <- gender_sexuality_data %>%
       TRUE ~ NA_character_  # Assign NA if no conditions match
     )
   ) 
+
+qa_check <- gender_sexuality_data %>%
+  group_by(cis_mf_trans_gnc, cisgender_mf, fl, cis_trans_gnc, detailed_gender, q22)%>%
+  summarise(count=n())
+
 ```
 
 ## 5.	Straight vs LGBQA
@@ -277,6 +331,10 @@ gender_sexuality_data <- gender_sexuality_data %>%
       TRUE ~ NA_integer_  # Everyone else as NA
     )
   )
+
+qa_check <- gender_sexuality_data %>%
+  select(straight_lgbqa, sexuality_count, detailed_sexuality, fx)
+  
 ```
 
 ## 6.	Cisgender heterosexual vs LGBTQIA+ 
@@ -297,6 +355,11 @@ gender_sexuality_data <- gender_sexuality_data %>%
       TRUE ~ NA_integer_  # Everyone else as NA
     )
   )
+
+qa_check <- gender_sexuality_data %>%
+  group_by(cishet_lgbtqia, straight_lgbqa, cisgender_mf, cis_trans_gnc)%>%
+  summarise(count=n())
+
 ```
 
 ## 7.	LGBTQIA+ white vs LGBTQIA+ BIPOC
@@ -320,6 +383,12 @@ gender_sexuality_data <- gender_sexuality_data %>%
       TRUE ~ NA_integer_  # Everyone else as NA
     )
   )
+
+
+qa_check <- gender_sexuality_data %>%
+  group_by(cishet_lgbtqia, lgbtqia_white_bipoc, nh_race)%>%
+  summarise(count=n())
+
 ```
 
 ## Get frequencies
@@ -356,7 +425,8 @@ gender_sexuality_data %>%
 # Get relevant columns from gender_sexuality_data to put into a table in the database
 final_df<-gender_sexuality_data%>%
   select(response_id, cisgender_mf, cisgender_tgnc, cis_trans_gnc, 
-         cis_mf_trans_gnc, straight_lgbqa, cishet_lgbtqia, lgbtqia_white_bipoc) 
+         cis_mf_trans_gnc, straight_lgbqa, cishet_lgbtqia, lgbtqia_white_bipoc, detailed_gender,
+         detailed_sexuality, fc:fl, fo:fx)
 
 # Write table with metadata
 table_name <- "gender_sexuality_data"
