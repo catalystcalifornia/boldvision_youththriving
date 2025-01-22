@@ -1,5 +1,5 @@
 ---
-title: Bold Vision Youth Thriving Survey Frequency Counts by Race Groups 
+title: Bold Vision Youth Thriving Survey Frequency Counts by Demographics Groups 
 output:
   html_document:
     code_folding: hide
@@ -11,6 +11,7 @@ output:
 
 
 ```{r setup, include=FALSE, echo=FALSE}
+# Set up libraries 
 knitr::opts_chunk$set(echo = FALSE)
 
 library(data.table)
@@ -33,7 +34,8 @@ options(scipen=999)
 source("W:\\RDA Team\\R\\credentials_source.R")
 con <- connect_to_db("bold_vision")
 
-#pull in data and data dictionary
+# Set up data environment and main data frame
+## pull in data and data dictionary
 svy_data_raw <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
 svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 where response_type = 'mc'")
 #filtering for all the variables of interest
@@ -46,14 +48,24 @@ combine_data_frames <- function(df_list) {
   return(combined_df)
 }
 
+```
+
+### Start Race Analysis
+```{r, message = FALSE, results='asis'}
+
+knitr::opts_chunk$set(echo = FALSE)
+
+# pull in race recoding and merge
+
 race_recoding <- dbGetQuery(con, "SELECT response_id, nh_race FROM youth_thriving.race_ethnicity_data")
 
 svy_data_raw <- svy_data_raw %>% left_join(race_recoding, by = 'response_id')
 #3444 rows of data before filtering
-svy_data_raw <- svy_data_raw %>% filter(!nh_race %in% c('NA', 'do_not_wish', 'nh_other'))
+svy_data <- svy_data_raw %>% filter(!nh_race %in% c('NA', 'do_not_wish', 'nh_other'))
 #3252 rows after filtering, 192 respondents are dropped for the purpose of this analysis
 
-svy_data <- svy_data_raw %>% mutate(race = nh_race) #replaced race with new race recoding 
+svy_data <- svy_data %>% mutate(race = nh_race) #replaced race with new race recoding 
+
 ```
 
 ```{r, message = FALSE, results='asis'}
@@ -331,9 +343,6 @@ table_comment<-paste0("The following is a table of chi square tests run for the 
 ```
 
 ### Start SPA Analysis
-```{r}
-svy_data_raw <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
-```
 
 ## analysis_per_spa
 ```{r, message = FALSE, results='asis'}
@@ -501,7 +510,7 @@ df_merged_chi_test <- combine_data_frames(actual_data_frames)
 ```
 ### End SPA analysis
 
-### Start age Analysis
+### Start Age Analysis
 
 ## analysis_per_age
 ```{r, message = FALSE, results='asis'}
