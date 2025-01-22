@@ -396,8 +396,8 @@ actual_data_frames <- lapply(data_frames_list, get)
 
 df_merged_per_spa <- combine_data_frames(actual_data_frames)
 
+# clean up column order
 df_merged_per_spa <- df_merged_per_spa %>% 
-  group_by(variable, response) %>%   
   arrange(spa_final_respondent, .by_group = TRUE)
 
 
