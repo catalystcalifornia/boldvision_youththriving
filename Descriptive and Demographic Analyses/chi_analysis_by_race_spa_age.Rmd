@@ -167,6 +167,7 @@ table_comment<-paste0("The following is a table of response frequency and rate b
 
 ```
 
+## analysis_per_race
 ```{r, message = FALSE, results='asis'}
 
 #### Data Table of Question Responses WITHIN Race Group #####
@@ -396,9 +397,9 @@ actual_data_frames <- lapply(data_frames_list, get)
 
 df_merged_per_spa <- combine_data_frames(actual_data_frames)
 
-# clean up column order
+# arrange by SPA
 df_merged_per_spa <- df_merged_per_spa %>% 
-  arrange(spa_final_respondent, .by_group = TRUE)
+  arrange(variable, spa_final_respondent, .by_group = TRUE)
 
 
 #push to postgres in pgAdmin 
@@ -564,9 +565,9 @@ actual_data_frames <- lapply(data_frames_list, get)
 
 df_merged_per_age <- combine_data_frames(actual_data_frames)
 
-df_merged_per_age <- df_merged_per_age %>% 
-  group_by(variable, response) %>%   
-  arrange(age_minor_adult, .by_group = TRUE)
+# arrange by age group
+df_merged_per_age <- df_merged_per_age %>%
+  arrange(variable, age_minor_adult, .by_group = TRUE)
 
 
 #push to postgres in pgAdmin 
