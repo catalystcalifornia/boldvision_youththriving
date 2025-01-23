@@ -41,11 +41,14 @@ small_svy_dd <- svy_dd %>%
 # small_svy_data only contains the columns of likert questions needed for the factor analysis
 small_svy_data <- svy_data %>%
   select(all_of(small_svy_dd$variable))
+
 ```
 
 ```{r, include=FALSE, echo=FALSE}
 # In the survey data, change the responses of "Don't wish to answer", "Not sure", "Not Sure",
 # "Does not apply to me", "Don't know" into NA values.
+
+small_svy_data_backup<-small_svy_data
 
 na_responses <- c("Don't wish to answer", "Not sure", "Not Sure", "Does not apply to me", "Don't know")
 
@@ -73,6 +76,7 @@ for (col in names(small_svy_data)) {
     }
   }
 }
+
 ```
 
 ```{r, include=FALSE, echo=FALSE}
@@ -231,8 +235,7 @@ run_cfa <- function(model_name) {
   
  #if(run_model_fit_measures(model_name)==TRUE) {
     # Fit the data to a CFA model
-    fit.cat <- cfa(model_name, data=small_svy_data, mimic =c("MPlus"), std.lv = TRUE,
-               ordered = TRUE)
+    fit.cat <- cfa(model_name, data=small_svy_data, std.lv = TRUE,ordered=TRUE)
     # Define threshold for factor loadings
     threshold_factor_loading <- 0.5
     
@@ -283,11 +286,11 @@ run_cfa <- function(model_name) {
 # subcomponents <- small_svy_dd %>%
 #   group_by(variable_name) %>%
 #   summarize(variables = paste(variable, collapse = " + "), .groups = "drop")
-# 
+#
 # components <- small_svy_dd %>%
 #   group_by(response_domain) %>%
 #   summarize(variables = paste(variable, collapse = " + "), .groups = "drop")
-# 
+#
 # # Create model strings for subcomponents
 # subcomponent_models <- subcomponents %>%
 #   mutate(model_string = paste0(
@@ -297,7 +300,7 @@ run_cfa <- function(model_name) {
 #     gsub("-", "_", gsub(",", "", tolower(gsub("/", "_", gsub(" ", "_", variable_name))))),
 #     " =~ ",
 #     variables, "'"))
-# 
+#
 # # Create model strings for components
 # component_models <- components %>%
 #   mutate(model_string = paste0(
@@ -307,8 +310,8 @@ run_cfa <- function(model_name) {
 #     gsub("-", "_", gsub(",", "", tolower(gsub(" ", "_", gsub(",|and", "", response_domain))))),
 #     " =~ ",
 #     variables, "'"))
-# 
-# 
+#
+#
 # all_model_strings <- c(
 #   subcomponent_models$model_string,
 #   component_models$model_string)
@@ -406,6 +409,64 @@ subcomponent_results <- do.call(rbind, lapply(subcomponent_models, run_cfa))
 # Get factor loadings for the components and subcomponents with less than 3 items
 remaining_results <- do.call(rbind, lapply(remaining_models, run_cfa))
 # Note: subcomponent_safe_access_to_public_spaces_for_social_cultural_and_literary_opportunities_model is exactly the same as component_vibrant_communities_model. subcomponent_cultural_identity_and_connection_model is exactly the same as component_cultural_identity_model.
+
+
+# loop QA for models
+for (i in component_models) {
+  model_a<-cfa(i, data=small_svy_data, ordered=TRUE, std.lv=TRUE)
+  assign(paste0("model_",i),model_a)
+ 
+}
+
+for (i in subcomponent_models) {
+  model_a<-cfa(i, data=small_svy_data, ordered=TRUE, std.lv=TRUE)
+  assign(paste0("model_",i),model_a)
+ 
+}
+
+# compare output from QA models to output in all_results
+summary(`model_component_caring_families_and_relationships =~ q10a + q12a + dk + dl + dn`,fit.measures=TRUE,ci=TRUE, standardized=TRUE)
+
+summary(`model_component_vibrant_communities =~ do + dp + dq + dr + ds + dt + du + dv`,fit.measures=TRUE,ci=TRUE,standardized=TRUE)
+
+summary(`model_subcomponent_positive_emotions =~ ck + cl + cm`,fit.measures=TRUE,ci=TRUE,standardized=TRUE)
+
+summary(`model_subcomponent_psychological_distress =~ ct + cu + cv + cw + cx + cy`,fit.measures=TRUE,ci=TRUE,standardized=TRUE)
+
+summary(`model_subcomponent_experiences_of_racism_and_discrimination =~ ef + eg + eh + ei + ej + ek + el + em + en`,fit.measures=TRUE,ci=TRUE,standardized=TRUE)
+
+# review combined measure of sm and pisf
+test_qa<-cfa(positive_identity_and_self_worth_AND_strong_minds_model, data=small_svy_data, ordered=TRUE, std.lv=TRUE)
+
+summary(test_qa,fit.measures=TRUE,ci=TRUE,standardized=TRUE)
+# none of model fit measures check out
+
+### Other QA code
+# test just standard code to make sure it matches up
+ qa_model<-cfa(component_caring_families_and_relationships_model, data=small_svy_data, std.lv=TRUE)
+ 
+ summary(qa_model, fit.measures=TRUE, ci=TRUE, standardized=TRUE)
+ 
+ qa_model_2<-cfa(component_caring_families_and_relationships_model, data=small_svy_data, mimic =c("MPlus"), std.lv=TRUE)
+ 
+ summary(qa_model_2, fit.measures=TRUE, standardized=TRUE)
+ 
+  summary(`model_subcomponent_psychological_distress =~ ct + cu + cv + cw + cx + cy`, fit.measures=TRUE, standardized=TRUE)
+
+   summary(`model_subcomponent_psychological_distress =~ ct + cu + cv + cw + cx + cy`, ci=TRUE, fit.measures=TRUE, standardized=TRUE)
+
+# test out extraction
+   std_loadings<-inspect(`model_subcomponent_psychological_distress =~ ct + cu + cv + cw + cx + cy`,"std.all")$lambda
+   std_df<-as.data.frame(std_loadings)
+   
+   test_df<-parameterEstimates(`model_subcomponent_psychological_distress =~ ct + cu + cv + cw + cx + cy`, se=TRUE,pvalue=TRUE,ci=TRUE,standardized=TRUE, level=0.95)
+   
+    qa_psyc_distress<-cfa(subcomponent_psychological_distress_model, data=small_svy_data, std.lv=TRUE, ordered=TRUE)
+       summary( qa_psyc_distress, ci=TRUE, fit.measures=TRUE, standardized=TRUE)
+
+    run_cfa(subcomponent_psychological_distress_model)
+
+   
 ```
 
 ```{r, include=FALSE, echo=FALSE}
