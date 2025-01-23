@@ -439,7 +439,13 @@ summary(`model_subcomponent_experiences_of_racism_and_discrimination =~ ef + eg 
 test_qa<-cfa(positive_identity_and_self_worth_AND_strong_minds_model, data=small_svy_data, ordered=TRUE, std.lv=TRUE)
 
 summary(test_qa,fit.measures=TRUE,ci=TRUE,standardized=TRUE)
-# none of model fit measures check out
+# none of model fit measures check out so agree not to proceed
+
+# QA table in r studio
+nrow(all_results) # same number of rows
+mean(all_results$factor_loading) # average same
+# checked a handful of rows ordering by factor loading scores
+# checked number of columns
 
 ### Other QA code
 # test just standard code to make sure it matches up
