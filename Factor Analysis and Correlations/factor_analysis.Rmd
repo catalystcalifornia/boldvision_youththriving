@@ -147,7 +147,7 @@ for (col in columns_to_reverse) {
 # Create a function to run model fit measures
 run_model_fit_measures <- function(model_name) {
   # Fit the data to a CFA model
-  fit.cat <- cfa(model_name, data=small_svy_data, mimic =c("MPlus"), std.lv = TRUE,
+  fit.cat <- cfa(model_name, data=small_svy_data, std.lv = TRUE,
                ordered = TRUE)
   # Extract fit measures
   chisq <- fitMeasures(fit.cat, "chisq.scaled")
@@ -230,8 +230,9 @@ run_cfa <- function(model_name) {
   # AV 12/6/24: The if statement is commented out for now, in order to see the factor loading scores regardless of the results of the model fit measures
   
  #if(run_model_fit_measures(model_name)==TRUE) {
+  
     # Fit the data to a CFA model
-    fit.cat <- cfa(model_name, data=small_svy_data, mimic =c("MPlus"), std.lv = TRUE,
+    fit.cat <- cfa(model_name, data=small_svy_data, std.lv = TRUE,
                ordered = TRUE)
     # Define threshold for factor loadings
     threshold_factor_loading <- 0.5
@@ -259,21 +260,39 @@ run_cfa <- function(model_name) {
     
     # Select specific columns from small_svy_dd for the merge
     small_svy_dd_selected <- small_svy_dd %>%
-    select(variable, question, sub_question, question_number,response_domain,variable_category,variable_name)
+    select(variable, question, sub_question, question_number,response_domain,variable_name)
     
+    # Run model fit measures if the model uses 3 or more questions 
+    if(nrow(loadings_summary)<3)
+    {
+      fit_measures_df <- data.frame(cfi = NA, tli = NA, rmsea = NA, srmr = NA)
+    }
+    else
+    {
+      fit_measures <- fitMeasures(fit.cat,c("cfi","tli","rmsea","srmr"))
+      # Convert fit_measures into a data frame
+      fit_measures_df <- as.data.frame(t(as.matrix(fit_measures)))
+    }
+
     # Create a dataframe with the summary results
     results_df <- loadings_summary %>%
     mutate(model_name = short_model_name,
            count_met_threshold = count_met_threshold,
            total_vars = nrow(loadings_summary)) %>%
-    left_join(small_svy_dd_selected, by = c("variable")) %>%
+    bind_cols(fit_measures_df) %>%
+    left_join(small_svy_dd_selected, by = c("variable")) %>% 
     relocate(model_name, question, sub_question, factor_loading, met_threshold) 
     
-
     # Return the dataframe
     return(results_df)
  # }
 }
+```
+
+```{r}
+# This model is used for testing the run_cfa function since it's a small model 
+# test_model <- 'test =~ dk + dl + dm + dx'
+# fit.cat <- run_cfa(test_model, data=small_svy_data, std.lv = TRUE, ordered = TRUE)
 ```
 
 ```{r, include=FALSE, echo=FALSE}
@@ -331,7 +350,7 @@ subcomponent_personal_safety_model <- 'subcomponent_personal_safety =~ q19'
 subcomponent_positive_emotions_model <- 'subcomponent_positive_emotions =~ ck + cl + cm'
 subcomponent_psychological_distress_model <- 'subcomponent_psychological_distress =~ ct + cu + cv + cw + cx + cy'
 subcomponent_relationships_support_model <- 'subcomponent_relationships_support =~ q10a + q12a + dn'
-subcomponent_safe_access_to_public_spaces_for_social_cultural_and_literary_opportunities_model <- 'subcomponent_safe_access_to_public_spaces_for_social_cultural_and_literary_opportunities =~ do + dp + dq + dr + ds + dt + du + dv'
+subcomponent_safe_access_to_public_spaces <- 'subcomponent_safe_access_to_public_spaces =~ do + dp + dq + dr + ds + dt + du + dv'
 subcomponent_self_efficacy_model <- 'subcomponent_self_efficacy =~ cn + cq'
 subcomponent_sparks_model <- 'subcomponent_sparks =~ q10'
 subcomponent_structural_racism_model <- 'subcomponent_structural_racism =~ es + et + eu + ev + ew + ex + ey'
@@ -377,22 +396,19 @@ remaining_models <- c(
   subcomponent_self_efficacy_model, 
   subcomponent_sparks_model 
   # The model below is exactly the same as component_vibrant_communities_model
-  # subcomponent_safe_access_to_public_spaces_for_social_cultural_and_literary_opportunities_model,  
+  # subcomponent_safe_access_to_public_spaces,  
   # The model below is exactly the same as component_cultural_identity_model
   # subcomponent_cultural_identity_and_connection_model, 
 )
 ```
 
 ```{r}
-# TESTING
-
 # This model combines component_positive_identity_and_self_worth_model and 
 # component_strong_minds_model into 1 model
 positive_identity_and_self_worth_AND_strong_minds_model <- 'positive_identity_and_self_worth_AND_strong_minds_model =~ cn + co + cp + cq + q10 + dd + de + df + dm + ck + cl + cm + cr + cs + ct + cu + cv + cw + cx + cy'
 
-test_result <- run_cfa(positive_identity_and_self_worth_AND_strong_minds_model)
+positive_identity_and_self_worth_AND_strong_minds_model_result <- run_cfa(positive_identity_and_self_worth_AND_strong_minds_model)
 ```
-
 
 ```{r}
 # Run confirmatory factor analysis (CFA) on the models
@@ -405,20 +421,19 @@ subcomponent_results <- do.call(rbind, lapply(subcomponent_models, run_cfa))
 
 # Get factor loadings for the components and subcomponents with less than 3 items
 remaining_results <- do.call(rbind, lapply(remaining_models, run_cfa))
-# Note: subcomponent_safe_access_to_public_spaces_for_social_cultural_and_literary_opportunities_model is exactly the same as component_vibrant_communities_model. subcomponent_cultural_identity_and_connection_model is exactly the same as component_cultural_identity_model.
+# Note: subcomponent_safe_access_to_public_spaces is exactly the same as component_vibrant_communities_model. subcomponent_cultural_identity_and_connection_model is exactly the same as component_cultural_identity_model.
 ```
 
 ```{r, include=FALSE, echo=FALSE}
 # Compile all the model results into a standard data frame
-all_results <- as.data.frame(rbind(component_results,subcomponent_results,remaining_results,test_result))
+all_results <- as.data.frame(rbind(component_results,subcomponent_results,remaining_results,positive_identity_and_self_worth_AND_strong_minds_model_result))
 
 # Write table with metadata
 table_name <- "factor_analysis"
 schema <- "youth_thriving"
 indicator <- "A table with the results of the factor analysis"
-source <- "
-Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Factor Analysis and Correlations/factor_analysis.Rmd"
-qa_filepath <- " See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_factor_analysis.docx "
+source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Factor Analysis and Correlations/factor_analysis.Rmd "
+qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_factor_analysis.docx"
 table_comment <- paste0(indicator, source)
 dbWriteTable(con, c(schema, table_name), all_results,
              overwrite = TRUE, row.names = FALSE)
@@ -438,6 +453,10 @@ column_comments <- c(
   "p-value of the factor loading score",
   "the number of variables in the component or subcomponent that meet the threshold for factor loading scores",
   "the number of variables witin the component or subcomponent",
+  "model fit measure: CFI",
+  "model fit measure: TLI",
+  "model fit measure: RMSEA",
+  "model fit measure: SRMR",
   "the question number that this variable refers to",
   "the component this variable belongs to",
   "the category this variable belongs to",
