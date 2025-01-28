@@ -436,7 +436,7 @@ source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/bo
 qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_factor_analysis.docx"
 table_comment <- paste0(indicator, source)
 dbWriteTable(con, c(schema, table_name), all_results,
-             overwrite = TRUE, row.names = FALSE)
+             overwrite = FALSE, row.names = FALSE)
 
 # Comment on table and columns
 column_names <- colnames(all_results) # Get column names
@@ -463,7 +463,7 @@ column_comments <- c(
   "the subcomponent this variable belongs to"
 )
 
-add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
 
 #dbDisconnect(con)
 ```
