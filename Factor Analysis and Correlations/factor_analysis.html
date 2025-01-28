@@ -353,6 +353,37 @@ display: none;
 </div>
 
 
+<pre class="r"><code># This model is used for testing the run_cfa function since it&#39;s a small model 
+# test_model &lt;- &#39;test =~ dk + dl + dm + dx&#39;
+# fit.cat &lt;- run_cfa(test_model, data=small_svy_data, std.lv = TRUE, ordered = TRUE)</code></pre>
+<pre class="r"><code># This model combines component_positive_identity_and_self_worth_model and 
+# component_strong_minds_model into 1 model
+positive_identity_and_self_worth_AND_strong_minds_model &lt;- &#39;positive_identity_and_self_worth_AND_strong_minds_model =~ cn + co + cp + cq + q10 + dd + de + df + dm + ck + cl + cm + cr + cs + ct + cu + cv + cw + cx + cy&#39;
+
+positive_identity_and_self_worth_AND_strong_minds_model_result &lt;- run_cfa(positive_identity_and_self_worth_AND_strong_minds_model)</code></pre>
+<pre><code>## positive_identity_and_self_worth_AND_strong_minds_model 
+##  Number of factor loadings meeting the threshold (&gt;= 0.5 ): 17 out of 20 items 
+##    variable factor_loading ci.lower ci.upper    se p_value met_threshold
+## 1        cy          0.773    0.753    0.794 0.010       0          TRUE
+## 2        cu          0.740    0.720    0.759 0.010       0          TRUE
+## 3        co          0.728    0.707    0.750 0.011       0          TRUE
+## 4        cp          0.725    0.703    0.748 0.011       0          TRUE
+## 5        cw          0.720    0.697    0.742 0.011       0          TRUE
+## 6        cn          0.670    0.646    0.694 0.012       0          TRUE
+## 7        cm          0.667    0.642    0.693 0.013       0          TRUE
+## 8        cr          0.621    0.592    0.650 0.015       0          TRUE
+## 9        dd          0.612    0.585    0.638 0.014       0          TRUE
+## 10       de          0.609    0.582    0.637 0.014       0          TRUE
+## 11       df          0.598    0.571    0.625 0.014       0          TRUE
+## 12       cq          0.592    0.565    0.619 0.014       0          TRUE
+## 13       cl          0.573    0.543    0.602 0.015       0          TRUE
+## 14       cv          0.552    0.524    0.579 0.014       0          TRUE
+## 15      q10          0.546    0.487    0.604 0.030       0          TRUE
+## 16       cs          0.509    0.477    0.541 0.016       0          TRUE
+## 17       ct          0.508    0.479    0.536 0.015       0          TRUE
+## 18       ck          0.490    0.458    0.522 0.016       0         FALSE
+## 19       cx          0.485    0.454    0.516 0.016       0         FALSE
+## 20       dm          0.442    0.407    0.477 0.018       0         FALSE</code></pre>
 <pre class="r"><code># Run confirmatory factor analysis (CFA) on the models
 
 # Get factor loadings for the components
@@ -382,7 +413,7 @@ component_results &lt;- do.call(rbind, lapply(component_models, run_cfa))</code>
 ## 1       co          0.782    0.761    0.802 0.011       0          TRUE
 ## 2       cp          0.751    0.727    0.774 0.012       0          TRUE
 ## 3       de          0.746    0.723    0.768 0.012       0          TRUE
-## 4       dd          0.727    0.704    0.750 0.011       0          TRUE
+## 4       dd          0.727    0.705    0.750 0.011       0          TRUE
 ## 5       df          0.681    0.657    0.705 0.012       0          TRUE
 ## 6       cn          0.671    0.646    0.696 0.013       0          TRUE
 ## 7       cq          0.587    0.559    0.615 0.014       0          TRUE
@@ -497,7 +528,7 @@ subcomponent_results &lt;- do.call(rbind, lapply(subcomponent_models, run_cfa))<
 ##  Number of factor loadings meeting the threshold (&gt;= 0.5 ): 7 out of 7 items 
 ##   variable factor_loading ci.lower ci.upper    se p_value met_threshold
 ## 1       et          0.862    0.850    0.874 0.006       0          TRUE
-## 2       ew          0.860    0.848    0.873 0.006       0          TRUE
+## 2       ew          0.860    0.848    0.872 0.006       0          TRUE
 ## 3       ey          0.814    0.800    0.829 0.007       0          TRUE
 ## 4       eu          0.801    0.786    0.816 0.007       0          TRUE
 ## 5       ev          0.791    0.777    0.806 0.007       0          TRUE
@@ -565,7 +596,7 @@ remaining_results &lt;- do.call(rbind, lapply(remaining_models, run_cfa))</code>
 ##  Number of factor loadings meeting the threshold (&gt;= 0.5 ): 1 out of 1 items 
 ##   variable factor_loading ci.lower ci.upper se p_value met_threshold
 ## 1      q10              1       NA       NA NA      NA          TRUE</code></pre>
-<pre class="r"><code># Note: subcomponent_safe_access_to_public_spaces_for_social_cultural_and_literary_opportunities_model is exactly the same as component_vibrant_communities_model. subcomponent_cultural_identity_and_connection_model is exactly the same as component_cultural_identity_model.</code></pre>
+<pre class="r"><code># Note: subcomponent_safe_access_to_public_spaces is exactly the same as component_vibrant_communities_model. subcomponent_cultural_identity_and_connection_model is exactly the same as component_cultural_identity_model.</code></pre>
 
 
 
