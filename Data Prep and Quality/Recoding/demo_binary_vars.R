@@ -3,7 +3,7 @@
 
 
 #### Step 1: Set Up -----
-packages <- c("dplyr", "RPostgreSQL", "usethis", "janitor", "stringr","purrr") 
+packages <- c("dplyr", "RPostgreSQL", "usethis", "janitor", "stringr","purrr","tidyverse") 
 
 for(pkg in packages){
   library(pkg, character.only = TRUE)
@@ -89,42 +89,65 @@ svy_data_connect$response_list[svy_data_connect$response_list == ""] <- "nonresp
 # look at cases where empty/no response or don't wish to answer or only looking for work
 educ_employ_vars # look at data dictionary
 
-disconnected <- list("by","cf","bx","nonresponse") # values to search for
+disconnected <- list("by","cf","bx","bz","bx,bz","nonresponse") # values to search for
 
 # try filtering for the list
 check <- svy_data_connect %>% 
   mutate(response_list_2 = as.list(response_list)) %>% # convert to actual list column
   # check: returns TRUE if any of the elements in list are not in our target list
-  mutate(connected_check = map_lgl(response_list, ~any(!(. %in% disconnected)))) %>%
+  mutate(connected_check = map_lgl(response_list_2, ~any(!(. %in% disconnected)))) %>%
   # filter for only youth where all responses are in target list
-  filter(connected_check == FALSE)
+  filter(connected_check == FALSE)%>%
+  left_join(svy_data_raw %>%
+              select(response_id,bz),
+            by="response_id")
   
 table(check$response_list,useNA='always') 
 
-# check youth who did not response
+# check other responses
+check_other <- check %>%
+  filter(str_detect(response_list_2, "bz"))
+# some folks who only selected BZ should be recoded to disconnected
+
+# flag other that are disconnected
+other <- list("Currently not looking for work but sometime this year", "have employment and not looking for it", # not looking, 2nd is a response where characters for don't are jumbled
+              "No","No work","None","Not working","Unemployed","Currently unemployed", "I do not have a job", # not working
+                     "Sex work","Become my own boss","I am a stay at home mom","Stay at home mom", # not in labor force or in underground work
+              "Y estoy buscando escuela para empezar mis estudios .") # looking for school and work
+  
+# check youth who did not respond
 check_nonresponse <- svy_data_raw %>%
   left_join(svy_data_connect, by="response_id")%>%
   filter(response_list=="nonresponse")
 # seem to have responded to other items, but assume NA vs. disconnected
 
-##### Recode youth only looking for work (bx) as disconnected ------
+##### Recode youth only looking for work (bx) as disconnected or youth who reported no work ------
 binary_connected <- svy_data_connect %>% 
    # recode only youth that reported looking for work and nothing else
-  mutate(disconnected=
+  mutate(disconnected_step1=
              case_when(
-               response_list=="bx" ~ 1,
+               response_list=="bx" ~ 1, #only looking for work
                response_list=="by" ~NA, # dont wish to answer as NA, no youth just reported cf and no other response
                response_list=="nonresponse" ~NA, # skipped question as NA
                TRUE ~ 0)) %>%
-  select(response_id, disconnected)
+  left_join(svy_data_raw %>% # join write-ins to flag the others
+              select(response_id,bz) %>%
+              rename(bz_writein=bz),
+            by="response_id") %>%
+  # recode write-ins that indicated no work, underground work, or looking for work
+  mutate(disconnected=
+           case_when(
+             str_detect(bz_writein, paste(other, collapse = "|")) ~ 1, 
+             TRUE ~ disconnected_step1))
 
 # qa check
 table(binary_connected$disconnected,useNA='always')
+table(binary_connected$disconnected_step1,useNA='always') # 15 added
 
 
 # Step 4: Push final table to postgres ----
 binary_final <- binary_bipoc %>% 
-  left_join(binary_connected) %>%
+  left_join(binary_connected %>% select(response_id,disconnected)) %>%
   left_join(binary_systems_imp)
 
 # Write table with metadata
