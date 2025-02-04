@@ -5,6 +5,8 @@ title: "Bold Vision Research"
 output: html_document
 ---
 
+# Step 0: Data Preparation
+Run these code chunks before running any subsequent steps in the research analysis (e.g. run step 0 before running step 2, no need to run step 1 to run step 2)
 ```{r, include=FALSE, echo=FALSE}
 # Pull in data from postgres database
 library(tidyverse)
@@ -25,8 +27,6 @@ svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024
 ```
 
 ```{r, include=FALSE, echo=FALSE}
-## Data Preparation
-
 # Filter svy_dd and svy_data to only contain the likert questions needed for the factor analysis
 
 # In the data dictionary, variable_name = subcomponent and response_domain = component
@@ -143,9 +143,6 @@ for (col in columns_to_reverse) {
 # }
 ```
 
-# Step 1: Factor Analysis 
-<p>Complete a confirmatory factor analysis to identify which items significantly load onto each of the youth thriving subcomponents and components. This will help us identify which items to proceed with in our analysis and identify when we may need to adjust components.</p>
-
 ```{r, include=FALSE, echo=FALSE}
 # Create a function for the entire process of confirmatory factor analysis (CFA),
 # including the model fit measures (only ran if the model is determined to be a good fit).
@@ -215,12 +212,8 @@ run_cfa <- function(model_name) {
 }
 ```
 
-```{r, include=FALSE, echo=FALSE}
-# This model is used for testing the run_cfa function since it's a small model 
-test_model <- 'test =~ dk + dl + dm'
-test_results <- run_cfa(test_model)
-```
-
+# Step 1: Factor Analysis 
+<p>Complete a confirmatory factor analysis to identify which items significantly load onto each of the youth thriving subcomponents and components. This will help us identify which items to proceed with in our analysis and identify when we may need to adjust components.</p>
 ```{r, include=FALSE, echo=FALSE}
 # # Create the string names for the subcomponent and component CFA models based on the data dictionary
 
@@ -361,7 +354,7 @@ source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/bo
 qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_factor_analysis.docx"
 table_comment <- paste0(indicator, source)
 dbWriteTable(con, c(schema, table_name), all_results,
-             overwrite = TRUE, row.names = FALSE)
+             overwrite = FALSE, row.names = FALSE)
 
 # Comment on table and columns
 column_names <- colnames(all_results) # Get column names
@@ -563,6 +556,7 @@ run_predictions <- function(model_name) {
 ```
 
 ```{r, include=FALSE, echo=FALSE}
+# measurement_models contains the (sub)component models needed for regression
 measurement_models <- c(
   # Dependent variables, Y's
   subcomponent_psychological_distress_model, 
@@ -578,7 +572,50 @@ measurement_models <- c(
 ```
 
 ```{r, include=FALSE, echo=FALSE}
+# predicted_results contains the predicted factor scores for each variable we want to use in the regression
 predicted_results <- do.call(cbind, lapply(measurement_models, run_predictions))
 
-predicted_results %>% summarise_all(~ sum(is.na(.)))
+# This shows the number of NA values for each (sub)component we want to use in the regression
+predicted_results %>% summarise_all(~sum(is.na(.)))
+
+# There are only 769 rows with no NA values
+sum(complete.cases(predicted_results))
+
+# Checking the min, mean, and max factor scores for each (sub)component
+apply(predicted_results, 2, max, na.rm=TRUE)
+apply(predicted_results, 2, mean, na.rm=TRUE)
+apply(predicted_results, 2, min, na.rm=TRUE)
+
+# Checking the histograms for each (sub)component
+mapply(function(data, name) hist(data, main=name, na.rm=TRUE), 
+       as.data.frame(predicted_results), 
+       colnames(predicted_results))
+```
+```{r, include=FALSE, echo=FALSE}
+# Write table with metadata
+table_name <- "factor_analysis_predicted"
+schema <- "youth_thriving"
+indicator <- "A table with the predicted factor scores of the subcomponents and components to be used for regression."
+source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Factor Analysis and Correlations/factor_analysis.Rmd "
+qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_item_reduction_component_imputation.docx"
+table_comment <- paste0(indicator, source)
+dbWriteTable(con, c(schema, table_name), predicted_results,
+             overwrite = TRUE, row.names = FALSE)
+
+# Comment on table and columns
+column_names <- colnames(predicted_results) # Get column names
+column_comments <- c(
+  "Predicted factor scores for subcomponent psychological distress",
+  "Predicted factor scores for component positive identity and self worth",
+  "Predicted factor scores for component caring families and relationships",
+  "Predicted factor scores for component cultural identity",
+  "Predicted factor scores for subcomponent experiences of racism and discrimination",
+  "Predicted factor scores for subcomponent microaggressions",
+  "Predicted factor scores for subcomponent structural racism",
+  "Predicted factor scores for component vibrant communities"
+)
+
+add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
+#dbDisconnect(con)
 ```
