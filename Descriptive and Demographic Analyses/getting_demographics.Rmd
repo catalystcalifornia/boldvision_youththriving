@@ -323,7 +323,7 @@ demo_spa <- svy_data %>%
          variable_name = 'SPA Number Of Respondent') %>%
   rename(response=spa_final_respondent,
          label=spa_name_final_respondent) %>%
-    select(variable_name, variable, response, count, rate)
+    select(variable_name, variable, response, label, count, rate)
 
 ```
 
@@ -344,6 +344,29 @@ column_names <- colnames(demographics_nh_race_df) # Get column names
 column_comments <- c(
   'This table uses non-Hispanic race categories',
   'This column has all of the non-Hispanic race categories',
+  'Denotes the number of respondents with the corresponding racial identity',
+  'Denotes the percentage of respondents with the corresponding racial identity')
+
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
+
+```
+
+# Export demographics_detailed_race_df dataframe as a table 
+```{r}
+# Write table demographics_detailed_race_df with metadata
+schema <- "youth_thriving"
+table_name <- "demographics_detailed_race"
+indicator <- "Frequencies and percentages of detailed race categories, including mixed races. Universe: out of all respondents including NA"
+
+table_comment <- paste0(indicator, source)
+# dbWriteTable(con, c(schema, table_name), demographics_detailed_race_df,
+#              overwrite = FALSE, row.names = FALSE)
+
+# Add metadata for demographics_detailed_race_df
+column_names <- colnames(demographics_detailed_race_df) # Get column names
+column_comments <- c(
+  'This table uses detailed race categories',
+  'This column has all of the detailed race categories',
   'Denotes the number of respondents with the corresponding racial identity',
   'Denotes the percentage of respondents with the corresponding racial identity')
 
@@ -492,6 +515,57 @@ column_comments <- c(
 
 ```
 
+# Export demographics_age_df dataframe as a table 
 ```{r}
-#dbDisconnect(con)
+# Write table demographics_age_df with metadata
+schema <- "youth_thriving"
+table_name <- "demographics_age"
+indicator <- "Frequencies and percentages of age categories minor:15-17 & adult:18-24. Universe: out of all respondents including NA"
+
+table_comment <- paste0(indicator, source)
+# dbWriteTable(con, c(schema, table_name), demo_age,
+#              overwrite = FALSE, row.names = FALSE)
+
+# Add metadata for demographics_age
+column_names <- colnames(demo_age) # Get column names
+column_comments <- c(
+  'Variable category',
+  'Variable shorthand',
+  'Age of respondent coded as minor 15-17 or adult 18-24',
+  'Denotes the number of respondents in age group',
+  'Denotes the percentage of respondents in age group')
+
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
+```
+
+# Export demographics_spa_df dataframe as a table 
+```{r}
+# Write table demographics_age_df with metadata
+schema <- "youth_thriving"
+table_name <- "demographics_spa"
+indicator <- "Frequencies and percentages of respondents in each SPA. Universe: out of all respondents including NA"
+
+table_comment <- paste0(indicator, source)
+# dbWriteTable(con, c(schema, table_name), demo_spa,
+#              overwrite = FALSE, row.names = FALSE)
+
+# Add metadata for demographics_spa
+column_names <- colnames(demo_spa) # Get column names
+column_comments <- c(
+  'Variable category',
+  'Variable shorthand',
+  'SPA number of respondent',
+  'SPA name of respondent',
+  'Denotes the number of respondents in SPA',
+  'Denotes the percentage of respondents in SPA')
+
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
+```
+
+```{r}
+
+# dbDisconnect(con)
+
 ```
