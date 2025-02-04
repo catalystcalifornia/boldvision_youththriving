@@ -381,7 +381,7 @@ column_comments <- c(
   "the subcomponent this variable belongs to"
 )
 
-add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
 
 #dbDisconnect(con)
 ```

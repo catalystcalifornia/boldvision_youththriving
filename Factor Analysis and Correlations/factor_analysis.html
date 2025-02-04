@@ -353,6 +353,7 @@ display: none;
 </div>
 
 
+
 <div id="step-0-data-preparation" class="section level1">
 <h1>Step 0: Data Preparation</h1>
 <p>Run these code chunks before running any subsequent steps in the
@@ -367,6 +368,7 @@ significantly load onto each of the youth thriving subcomponents and
 components. This will help us identify which items to proceed with in
 our analysis and identify when we may need to adjust components.
 </p>
+
 <pre class="r"><code># Run confirmatory factor analysis (CFA) on the models
 
 # Get factor loadings for the components
@@ -873,7 +875,9 @@ remaining_results &lt;- do.call(rbind, lapply(remaining_models, run_cfa))</code>
 ##         (&gt;= 0.6 ): 1 out of 1 items 
 ##   variable factor_loading ci.lower ci.upper se p_value met_threshold
 ## 1      q10              1       NA       NA NA      NA          TRUE</code></pre>
+
 </div>
+
 
 
 

@@ -436,7 +436,7 @@ source <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Sur
 Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/recoding_gender_sexuality.Rmd"
 table_comment <- paste0(indicator, source)
 dbWriteTable(con, c(schema, table_name), final_df,
-             overwrite = TRUE, row.names = FALSE)
+             overwrite = FALSE, row.names = FALSE)
 
 # Comment on table and columns
 column_names <- colnames(final_df) # Get column names
@@ -448,7 +448,10 @@ column_comments <- c(
   "Categorical: Cisgender male, cisgender female, transgender, gender nonconforming",
   "0/1: Straight (0) vs LGBQA (1)",
   "0/1: Cisgender heterosexual (0) vs LGBTQIA+ (1)",
-  "0/1: LGBTQIA+ white (0) vs LGBTQIA+ BIPOC (1)"
+  "0/1: LGBTQIA+ white (0) vs LGBTQIA+ BIPOC (1)",
+  "String of all the gender identities the respondent chose",
+  "String of all the sexuality identities the respondent chose",
+  "fc:fl are the cleaned gender columns and fo:fx are the cleaned sexuality columns"
 )
 
 add_table_comments <- function(con, schema, table_name, indicator, source, column_names, column_comments) {
