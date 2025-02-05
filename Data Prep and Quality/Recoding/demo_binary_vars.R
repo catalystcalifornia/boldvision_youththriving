@@ -89,11 +89,11 @@ svy_data_connect$response_list[svy_data_connect$response_list == ""] <- "nonresp
 # look at cases where empty/no response or don't wish to answer or only looking for work
 educ_employ_vars # look at data dictionary
 
-disconnected <- list("by","cf","bx","bz","bx,bz","nonresponse") # values to search for
+disconnected <- list("by","cf","bx","bz","nonresponse") # values to search for
 
 # try filtering for the list
 check <- svy_data_connect %>% 
-  mutate(response_list_2 = as.list(response_list)) %>% # convert to actual list column
+  mutate(response_list_2 = strsplit(response_list, ",\\s*")) %>% # convert to actual list column
   # check: returns TRUE if any of the elements in list are not in our target list
   mutate(connected_check = map_lgl(response_list_2, ~any(!(. %in% disconnected)))) %>%
   # filter for only youth where all responses are in target list
