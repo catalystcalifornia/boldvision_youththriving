@@ -443,6 +443,10 @@ subcomponent_relationships_support_model <- 'subcomponent_relationships_support 
 subcomponent_self_efficacy_model <- 'subcomponent_self_efficacy =~ cn'
 subcomponent_sparks_model <- 'subcomponent_sparks =~ q10'
 subcomponent_structural_racism_model <- 'subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex'
+
+# qa check models
+qa_model_check<-factor_analysis%>%group_by(model_name)%>%summarise(count=n(), vars=toString(unique(variable)))
+
 ```
 
 ```{r, include=FALSE, echo=FALSE}
@@ -463,13 +467,13 @@ subcomponent_models <- c(
   subcomponent_microaggressions_model,
   subcomponent_positive_emotions_model, 
   subcomponent_psychological_distress_model,
-  subcomponent_relationships_support_model, 
   subcomponent_structural_racism_model
 )
 
 # Contains all the subcomponent and component models that have less than 3 question items
 remaining_models <- c(
   component_safety_model, 
+  subcomponent_relationships_support_model, 
   subcomponent_connectedness_model, 
   subcomponent_critical_action_model, 
   subcomponent_growth_mindset_model, 
@@ -618,4 +622,84 @@ column_comments <- c(
 add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
 
 #dbDisconnect(con)
+```
+
+
+# QA
+```{r}
+# qa item reduction
+# factor score threshold of 0.6
+factor_analysis_reduced <- dbGetQuery(con, "SELECT * FROM youth_thriving.factor_analysis_item_reduction
+                              WHERE total_vars>=3")
+
+fit_reduced <- factor_analysis_reduced  %>% filter(cfi>=.90 & tli >=.95 & (rmsea<.08 | srmr <.07))
+
+factor_analysis_original <- dbGetQuery(con, "SELECT * FROM youth_thriving.factor_analysis
+                              WHERE total_vars>=3")
+
+fit_original_reduced <- factor_analysis_original  %>% filter(cfi>=.90 & tli >=.95 & (rmsea<.08 | srmr <.07))
+
+# no change in number fitting all 3 parameters, compare fit change
+factor_analysis_reduced <- factor_analysis_reduced %>%
+  mutate(cfi_met=ifelse(cfi>=.95, 1,0),
+         tli_met=ifelse(tli>=.95, 1,0),
+         rmsea_met=ifelse(rmsea<=.05, 1,0),
+         srmr_met=ifelse(srmr<.07, 1,0),
+         parameters_met=cfi_met+tli_met+rmsea_met+srmr_met)
+
+factor_analysis_original <- factor_analysis_original %>%
+  mutate(cfi_met=ifelse(cfi>=.95, 1,0),
+         tli_met=ifelse(tli>=.95, 1,0),
+         rmsea_met=ifelse(rmsea<=.05, 1,0),
+         srmr_met=ifelse(srmr<.07, 1,0),,
+         parameters_met=cfi_met+tli_met+rmsea_met+srmr_met)
+
+compare <- factor_analysis_reduced %>% distinct(model_name, cfi, tli, rmsea, srmr,parameters_met) %>%
+  left_join(factor_analysis_original %>% distinct(model_name, cfi, tli, rmsea, srmr,parameters_met), by="model_name")
+
+# positive identity and self worth doesn't meet conditions in either model
+# test alternate
+subcomponent_self_efficicacy_hope_model <- 'subcomponent_self_efficacy_hope =~ co + cp + cn + cq'
+
+subcomponent_self_efficicacy_hope_model_result <- run_cfa(subcomponent_self_efficicacy_hope_model)
+# better fit proceed with this model that is a combo of self-efficacy and hope for future
+
+
+# qa predicted results
+subcomponent_psychological_distress_model <- 'subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx'
+qa_predict_factor<-cfa(subcomponent_psychological_distress_model, small_svy_data, std.lv=TRUE, ordered=TRUE)
+qa_predict<-lavPredict(qa_predict_factor, small_svy_data, append.data=TRUE)%>%as.data.frame()
+sum(is.na(qa_predict$subcomponent_psychological_distress))
+sum(is.na(predicted_results$subcomponent_psychological_distress)) # has NA's
+3444-167 # difference is NA values makes sense
+mean(qa_predict$subcomponent_psychological_distress) 
+mean(predicted_results$subcomponent_psychological_distress,na.rm=TRUE) # average is the same
+
+qa_predict_factor<-cfa(subcomponent_experiences_of_racism_and_discrimination_model, small_svy_data, std.lv=TRUE, ordered=TRUE)
+qa_predict<-lavPredict(qa_predict_factor, small_svy_data, append.data=TRUE)%>%as.data.frame()
+sum(is.na(qa_predict$subcomponent_experiences_of_racism_and_discrimination))
+sum(is.na(predicted_results$subcomponent_experiences_of_racism_and_discrimination)) # has NA's, difference is missing values ommitted in my result
+mean(qa_predict$subcomponent_experiences_of_racism_and_discrimination) 
+mean(predicted_results$subcomponent_experiences_of_racism_and_discrimination,na.rm=TRUE) # average is the same
+
+
+
+# qa nulls
+subset <- predicted_results %>%
+  select(-c(subcomponent_experiences_of_racism_and_discrimination, component_vibrant_communities))
+
+# 2569 with complete cases
+sum(complete.cases(subset))
+
+# check responses for 2 components/subcomponents
+exp_racism <- dbGetQuery(con, "SELECT * FROM youth_thriving.tot_freq_racial_justice
+                              WHERE variable_name='Experiences Of Racism And Discrimination'")
+
+exp_racism <- exp_racism %>% filter(response %in% c("Does not apply to me","Don't wish to answer"))
+
+vibrant <- dbGetQuery(con, "SELECT * FROM youth_thriving.tot_freq_vibrant_community")
+
+vibrant <- vibrant %>% filter(response %in% c("Don't know","Don't wish to answer"))
+# might need to switch to a straight sum or average score here for each, e.g., # of experiences reported, # of resources reported
+
 ```
