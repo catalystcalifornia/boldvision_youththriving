@@ -35,12 +35,6 @@ id_dem <- id_binary_dem %>% left_join( id_sogi,
 svy_data <- svy_data %>% left_join( id_dem, 
                                        by='response_id')
 
-#function used to create master datasets to push to pgAdmin
-# combine_data_frames <- function(df_list) {
-#   combined_df <- do.call(rbind, df_list)
-#   return(combined_df)
-# }
-
 
 ####Step 2: Creating a function to get frequency tables by demographic variable ####
 
@@ -71,7 +65,12 @@ fx_freq_table  <- function(demographic_variable) {
                 rate = survey_mean(vartype = c("cv", "se"), level = .90), .groups = "drop") %>%
       mutate(rate = rate * 100, 
              rate_cv = rate_cv * 100, 
-             moe = rate_se * 1.645 * 100)
+             moe = rate_se * 1.645 * 100) %>%
+      mutate(!!sym(demographic_variable) := case_when(
+        !!sym(demographic_variable) == 1 ~ demographic_variable, 
+        !!sym(demographic_variable) == 0 ~ paste0("not ", demographic_variable),
+        TRUE ~ as.character(!!sym(demographic_variable)) # Keep other values unchanged
+      ))
     
     # Merge data with dictionary
     df_almost_final <- merge(x = df_var, y = dict_var, 
@@ -100,7 +99,7 @@ fx_freq_table  <- function(demographic_variable) {
 
 ####Step 3: Create a function where to you write to table to postgres ####
 write_survey_data_to_db <- function(df, demographic_variable) {
-  table_name <- paste0("response_analysis_per_", demographic_variable)
+  table_name <- paste0("freq_", demographic_variable)
   
   # Write data to database
   dbWriteTable(con, c('youth_thriving', table_name), df,
@@ -111,7 +110,7 @@ write_survey_data_to_db <- function(df, demographic_variable) {
     "The following is a table of response frequency and rate PER ", demographic_variable, " group. ",
     "The denominator for each analysis is the total number of youth from the ", demographic_variable, " group who answered the question. ",
     "In other words- of the potential responses to a question, what % of X ", demographic_variable, " group said Y compared to how many of that ", demographic_variable, " group said Z. ",
-    "W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_demovariables_analysis.docx",
+    "W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_freqtables_binarydemo.docx",
     " Created on ", Sys.Date()
   )
   
@@ -148,10 +147,26 @@ write_survey_data_to_db <- function(df, demographic_variable) {
 
 
 ####Step 4: Run the functions, check the tables in the environment and push to postgres if everything looks good ####
-fx_freq_table("bipoc")
-fx_freq_table("disconnected")
+df_merged_per_bipoc <- fx_freq_table("bipoc")
+df_merged_per_disconnected <- fx_freq_table("disconnected")
+df_merged_per_systems_impacted <- fx_freq_table("systems_impacted")
+df_merged_per_arrested <- fx_freq_table("arrested")
+df_merged_per_suspended <- fx_freq_table("suspended")
+df_merged_per_undocumented <- fx_freq_table("undocumented")
+df_merged_per_unhoused <- fx_freq_table("unhoused")
+df_merged_per_lgbtqia <- fx_freq_table("lgbtqia")
 
+#FIRST CHECK THE TABLES IN THE ENVIRONMENT AND THEN PUSH TO POSTGRES
 
+# write_survey_data_to_db(df_merged_per_bipoc, "bipoc")
+# write_survey_data_to_db(df_merged_per_disconnected, "disconnected")
+# write_survey_data_to_db(df_merged_per_systems_impacted, "systems_impacted")
+# write_survey_data_to_db(df_merged_per_arrested, "arrested")
+# write_survey_data_to_db(df_merged_per_suspended, "suspended")
+# write_survey_data_to_db(df_merged_per_undocumented, "undocumented")
+# write_survey_data_to_db(df_merged_per_unhoused, "unhoused")
+# write_survey_data_to_db(df_merged_per_lgbtqia, "lgbtqia")
 
+  
 ####Step 5: CLOSE database connection! ####
 dbDisconnect(con)
