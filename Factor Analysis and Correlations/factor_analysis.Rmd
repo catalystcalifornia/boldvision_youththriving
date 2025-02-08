@@ -75,7 +75,7 @@ for (col in names(small_svy_data)) {
 }
 ```
 
-```{r}
+```{r, include=FALSE, echo=FALSE}
 # This chunk is needed for running factor score predictions in Step 2. For component "Vibrant Communities", we are recoding the "Don't know" responses to "No", instead of NA. There are too many "Don't know" responses for this component, causing us to have too many NA values, and thus, too many incomplete rows in predicted_results.
 
 small_svy_data <- small_svy_data %>%
@@ -347,8 +347,6 @@ remaining_results <- do.call(rbind, lapply(remaining_models, run_cfa))
 positive_identity_and_self_worth_AND_strong_minds_model <- 'positive_identity_and_self_worth_AND_strong_minds_model =~ cn + co + cp + cq + q10 + dd + de + df + dm + ck + cl + cm + cr + cs + ct + cu + cv + cw + cx + cy'
 
 positive_identity_and_self_worth_AND_strong_minds_model_result <- run_cfa(positive_identity_and_self_worth_AND_strong_minds_model)
-
-run_cfa(subcomponent_relationships_support_model)
 ```
 
 ```{r, include=FALSE, echo=FALSE}
@@ -675,7 +673,7 @@ compare <- factor_analysis_reduced %>%
   filter(model_name%in% c("component_caring_families_and_relationships","component_positive_identity_and_self_worth","component_strong_minds"))
 ```
 
-```{r}
+```{r, include=FALSE, echo=FALSE}
 # positive identity and self worth doesn't meet conditions in either model
 # test alternate
 subcomponent_self_efficicacy_hope_model <- 'subcomponent_self_efficacy_hope =~ co + cp + cn + cq'

@@ -353,7 +353,6 @@ display: none;
 </div>
 
 
-
 <div id="step-0-data-preparation" class="section level1">
 <h1>Step 0: Data Preparation</h1>
 <p>Run these code chunks before running any subsequent steps in the
@@ -368,7 +367,6 @@ significantly load onto each of the youth thriving subcomponents and
 components. This will help us identify which items to proceed with in
 our analysis and identify when we may need to adjust components.
 </p>
-
 <pre class="r"><code># Run confirmatory factor analysis (CFA) on the models
 
 # Get factor loadings for the components
@@ -453,14 +451,14 @@ component_results &lt;- do.call(rbind, lapply(component_models, run_cfa))</code>
 ##  Number of factor loadings meeting the threshold 
 ##         (&gt;= 0.6 ): 8 out of 8 items 
 ##   variable factor_loading ci.lower ci.upper    se p_value met_threshold
-## 1       dq          0.900    0.865    0.935 0.018       0          TRUE
-## 2       du          0.892    0.851    0.933 0.021       0          TRUE
-## 3       dp          0.879    0.839    0.920 0.021       0          TRUE
-## 4       dr          0.856    0.811    0.902 0.023       0          TRUE
-## 5       dv          0.828    0.772    0.884 0.028       0          TRUE
-## 6       dt          0.823    0.775    0.871 0.025       0          TRUE
-## 7       do          0.815    0.762    0.868 0.027       0          TRUE
-## 8       ds          0.785    0.719    0.851 0.034       0          TRUE</code></pre>
+## 1       dp          0.788    0.759    0.816 0.014       0          TRUE
+## 2       dq          0.776    0.747    0.805 0.015       0          TRUE
+## 3       du          0.748    0.716    0.781 0.017       0          TRUE
+## 4       dv          0.744    0.710    0.779 0.018       0          TRUE
+## 5       dr          0.743    0.711    0.776 0.017       0          TRUE
+## 6       ds          0.736    0.697    0.774 0.020       0          TRUE
+## 7       dt          0.681    0.648    0.714 0.017       0          TRUE
+## 8       do          0.657    0.622    0.692 0.018       0          TRUE</code></pre>
 <pre class="r"><code># Get factor loadings for the subcomponents
 subcomponent_results &lt;- do.call(rbind, lapply(subcomponent_models, run_cfa))</code></pre>
 <pre><code>## subcomponent_experiences_of_racism_and_discrimination 
@@ -727,14 +725,14 @@ component_results &lt;- do.call(rbind, lapply(component_models, run_cfa))</code>
 ##  Number of factor loadings meeting the threshold 
 ##         (&gt;= 0.6 ): 8 out of 8 items 
 ##   variable factor_loading ci.lower ci.upper    se p_value met_threshold
-## 1       dq          0.900    0.865    0.935 0.018       0          TRUE
-## 2       du          0.892    0.851    0.933 0.021       0          TRUE
-## 3       dp          0.879    0.839    0.920 0.021       0          TRUE
-## 4       dr          0.856    0.811    0.902 0.023       0          TRUE
-## 5       dv          0.828    0.772    0.884 0.028       0          TRUE
-## 6       dt          0.823    0.775    0.871 0.025       0          TRUE
-## 7       do          0.815    0.762    0.868 0.027       0          TRUE
-## 8       ds          0.785    0.719    0.851 0.034       0          TRUE</code></pre>
+## 1       dp          0.788    0.759    0.816 0.014       0          TRUE
+## 2       dq          0.776    0.747    0.805 0.015       0          TRUE
+## 3       du          0.748    0.716    0.781 0.017       0          TRUE
+## 4       dv          0.744    0.710    0.779 0.018       0          TRUE
+## 5       dr          0.743    0.711    0.776 0.017       0          TRUE
+## 6       ds          0.736    0.697    0.774 0.020       0          TRUE
+## 7       dt          0.681    0.648    0.714 0.017       0          TRUE
+## 8       do          0.657    0.622    0.692 0.018       0          TRUE</code></pre>
 <pre class="r"><code># Get factor loadings for the subcomponents
 subcomponent_results &lt;- do.call(rbind, lapply(subcomponent_models, run_cfa))</code></pre>
 <pre><code>## subcomponent_experiences_of_racism_and_discrimination 
@@ -785,16 +783,7 @@ subcomponent_results &lt;- do.call(rbind, lapply(subcomponent_models, run_cfa))<
 ## 3       cw          0.838    0.824    0.853 0.008       0          TRUE
 ## 4       cv          0.730    0.711    0.749 0.010       0          TRUE
 ## 5       ct          0.685    0.665    0.706 0.011       0          TRUE
-## 6       cx          0.666    0.644    0.687 0.011       0          TRUE</code></pre>
-<pre><code>## Warning: lavaan-&gt;lav_model_vcov():  
-##    Could not compute standard errors! The information matrix could not be 
-##    inverted. This may be a symptom that the model is not identified.</code></pre>
-<pre><code>## subcomponent_relationships_support 
-##  Number of factor loadings meeting the threshold 
-##         (&gt;= 0.6 ): 1 out of 2 items 
-##   variable factor_loading ci.lower ci.upper se p_value met_threshold
-## 1       dn          1.000       NA       NA NA      NA          TRUE
-## 2     q12a          0.484       NA       NA NA      NA         FALSE
+## 6       cx          0.666    0.644    0.687 0.011       0          TRUE
 ## 
 ## subcomponent_structural_racism 
 ##  Number of factor loadings meeting the threshold 
@@ -806,78 +795,17 @@ subcomponent_results &lt;- do.call(rbind, lapply(subcomponent_models, run_cfa))<
 ## 4       eu          0.801    0.786    0.816 0.007       0          TRUE
 ## 5       ev          0.791    0.777    0.806 0.007       0          TRUE
 ## 6       es          0.776    0.760    0.792 0.008       0          TRUE
-## 7       ex          0.700    0.678    0.722 0.011       0          TRUE</code></pre>
-<pre class="r"><code># Get factor loadings for the components and subcomponents with less than 3 items
-remaining_results &lt;- do.call(rbind, lapply(remaining_models, run_cfa))</code></pre>
-<pre><code>## Warning: lavaan-&gt;lav_model_vcov():  
-##    Could not compute standard errors! The information matrix could not be 
-##    inverted. This may be a symptom that the model is not identified.</code></pre>
-<pre><code>## component_safety 
+## 7       ex          0.700    0.678    0.722 0.011       0          TRUE
+## 
+## subcomponent_self_efficacy_hope 
 ##  Number of factor loadings meeting the threshold 
-##         (&gt;= 0.6 ): 1 out of 1 items 
-##   variable factor_loading ci.lower ci.upper se p_value met_threshold
-## 1      q19              1       NA       NA NA      NA          TRUE</code></pre>
-<pre><code>## Warning: lavaan-&gt;lav_model_vcov():  
-##    Could not compute standard errors! The information matrix could not be 
-##    inverted. This may be a symptom that the model is not identified.</code></pre>
-<pre><code>## subcomponent_connectedness 
-##  Number of factor loadings meeting the threshold 
-##         (&gt;= 0.6 ): 2 out of 2 items 
-##   variable factor_loading ci.lower ci.upper se p_value met_threshold
-## 1       dk          1.000       NA       NA NA      NA          TRUE
-## 2       dl          0.705       NA       NA NA      NA          TRUE</code></pre>
-<pre><code>## Warning: lavaan-&gt;lav_model_vcov():  
-##    Could not compute standard errors! The information matrix could not be 
-##    inverted. This may be a symptom that the model is not identified.</code></pre>
-<pre><code>## subcomponent_critical_action 
-##  Number of factor loadings meeting the threshold 
-##         (&gt;= 0.6 ): 1 out of 1 items 
-##   variable factor_loading ci.lower ci.upper se p_value met_threshold
-## 1       dm              1       NA       NA NA      NA          TRUE</code></pre>
-<pre><code>## Warning: lavaan-&gt;lav_model_vcov():  
-##    Could not compute standard errors! The information matrix could not be 
-##    inverted. This may be a symptom that the model is not identified.</code></pre>
-<pre><code>## subcomponent_growth_mindset 
-##  Number of factor loadings meeting the threshold 
-##         (&gt;= 0.6 ): 1 out of 1 items 
-##   variable factor_loading ci.lower ci.upper se p_value met_threshold
-## 1       cr              1       NA       NA NA      NA          TRUE</code></pre>
-<pre><code>## Warning: lavaan-&gt;lav_model_vcov():  
-##    Could not compute standard errors! The information matrix could not be 
-##    inverted. This may be a symptom that the model is not identified.</code></pre>
-<pre><code>## subcomponent_hope_for_the_future 
-##  Number of factor loadings meeting the threshold 
-##         (&gt;= 0.6 ): 2 out of 2 items 
-##   variable factor_loading ci.lower ci.upper se p_value met_threshold
-## 1       co          1.000       NA       NA NA      NA          TRUE
-## 2       cp          0.736       NA       NA NA      NA          TRUE</code></pre>
-<pre><code>## Warning: lavaan-&gt;lav_model_vcov():  
-##    Could not compute standard errors! The information matrix could not be 
-##    inverted. This may be a symptom that the model is not identified.</code></pre>
-<pre><code>## subcomponent_personal_safety 
-##  Number of factor loadings meeting the threshold 
-##         (&gt;= 0.6 ): 1 out of 1 items 
-##   variable factor_loading ci.lower ci.upper se p_value met_threshold
-## 1      q19              1       NA       NA NA      NA          TRUE</code></pre>
-<pre><code>## Warning: lavaan-&gt;lav_model_vcov():  
-##    Could not compute standard errors! The information matrix could not be 
-##    inverted. This may be a symptom that the model is not identified.</code></pre>
-<pre><code>## subcomponent_self_efficacy 
-##  Number of factor loadings meeting the threshold 
-##         (&gt;= 0.6 ): 1 out of 1 items 
-##   variable factor_loading ci.lower ci.upper se p_value met_threshold
-## 1       cn              1       NA       NA NA      NA          TRUE</code></pre>
-<pre><code>## Warning: lavaan-&gt;lav_model_vcov():  
-##    Could not compute standard errors! The information matrix could not be 
-##    inverted. This may be a symptom that the model is not identified.</code></pre>
-<pre><code>## subcomponent_sparks 
-##  Number of factor loadings meeting the threshold 
-##         (&gt;= 0.6 ): 1 out of 1 items 
-##   variable factor_loading ci.lower ci.upper se p_value met_threshold
-## 1      q10              1       NA       NA NA      NA          TRUE</code></pre>
-
+##         (&gt;= 0.6 ): 4 out of 4 items 
+##   variable factor_loading ci.lower ci.upper    se p_value met_threshold
+## 1       co          0.871    0.855    0.887 0.008       0          TRUE
+## 2       cp          0.816    0.798    0.834 0.009       0          TRUE
+## 3       cn          0.751    0.731    0.772 0.010       0          TRUE
+## 4       cq          0.672    0.648    0.695 0.012       0          TRUE</code></pre>
 </div>
-
 
 
 
