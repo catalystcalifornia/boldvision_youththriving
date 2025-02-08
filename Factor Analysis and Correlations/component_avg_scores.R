@@ -121,7 +121,7 @@ svy_df <- svy_df %>%
   mutate(total='all youth')
 
 df_total<-avg_scores(df=svy_df,demo_var="total")
-
+mean(svy_df$subcomponent_psychological_distress,na.rm=TRUE)
 # Step 3: Compute for binary vars -----------------
 df_total<-avg_scores(df=svy_df,demo_var="total")
 

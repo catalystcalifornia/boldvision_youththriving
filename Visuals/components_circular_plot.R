@@ -6,12 +6,13 @@ library(stringr)
 
 df_total <- df_total %>% filter(component!='subcomponent_experiences_of_racism_and_discrimination_sum')
 plt <- ggplot(df_total) +
+  ylim(-.2,.2) +
   # Make custom panel grid
-  # geom_hline(
-  #   aes(yintercept = y), 
-  #   # data.frame(y = c(0:3) * 1000),
-  #   color = "lightgrey"
-  # ) + 
+  geom_hline(
+    aes(yintercept = -.2),
+    data.frame(y = c(0:3) * 1000),
+    color = "lightgrey"
+  ) +
   # Add bars to represent the cumulative track lengths
   # str_wrap(region, 5) wraps the text so each line has at most 5 characters
   # (but it doesn't break long words!)
@@ -49,7 +50,7 @@ plt <- ggplot(df_total) +
 #   ) +
   
   # Make it circular!
-  coord_polar()
+  coord_polar(start=0)
 
 plt
 
