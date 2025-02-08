@@ -84,18 +84,22 @@ temp_df <- df %>%
   group_by(!!sym(demo_var)) %>% # group by demographic variable
   summarise(count=n(), # calculate the unweighted count meeting demo var and with values for component var
             avg=survey_mean(!!sym(i), vartype=c("se","ci"),level=.90)) %>% # get the average score
-  rename(!!paste({{i}},"avg",sep="_"):=avg,
-         !!paste({{i}},"count",sep="_"):=count,
-         !!paste({{i}},"se",sep="_"):=avg_se,
-         !!paste({{i}},"low_ci",sep="_"):=avg_low,
-         !!paste({{i}},"upp_ci",sep="_"):=avg_upp,
+  rename(
+    # !!paste({{i}},"avg",sep="_"):=avg,
+    #      !!paste({{i}},"count",sep="_"):=count,
+    #      !!paste({{i}},"se",sep="_"):=avg_se,
+    #      !!paste({{i}},"low_ci",sep="_"):=avg_low,
+    #      !!paste({{i}},"upp_ci",sep="_"):=avg_upp,
          subgroup=!!sym(demo_var)
- )
+ ) %>%
+  mutate(component=!!paste({{i}}))
 mylist[[i]] <- temp_df # assign table/list output to my empty list
 
 }
 
-final_df <-mylist %>% reduce(left_join)
+all_vars_df<-dplyr::bind_rows(mylist)
+
+# final_df <-mylist %>% reduce(left_join,by="subgroup")
 
 
 }
@@ -117,13 +121,6 @@ svy_df <- svy_df %>%
   mutate(total='all youth')
 
 df_total<-avg_scores(df=svy_df,demo_var="total")
-
-final_df <- df_total %>%
-pivot_longer(!subgroup,
-             names_to = c('.value', 'temp'), 
-             names_sep = '_', 
-             values_drop_na = TRUE) %>% 
-  select(-temp)
 
 # Step 3: Compute for binary vars -----------------
 df_total<-avg_scores(df=svy_df,demo_var="total")
