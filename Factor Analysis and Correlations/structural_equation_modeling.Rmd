@@ -1,0 +1,178 @@
+---
+title: "SEM"
+author: "Alicia Vo"
+date: "2025-02-10"
+output: html_document
+---
+# Step 0: Data Preparation
+
+```{r setup, include=FALSE, echo=FALSE}
+options(scipen=999) # Turn off scientific notation
+
+library(tidyverse)
+library(RPostgreSQL)
+library(lavaan)
+library(psych)
+
+# Used to get RDA function for adding table comments
+source("W:\\RDA Team\\R\\Github\\RDA Functions\\main\\RDA-Functions\\Utility_Functions.R")
+
+# Connect to postgres
+source("W:\\RDA Team\\R\\credentials_source.R")
+con <- connect_to_db("bold_vision")
+
+# Pull in the survey data and data dictionary
+raw_svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
+svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024")
+```
+
+```{r, include=FALSE, echo=FALSE}
+# Filter svy_dd and raw_svy_data to only contain the likert questions needed for the factor analysis
+
+# In the data dictionary, variable_name = subcomponent and response_domain = component
+subcomponent_list <- c("Positive Emotions", "Self-Efficacy", "Hope For The Future", "Growth Mindset", "Psychological Distress", "Sparks", "Relationships/Support", "Freedom To Explore The Self", "Connectedness", "Critical Action", "Safe Access To Public Spaces For Social, Cultural, And Literary Opportunities", "Cultural Identity And Connection", "Experiences Of Racism And Discrimination", "Microaggressions", "Structural Racism", "Personal Safety")
+
+component_list <- c("Strong Minds", "Positive Identity And Self-Worth", "Caring Families And Relationships", "Vibrant Communities", "Cultural Identity", "Racial Justice, Equity, And Inclusion", "Safety")
+
+# small_svy_dd only contains the likert questions needed for the factor analysis
+small_svy_dd <- svy_dd %>%
+  filter(response_domain %in% component_list & !(is.na(likert_type)))
+
+# small_svy_data only contains the columns of likert questions needed for the factor analysis
+small_svy_data <- raw_svy_data %>%
+  select(response_id, all_of(small_svy_dd$variable))
+```
+
+```{r, include=FALSE, echo=FALSE}
+# In the survey data, change the responses of "Don't wish to answer", "Not sure", "Not Sure", "Does not apply to me", "Don't know" into NA values. Use this na_responses if trying to replicate results from Step 1. Here, we recode the "Don't know" responses into NA values. 
+#na_responses <- c("Don't wish to answer", "Not sure", "Not Sure", "Does not apply to me", "Don't know")
+
+# In the survey data, change the responses of "Don't wish to answer", "Not sure", "Not Sure", "Does not apply to me" into NA values. Use this na_responses if trying to replicate results from Step 2. Here, we don't recode the "Don't know" responses into NA values. Note that the "Don't know" responses are only applicable to the "Vibrant Communities" questions in small_svy_dd.
+na_responses <- c("Don't wish to answer", "Not sure", "Not Sure", "Does not apply to me")
+
+# Iterate over each column in small_svy_data
+for (col in names(small_svy_data)) {
+  # Get the corresponding row in the data dictionary
+  dd_row <- small_svy_dd[small_svy_dd$variable == col, ]
+  
+  if (nrow(dd_row) > 0) { # Ensure there is a matching dictionary entry
+    # Get response_# columns
+    valid_responses <- dd_row[1, grepl("^response_[0-9]+$", names(dd_row))]
+    valid_responses <- valid_responses[!is.na(valid_responses)]  # Exclude NAs explicitly
+    # Create response_map only if valid responses exist
+    if (length(valid_responses) > 0) {
+      response_map <- setNames(as.list(valid_responses), seq_along(valid_responses))
+      # Replace values in the column based on the response map
+      small_svy_data[[col]] <- unlist(lapply(small_svy_data[[col]], function(x) {
+        if (!is.na(x) && response_map[[as.character(x)]] %in% na_responses) {
+          NA
+        } else {
+          x
+        }
+      }))
+    }
+  }
+}
+```
+
+```{r, include=FALSE, echo=FALSE}
+# This chunk is needed for running factor score predictions in Step 2. For component "Vibrant Communities", we are recoding the "Don't know" responses to "No", instead of NA. There are too many "Don't know" responses for this component, causing us to have too many NA values, and thus, too many incomplete rows in predicted_results.
+
+small_svy_data <- small_svy_data %>%
+  mutate(across(c(do, dp, dq, dr, ds, dt, du, dv), ~ ifelse(. == 3, 1, .)))
+```
+
+```{r, include=FALSE, echo=FALSE}
+# Reverse the likert scales in the survey data for the scales that need reversing
+
+# Identify columns to reverse
+columns_to_reverse <- small_svy_dd$variable[grep("_rev$", small_svy_dd$likert_type)]
+
+# q10 is a special case of scale reversal; swap values 1 and 2
+columns_to_reverse <- columns_to_reverse[columns_to_reverse != "q10"]
+small_svy_data$q10 <- ifelse(
+  is.na(small_svy_data$q10), 
+  NA, 
+  ifelse(small_svy_data$q10 == 1, 2, 
+         ifelse(small_svy_data$q10 == 2, 1, small_svy_data$q10))
+)
+
+# Loop through each column to reverse
+for (col in columns_to_reverse) {
+  # Get the maximum scale value from the 'likert' column
+  scale_max <- as.numeric(sub("pt_scale", "", small_svy_dd$likert[small_svy_dd$variable == col]))
+  # Reverse the scale in small_svy_data
+  small_svy_data[[col]] <- ifelse(is.na(small_svy_data[[col]]),
+                                NA,
+                                scale_max + 1 - small_svy_data[[col]])
+}
+```
+
+```{r}
+# Create df svy_data, which contains all the columns of raw_survey_data, but the matching columns from small_svy_data are used instead.
+
+# Get the common columns between raw_svy_data and small_svy_data, except for response_id
+matching_cols <- intersect(names(raw_svy_data), names(small_svy_data))
+matching_cols <- matching_cols[!matching_cols %in% c("response_id")]
+
+# Replace matching columns in raw_svy_data with those from small_svy_data for the new df, svy_data
+svy_data <- raw_svy_data %>%
+  select(-all_of(matching_cols)) %>% # Drop matching columns
+  left_join(small_svy_data, by = "response_id") # Re-add them from small_svy_data
+```
+
+```{r, include=FALSE, echo=FALSE}
+subcomponent_experiences_of_racism_and_discrimination <- dbGetQuery(con, "SELECT response_id, subcomponent_experiences_of_racism_and_discrimination_sum FROM youth_thriving.factor_analysis_predicted")
+
+# Edit svy_data to prep for SEM: Add subcomponent_experiences_of_racism_and_discrimination to the dataframe, rename column names, make new columns.
+svy_data <- svy_data %>%
+  left_join(subcomponent_experiences_of_racism_and_discrimination, by="response_id") %>%
+  mutate(growth_mindset = rowMeans(across(c(cr, cs)), na.rm = TRUE)) %>%
+  rename(personal_safety = q19,
+         opportunities_for_community_involvement = dm)
+
+ordinal_cols <- recode(matching_cols, 
+                        "q19" = "personal_safety", 
+                        "dm"  = "opportunities_for_community_involvement") %>%
+  setdiff(c("cr", "cs")) %>%
+  c("growth_mindset", "subcomponent_experiences_of_racism_and_discrimination_sum")
+
+```
+
+# Step 3: Regression Analysis
+```{r Proposed Model 1, include=FALSE, echo=FALSE}
+# The factor loadings are different from the loading results from Step 1 because in Step 1, we ran cfa() on each model individually. Therefore, each model was fitted with cfa() using a different number of observations, depending on what missing values there were for each model's specific variables. Here, we run sem() on all the models at once, so it only uses rows where there is no missing data for all the models' variables combined.
+
+model_1 <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds
+  subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx
+  
+  # Regression
+  subcomponent_psychological_distress ~ component_caring_families_and_relationships + component_cultural_identity + subcomponent_microaggressions + subcomponent_structural_racism + component_vibrant_communities + subcomponent_experiences_of_racism_and_discrimination_sum + personal_safety + growth_mindset + opportunities_for_community_involvement
+'
+
+# Setting std.lv = TRUE allows all factor loadings to be freely estimated instead of fixing the first loading equal to 1.0
+# Setting ordered = ordinal_cols specifies the columns to be treated as ordinal variables
+fit_1 <- sem(model_1, data = svy_data, std.lv = TRUE, ordered = ordinal_cols)
+# summary(fit_1, standardized=TRUE, fit.measures=TRUE)
+
+sem_output <- parameterEstimates(fit_1, standardized = TRUE) %>%
+  filter(op %in% c("~"))
+```
+
+```{r}
+# Standardize scale for the "Non-imputed Component and Individual Item Scores". I'm fairly certain we need to scale these variables in order to compare effect sizes with the latent variables. The latent variables are already standardized because the factor loadings lie within the range 0-1. 
+scale_data <- svy_data %>%
+  mutate(across(c(subcomponent_experiences_of_racism_and_discrimination_sum, personal_safety, growth_mindset, opportunities_for_community_involvement), scale))
+
+fit_2 <- sem(model_1, data = scale_data, std.lv = TRUE, ordered = ordinal_cols)
+
+sem_output_2 <- parameterEstimates(fit_2, standardized = TRUE) %>%
+  filter(op %in% c("~"))
+```
+
