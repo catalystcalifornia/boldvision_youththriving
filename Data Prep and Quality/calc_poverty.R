@@ -1,6 +1,22 @@
 # The purpose of this script is to calculate poverty rates for each respondent by their designated zipcode. Final calculations are produced as a datatable and pushed to pgAdmin database. 
 # Author: Maria Khan 
 
+####Step 0: Data Prep for Table S1701 ####
+# Set source for ACS 5-Yr table update fx
+source("W:\\RDA Team\\R\\Github\\RDA Functions\\MK\\RDA-Functions\\acs_rda_shared_tables.R")
+
+# Script file path, for postgres table comment
+filepath <- "W:/RDA Team/R/Github/RDA Functions/MK/RDA-Functions/acs_s1701_2023.R"
+
+# Define arguments for ACS table update fx
+yr <- 2023 # update for the ACS data/ZCTA vintage needed
+
+# ### If you add a new table, you must also update table_vars below
+project_vars <- c("S1701")  
+
+## Run fx to get updates ACS table(s)
+update_acs(yr=yr, acs_tables=project_vars,filepath)
+
 #### Step 1: Set up ####
 library(data.table)
 library(dplyr)
@@ -100,7 +116,7 @@ part2_zips_pov_data <- raw_svy_data %>%
   select(response_id, zipcode_svy, zcta_acs, pop, perc_below_100_fpl, perc_below_200_fpl)
 
 part1_zips_pov_data <- bvyts_pov_data %>%
-  filter(!response_id %in% unmatched_zips_pov$response_id)
+  filter(!response_id %in% bvyts_pov_data_unmatched$response_id)
 
 bvyts_pov_data_final <- rbind(part2_zips_pov_data,part1_zips_pov_data)
 
