@@ -21,8 +21,6 @@ con <- connect_to_db("bold_vision")
 svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
 #data dictionary
 svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 where response_type = 'mc' AND response_domain !='Demographics' AND response_domain != 'Info'")
-#gather unique indicators for later
-unique_indicators <- unique(svy_dd$variable)
 
 #LGBTQIA data in here
 id_sogi <- dbGetQuery(con, "SELECT response_id, cishet_lgbtqia AS lgbtqia FROM youth_thriving.gender_sexuality_data")
@@ -99,7 +97,7 @@ fx_freq_table  <- function(demographic_variable) {
 
 ####Step 3: Create a function where to you write to table to postgres ####
 write_survey_data_to_db <- function(df, demographic_variable) {
-  table_name <- paste0("freq_", demographic_variable)
+  table_name <- paste0("tot_freq_", demographic_variable)
   
   # Write data to database
   dbWriteTable(con, c('youth_thriving', table_name), df,
@@ -107,9 +105,12 @@ write_survey_data_to_db <- function(df, demographic_variable) {
   
   # Create table comment
   table_comment <- paste0(
-    "The following is a table of response frequency and rate PER ", demographic_variable, " group. ",
-    "The denominator for each analysis is the total number of youth from the ", demographic_variable, " group who answered the question. ",
-    "In other words- of the potential responses to a question, what % of X ", demographic_variable, " group said Y compared to how many of that ", demographic_variable, " group said Z. ",
+    "The following is a table of response frequencies and rates for non-demographic questions grouped by",  
+    demographic_variable, " status. The denominator for each stat is the total number of youth who 
+    answered the question grouped by",  demographic_variable," status. For example, looking at 
+    arrested youth, count represents how many arrested youth selected response X to a given question. 
+    Rate represents what % of arrested youth selected response X out of the total number of arrested youth 
+    who answered the question.",
     "W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_freqtables_binarydemo.docx",
     " Created on ", Sys.Date()
   )
@@ -127,17 +128,17 @@ write_survey_data_to_db <- function(df, demographic_variable) {
     COMMENT ON COLUMN youth_thriving.", table_name, ".sub_question IS 
       'the subquestion that this variable refers to';
     COMMENT ON COLUMN youth_thriving.", table_name, ".variable_name IS 
-      'a more explanatory name of what the variable aims to measure';
+      'the survey SUBcomponent this variable falls under';
     COMMENT ON COLUMN youth_thriving.", table_name, ".response_domain IS 
-      'the survey domain this variable refers to';
+      'the survey component this variable falls under';
     COMMENT ON COLUMN youth_thriving.", table_name, ".", demographic_variable, " IS 
-      '", demographic_variable, " group';
+      '", demographic_variable, " youth';
     COMMENT ON COLUMN youth_thriving.", table_name, ".response IS 
       'the response that the data is about';
     COMMENT ON COLUMN youth_thriving.", table_name, ".count IS 
-      'the count of people within this ", demographic_variable, " group that answered this response';
+      'the count of ", demographic_variable, " youth that selected this response';
     COMMENT ON COLUMN youth_thriving.", table_name, ".rate IS 
-      'the weighted rate of people in this ", demographic_variable, " group that answered with this response compared to how others in this ", demographic_variable, " group responded';
+      'the weighted % of", demographic_variable, " youth who selected this response out of the total number of ", demographic_variable, " youth who answered this question';
     COMMENT ON COLUMN youth_thriving.", table_name, ".rate_cv IS 
       'a weighted coefficient of variation for this rate';
     COMMENT ON COLUMN youth_thriving.", table_name, ".moe IS 
