@@ -492,8 +492,7 @@ indicator <- "A table with the results of the factor analysis. In this table, fa
 source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Factor Analysis and Correlations/factor_analysis.Rmd "
 qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_item_reduction_component_imputation.docx"
 table_comment <- paste0(indicator, source)
-dbWriteTable(con, c(schema, table_name), all_results,
-             overwrite = TRUE, row.names = FALSE)
+#dbWriteTable(con, c(schema, table_name), all_results, overwrite = TRUE, row.names = FALSE)
 
 # Comment on table and columns
 column_names <- colnames(all_results) # Get column names
@@ -555,7 +554,8 @@ measurement_models <- c(
   component_cultural_identity_model,
   subcomponent_microaggressions_model,
   subcomponent_structural_racism_model,
-  component_vibrant_communities_model
+  component_vibrant_communities_model,
+  subcomponent_experiences_of_racism_and_discrimination_model
 )
 ```
 
@@ -568,14 +568,16 @@ predicted_results <- subset(predicted_results, select=which(!duplicated(names(pr
 ```
 
 ```{r, include=FALSE, echo=FALSE}
+# Update 2/13/25: We are not going to use a summative score for subcomponent_experiences_of_racism_and_discrimination_model. Instead, we reduced the number of items in the model.
+
 # There are too many NA values for the "Experiences of Racism and Discrimination" so we are not going to use predicted factor scores for this subcomponent. Instead, we are going to compute a summative score.
-sum_experiences <- small_svy_data %>%
-  mutate(subcomponent_experiences_of_racism_and_discrimination_sum = rowSums(select(., c(ef, eg, eh, ei, ej, ek, el, em, en)), na.rm = TRUE)) %>%
-  select(response_id,subcomponent_experiences_of_racism_and_discrimination_sum)
+# sum_experiences <- small_svy_data %>%
+#   mutate(subcomponent_experiences_of_racism_and_discrimination_sum = rowSums(select(., c(ef, eg, eh, ei, ej, ek, el, em, en)), na.rm = TRUE)) %>%
+#   select(response_id,subcomponent_experiences_of_racism_and_discrimination_sum)
 
 # Merge subcomponent_experiences_of_racism_and_discrimination_sum with predicted_results
-predicted_results <- predicted_results %>%
-  left_join(sum_experiences, by="response_id")
+# predicted_results <- predicted_results %>%
+#   left_join(sum_experiences, by="response_id")
 ```
 
 ```{r, include=FALSE, echo=FALSE}
@@ -586,8 +588,7 @@ indicator <- "A table with the predicted factor scores of the subcomponents and 
 source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Factor Analysis and Correlations/factor_analysis.Rmd "
 qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_item_reduction_component_imputation.docx"
 table_comment <- paste0(indicator, source)
-dbWriteTable(con, c(schema, table_name), predicted_results,
-             overwrite = TRUE, row.names = FALSE)
+#dbWriteTable(con, c(schema, table_name), predicted_results, overwrite = TRUE, row.names = FALSE)
 
 # Comment on table and columns
 column_names <- colnames(predicted_results) # Get column names
@@ -601,7 +602,7 @@ column_comments <- c(
   "Predicted factor scores for subcomponent microaggressions",
   "Predicted factor scores for subcomponent structural racism",
   "Predicted factor scores for component vibrant communities",
-  "Summative scores for subcomponent experiences of racism and discrimination"
+  "Predicted factor scores for subcomponent experiences of racism and discrimination"
 )
 
 add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
