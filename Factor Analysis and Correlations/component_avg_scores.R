@@ -16,7 +16,7 @@ source("W:\\RDA Team\\R\\credentials_source.R")
 con <- connect_to_db("bold_vision")
 
 # pulling raw survey data
-svy_data <- dbGetQuery(con, "SELECT response_id, age_minor_adult, spa_final_respondent, spa_name_final_respondent, weights_final 
+svy_data_raw <- dbGetQuery(con, "SELECT response_id, age_minor_adult, spa_final_respondent, spa_name_final_respondent, weights_final 
                        FROM youth_thriving.raw_survey_data")
 
 # pulling data dictionary 
@@ -33,8 +33,20 @@ sogi <- dbGetQuery(con, "SELECT * FROM youth_thriving.gender_sexuality_data ")
 
 race <- dbGetQuery(con, "SELECT * FROM youth_thriving.race_ethnicity_data ")
 
+# Step 1: Setting up dataframe for average scores by demographics -----
+# standardize experiences of racism and discrimination
+imputed_scores <- imputed_scores %>%
+  mutate(subcomponent_experiences_of_racism_and_discrimination=scale(subcomponent_experiences_of_racism_and_discrimination_sum))
+
+# check
+min(imputed_scores$subcomponent_experiences_of_racism_and_discrimination)
+max(imputed_scores$subcomponent_experiences_of_racism_and_discrimination)
+
+# drop old column
+imputed_scores <- imputed_scores %>% select(-subcomponent_experiences_of_racism_and_discrimination_sum)
+
 # join data frames
-svy_df_orig <- svy_data %>%
+svy_df_orig <- svy_data_raw %>%
   left_join(imputed_scores) %>%
   left_join(binary) %>%
   left_join(sogi%>%select(response_id,cisgender_mf:detailed_sexuality)) %>%
@@ -42,7 +54,6 @@ svy_df_orig <- svy_data %>%
 
 # rename values for 0/1 variables so it's easier to read data results later
 # new df and saving original df
-
 svy_df <- svy_df_orig
 
 # list of binary vars it can apply to systematically
@@ -66,12 +77,12 @@ table(svy_df$bipoc,useNA='always')
 table(svy_df_orig$bipoc,useNA='always')
 
 
-# Step 1: Create function to calculate average component scores by youth demographics ----
+# Step 2: Create function to calculate average component scores by youth demographics ----
 # component names
 avg_scores<-function (df,demo_var) {
   
 components <- imputed_scores %>% 
-  select(subcomponent_psychological_distress:subcomponent_experiences_of_racism_and_discrimination_sum) %>%
+  select(subcomponent_psychological_distress:subcomponent_experiences_of_racism_and_discrimination) %>%
   names()
 
 mylist <- list()
@@ -116,12 +127,83 @@ test_df <- svy_df %>%
             avg=survey_mean(subcomponent_psychological_distress, vartype=c("se","ci"),level=.90))  # get the average score
 
          
-# Step 2: Compute average scores per component in model for all youth -----------------
+# Step 3: Compute average scores per component in model for all youth -----------------
 svy_df <- svy_df %>%
   mutate(total='all youth')
 
 df_total<-avg_scores(df=svy_df,demo_var="total")
-mean(svy_df$subcomponent_psychological_distress,na.rm=TRUE)
-# Step 3: Compute for binary vars -----------------
-df_total<-avg_scores(df=svy_df,demo_var="total")
 
+# check that weighting is working but running mean without the srvy package
+mean(svy_df$subcomponent_psychological_distress,na.rm=TRUE)
+
+# Step 4: Compute for binary vars -----------------
+df_disconnected<-avg_scores(df=svy_df,demo_var="disconnected")
+
+df_si<-avg_scores(df=svy_df,demo_var="systems_impacted")
+
+df_arrested<-avg_scores(df=svy_df,demo_var="arrested")
+
+df_suspended<-avg_scores(df=svy_df,demo_var="suspended")
+
+df_undocumented<-avg_scores(df=svy_df,demo_var="undocumented")
+
+df_unhoused<-avg_scores(df=svy_df,demo_var="unhoused")
+
+# Step 5: Compute for SOGI -----------------
+svy_df <- svy_df %>%
+  mutate(cisgender_mf=
+                   case_when(
+                     cisgender_mf==1 ~ 'Cisgender Female',
+                     cisgender_mf==0 ~ 'Cisgender Male',
+                     TRUE ~ NA
+                   ),
+         cishet_lgbtqia=
+           case_when(
+             cishet_lgbtqia==1 ~ 'LGBTQIA+',
+             cishet_lgbtqia==0 ~ 'not LGBTQIA+',
+             TRUE ~ NA))
+
+df_cis<-avg_scores(df=svy_df,demo_var="cisgender_mf")
+
+df_lgbtia<-avg_scores(df=svy_df,demo_var="cishet_lgbtqia")
+
+# Step 6: Compute for Race -----------------
+# acs race categories, non-overlapping
+df_race<-avg_scores(df=svy_df,demo_var="acs_race")
+
+# aian, nhpi, swana alone or in combo
+# list of alone or in combo vars
+aoic_vars <- svy_df %>% 
+  select(race_aian, race_nhpi, race_swana) %>%
+  names()
+
+
+# loop statement
+for (i in aoic_vars) { 
+  svy_df <- svy_df %>%
+    mutate(!!paste({{i}}):=
+             case_when(
+               !!sym(i)==1 ~ !!paste({{i}}),
+               !!sym(i)==0 ~ !!paste("not",{{i}}),
+               TRUE ~ NA
+             ) )
+}
+
+
+# test results
+table(svy_df$race_aian,useNA='always')
+table(svy_df_orig$race_aian,useNA='always')
+
+# replace race_ in columns
+svy_df[aoic_vars] <- lapply(svy_df[aoic_vars], gsub, pattern = "race_", replacement = "")
+
+# test results
+table(svy_df$race_aian,useNA='always')
+table(svy_df_orig$race_aian,useNA='always')
+
+# run function
+df_aian<-avg_scores(df=svy_df,demo_var="race_aian")
+
+df_nhpi<-avg_scores(df=svy_df,demo_var="race_nhpi")
+
+df_swana<-avg_scores(df=svy_df,demo_var="race_swana")
