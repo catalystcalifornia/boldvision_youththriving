@@ -313,10 +313,10 @@ df_final_sys <- rbind(df_arrested, df_disconnected, df_suspended, df_undocumente
 table_name <- "factor_analysis_avg_scores_systems_involved"
 demographic <- " for systems involved indicators, e.g., ever arrested, disconnected frome ducation/school, ever suspended, undocumented, or unhoused "
 table_comment <- paste0(indicator, demographic, source)
-column_names <- colnames(df_sys) # Get column names
+column_names <- colnames(df_final_sys) # Get column names
 
 # write table
-dbWriteTable(con, c(schema, table_name), df_sys,
+dbWriteTable(con, c(schema, table_name), df_final_sys,
              overwrite = FALSE, row.names = FALSE)
 
 # Comment on table and columns
