@@ -322,4 +322,17 @@ dbWriteTable(con, c(schema, table_name), df_sys,
 # Comment on table and columns
 add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
 
+## All youth table export ------
+table_name <- "factor_analysis_avg_scores_total"
+demographic <- " for all youth"
+table_comment <- paste0(indicator, demographic, source)
+column_names <- colnames(df_total) # Get column names
+
+# write table
+dbWriteTable(con, c(schema, table_name), df_total,
+             overwrite = FALSE, row.names = FALSE)
+
+# Comment on table and columns
+add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
 dbDisconnect(con)

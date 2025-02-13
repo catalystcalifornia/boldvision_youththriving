@@ -1,137 +1,123 @@
-# create visual of average subcomponent scores for all youth
+# Create visuals of average component scores/subcomponent scores for all youth and by demographics
 
+# Step 0: Setting up work space ------
 library(dplyr)
 library(ggplot2)
+library(tidyverse)
 library(stringr)
+library(extrafont)
+library(showtext)
 
-df_total <- df_total %>% filter(component!='subcomponent_experiences_of_racism_and_discrimination_sum')
-plt <- ggplot(df_total) +
-  ylim(-.2,.2) +
-  # Make custom panel grid
-  geom_hline(
-    aes(yintercept = -.2),
-    data.frame(y = c(0:3) * 1000),
-    color = "lightgrey"
-  ) +
-  # Add bars to represent the cumulative track lengths
-  # str_wrap(region, 5) wraps the text so each line has at most 5 characters
-  # (but it doesn't break long words!)
-  geom_col(
-    aes(
-      x = reorder(str_wrap(component, 5), avg),
-      y = avg,
-      fill = avg
-    ),
-    position = "dodge2",
-    show.legend = TRUE,
-    alpha = .9
-  ) +
-  
-  # Add dots to represent the mean gain
-  geom_point(
-    aes(
-      x = reorder(str_wrap(component, 5),avg),
-      y = avg
-    ),
-    size = 3,
-    color = "gray12"
-  ) +
-#   
-#   # Lollipop shaft for mean gain per region
-#   geom_segment(
-#     aes(
-#       x = reorder(str_wrap(region, 5), sum_length),
-#       # y = 0,
-#       xend = reorder(str_wrap(region, 5), sum_length),
-#       # yend = 3000
-#     ),
-#     linetype = "dashed",
-#     color = "gray12"
-#   ) +
-  
-  # Make it circular!
-  coord_polar(start=0)
+# connect to postgres and source functions
+source("W:\\RDA Team\\R\\credentials_source.R")
 
-plt
+con <- connect_to_db("bold_vision")
 
-plt <- plt +
-  # Annotate the bars and the lollipops so the reader understands the scaling
-  annotate(
-    x = 11, 
-    y = 1300,
-    label = "Mean Elevation Gain\n[FASL]",
-    geom = "text",
-    angle = -67.5,
-    color = "gray12",
-    size = 2.5,
-    family = "Bell MT"
-  ) +
-  annotate(
-    x = 11, 
-    y = 3150,
-    label = "Cummulative Length [FT]",
-    geom = "text",
-    angle = 23,
-    color = "gray12",
-    size = 2.5,
-    family = "Bell MT"
-  ) +
-  # Annotate custom scale inside plot
-  annotate(
-    x = 11.7, 
-    y = 1100, 
-    label = "1000", 
-    geom = "text", 
-    color = "gray12", 
-    family = "Bell MT"
-  ) +
-  annotate(
-    x = 11.7, 
-    y = 2100, 
-    label = "2000", 
-    geom = "text", 
-    color = "gray12", 
-    family = "Bell MT"
-  ) +
-  annotate(
-    x = 11.7, 
-    y =3100, 
-    label = "3000", 
-    geom = "text", 
-    color = "gray12", 
-    family = "Bell MT"
-  ) +
-  # Scale y axis so bars don't start in the center
-  scale_y_continuous(
-    limits = c(-1500, 3500),
-    expand = c(0, 0),
-    breaks = c(0, 1000, 2000, 3000)
-  ) + 
-  # New fill and legend title for number of tracks per region
-  scale_fill_gradientn(
-    "Amount of Tracks",
-    colours = c( "#6C5B7B","#C06C84","#F67280","#F8B195")
-  ) +
-  # Make the guide for the fill discrete
-  guides(
-    fill = guide_colorsteps(
-      barwidth = 15, barheight = .5, title.position = "top", title.hjust = .5
-    )
-  ) +
-  theme(
-    # Remove axis ticks and text
-    axis.title = element_blank(),
-    axis.ticks = element_blank(),
-    axis.text.y = element_blank(),
-    # Use gray text for the region names
-    axis.text.x = element_text(color = "gray12", size = 12),
-    # Move the legend to the bottom
-    legend.position = "bottom",
-  )
+# pulling in data
+df_total <- dbGetQuery(con, "SELECT * 
+                       FROM youth_thriving.factor_analysis_avg_scores_total
+                       where component_model!='component_positive_identity_and_self_worth'")
 
-plt
+# adjust minimum across data frames
+df_total <- df_total %>%
+  mutate(avg_adjusted = avg+abs(min(avg))+.002)
 
-plt <- plt + 
+# data dictionary for component labels
+component_labels <- select(df_total, component_model) %>%
+  mutate(component_label=gsub(component_model,pattern="component_",replacement=""),
+         component_label=gsub(component_label,pattern="sub",replacement=""),
+         component_label=gsub(component_label,pattern="_", replacement=" "),
+         component_label=str_to_title(component_label))%>%
+  mutate(component_label=ifelse(component_label=="Self Efficacy Hope",
+                                "Self-Efficacy And Hope",component_label))
+
+df_total <- df_total %>%
+  left_join(component_labels)
+
+df_total$component_label <- factor(df_total$component_label, levels = c("Psychological Distress","Self-Efficacy And Hope",
+                                                                        "Cultural Identity","Caring Families And Relationships",
+                                                                        "Vibrant Communities", "Microaggressions",
+                                                                        "Experiences Of Racism And Discrimination",
+                                                                        "Structural Racism"))
+                                                                        
+
+#### Step 2: Setting Bold Vision Style Guide####
+
+##Colors
+
+gray <- "#D6D7D6"
+pink <- "#F75EC1"
+dark_pink <- "#EF4A66"
+orange <- "#F57E20"
+yellow <- "#FFBF00"
+light_green <- "#00A75A"
+dark_green <- "#00864A"
+blue  <- "#2A12B2"
+light_blue <- "#465adc"
+dark_blue <-'#220f8c'
+
+
+## FONTS ## 
+
+font_add(family = "Manifold CF", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Manifold/Fonts/manifoldcf-heavy.otf")
+font_add(family = "HelveticaNeueLTStdMdCn", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Helvetica Neue LT Std/HelveticaNeueLTStd-MdCn.otf")
+font_add(family = "HelveticaNeueLTStdHvCn", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Helvetica Neue LT Std/HelveticaNeueLTStd-HvCn.otf")
+font_add(family = "HelveticaNeueLTStdMdCnO", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Helvetica Neue LT Std/HelveticaNeueLTStd-MdCnO.otf")
+
+
+# font_import()
+loadfonts(device = "win")
+windowsFonts()
+showtext_auto()
+
+# define fonts in chart
+font_title <- "Manifold CF"
+font_subtitle <- "Manifold CF"
+font_caption <- "HelveticaNeueLTStdMdCn"
+font_bar_label <- "HelveticaNeueLTStdHvCn"
+font_axis_label <- "HelveticaNeueLTStdMdCn"
+
+# Make the plot
+p <- ggplot(df_total, aes(x=component_label, y=avg_adjusted, fill=component_label)) +
+  geom_bar(stat = "identity", position = "dodge") +   
+  scale_fill_manual(values = c(
+    "Caring Families And Relationships" = light_green,
+    "Microaggressions" = light_blue,
+    "Self-Efficacy And Hope" = dark_pink,
+    "Structural Racism" = dark_blue,
+    "Experiences Of Racism And Discrimination"=blue,
+    "Cultural Identity" = yellow,
+    "Psychological Distress" = pink,
+    "Vibrant Communities" = dark_green
+  )) +    
+  ylim(-.04,.2) +
+  # ylab("Average Underlying Outcome")+
+  labs(
+    subtitle="All Youth"
+  ) +
+  theme_minimal() +
+  theme(legend.title = element_blank(),
+        # legend.position = "bottom", # no legend title 
+        # define style for axis text
+        axis.text.y=element_blank(),
+        # axis.text.y = element_text(size = 9, colour = "black", family= font_axis_label, face = "bold"),
+        axis.text.x=element_blank(),
+        axis.title.x=element_blank(),
+        # axis.title.x = element_text(size = 12, colour = "black", family = font_axis_label, face = "bold"),
+        # define style for title and caption
+        plot.caption = element_text(hjust = 0.0, size = 8, colour = "black", family = font_caption, face = "plain"),
+        # plot.title = element_text(hjust = 0.0, size = 18, colour = "black", family = font_title, face = "bold"),
+        plot.subtitle = 
+          element_text(hjust = 0.0, size = 12, colour = "black", family = font_title), 
+        # grid line style
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank()) + 
+  coord_polar()
+
+p
+
+
+p <- p + 
   # Add labels
   labs(
     title = "\nHiking Locations in Washington",
