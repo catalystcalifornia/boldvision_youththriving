@@ -161,8 +161,7 @@ run_cfa <- function(model_name) {
  #if(run_model_fit_measures(model_name)==TRUE) {
   
     # Fit the data to a CFA model
-    fit.cat <- cfa(model_name, data=small_svy_data, std.lv = TRUE,
-               ordered = TRUE)
+    fit.cat <- cfa(model_name, data=small_svy_data, std.lv = TRUE, ordered = TRUE)
     # Define threshold for factor loadings
     threshold_factor_loading <- 0.6
     
@@ -437,7 +436,7 @@ component_vibrant_communities_model <- 'component_vibrant_communities =~ dq + du
 positive_identity_and_self_worth_AND_strong_minds_model_model <- 'positive_identity_and_self_worth_AND_strong_minds_model =~ cy + cu + co + cp + cw + cn + cm + cr + dd + de'
 subcomponent_connectedness_model <- 'subcomponent_connectedness =~ dk + dl'
 subcomponent_critical_action_model <- 'subcomponent_critical_action =~ dm'
-subcomponent_experiences_of_racism_and_discrimination_model <- 'subcomponent_experiences_of_racism_and_discrimination =~ ek + el + ei + en + em + ej + eh + ef + eg'
+subcomponent_experiences_of_racism_and_discrimination_model <- 'subcomponent_experiences_of_racism_and_discrimination =~ ei + em + eh + eg'
 subcomponent_freedom_to_explore_the_self_model <- 'subcomponent_freedom_to_explore_the_self =~ de + dd + df'
 subcomponent_growth_mindset_model <- 'subcomponent_growth_mindset =~ cr'
 subcomponent_hope_for_the_future_model <- 'subcomponent_hope_for_the_future =~ co + cp'
