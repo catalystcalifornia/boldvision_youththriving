@@ -116,7 +116,7 @@ part2_zips_pov_data <- raw_svy_data %>%
   select(response_id, zipcode_svy, zcta_acs, pop, perc_below_100_fpl, perc_below_200_fpl)
 
 part1_zips_pov_data <- bvyts_pov_data %>%
-  filter(!response_id %in% bvyts_pov_data_unmatched$response_id)
+  filter(!response_id %in% part2_zips_pov_data$response_id)
 
 bvyts_pov_data_final <- rbind(part2_zips_pov_data,part1_zips_pov_data)
 
@@ -126,7 +126,7 @@ bvyts_pov_data_final %>% filter(is.na(zcta_acs)) %>% select(zipcode_svy)
 #### Step 6: Push datatable to postgres ####
 source("W:\\RDA Team\\R\\Github\\RDA Functions\\main\\RDA-Functions\\Utility_Functions.R")
 
-table_name <- "povery_rates_acs_23"
+table_name <- "poverty_rate_data"
 schema <- "youth_thriving"
 indicator <- "Poverty level rates of the zipcodes respondents reported they live in. 
 We calculated these rates by joining ACS Table S1701 ZCTAs to the survey data zipcodes either by name or geocoded centroid. 
@@ -144,8 +144,8 @@ column_comments <- c(
   'zip code from survey data, reported by each survey respondent on where they live',
   'zcta from ACS data table S1701, 2019-2023',
   'total population of zcta',
-  'Rate of poeple living under 125% poverty level in the associated zipcode.',
-  'Rate of poeple living under 200% poverty level in the associated zipcode.')
+  'Rate of people living under 125% poverty level in the associated zipcode.',
+  'Rate of people living under 200% poverty level in the associated zipcode.')
 
 add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
 
