@@ -97,7 +97,7 @@ fx_freq_table  <- function(demographic_variable) {
 
 ####Step 3: Create a function where to you write to table to postgres ####
 write_survey_data_to_db <- function(df, demographic_variable) {
-  table_name <- paste0("tot_freq_", demographic_variable)
+  table_name <- paste0("response_analysis_per_", demographic_variable)
   
   # Write data to database
   dbWriteTable(con, c('youth_thriving', table_name), df,
