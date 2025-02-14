@@ -21,6 +21,7 @@ library(devtools)
 # Connect to postgres
 source("W:\\RDA Team\\R\\credentials_source.R")
 con <- connect_to_db("bold_vision")
+conn <- connect_to_db("rda_shared_data")
 
 source("W:\\RDA Team\\R\\Github\\RDA Functions\\main\\RDA-Functions\\Utility_Functions.R")
 
@@ -327,6 +328,116 @@ demo_spa <- svy_data %>%
 
 ```
 
+# Calculate poverty rate demographics
+```{r}
+# pull in poverty data frame 
+pov_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.poverty_rate_data")
+
+# explore potential cutoffs
+fivenum(pov_data$perc_below_100_fpl, na.rm=TRUE)
+fivenum(pov_data$perc_below_200_fpl, na.rm=TRUE)
+hist(pov_data$perc_below_100_fpl)
+hist(pov_data$perc_below_200_fpl)
+mean(pov_data$perc_below_100_fpl,na.rm=TRUE)
+mean(pov_data$perc_below_200_fpl,na.rm=TRUE)
+
+# use following thresholds for 100% FPL based on distribution and research here on high poverty ZIP Codes
+# https://www.ers.usda.gov/data-products/poverty-area-measures/background-and-uses
+
+# determine 200% FPL threshold based on sample distribution and LAC distribution
+
+# get percentages of 200% FPL for LA County ZIPs
+zips <- dbGetQuery(con, "SELECT * from bv_2023.crosswalk_zip_spas_2023") # zip codes
+zips_lac <- distinct(zips,zipcode) # keep only unique ones
+
+zips_pov_acs <- dbGetQuery(conn, "SELECT geoid, geolevel, s1701_c01_001e, s1701_c02_001e, s1701_c01_042e 
+                      FROM economic.acs_5yr_s1701_multigeo_2023
+                      where geolevel='zcta'") # get zip code poverty vars
+
+# get poverty rates for LAC ZIP Codes
+zips_lac_pov <- zips %>%
+  left_join(zips_pov_acs, by=c("zipcode"="geoid")) %>%
+  mutate(pop=s1701_c01_001e,
+    perc_below_100_fpl = (s1701_c02_001e / s1701_c01_001e) * 100,
+    perc_below_200_fpl = (s1701_c01_042e / s1701_c01_001e) * 100) %>%
+  select(zipcode, pop, perc_below_100_fpl, perc_below_200_fpl)
+
+# explore potential cutoffs
+fivenum(zips_lac_pov$perc_below_100_fpl, na.rm=TRUE)
+fivenum(zips_lac_pov$perc_below_200_fpl, na.rm=TRUE)
+hist(zips_lac_pov$perc_below_100_fpl)
+hist(zips_lac_pov$perc_below_200_fpl)
+mean(zips_lac_pov$perc_below_100_fpl,na.rm=TRUE)
+mean(zips_lac_pov$perc_below_200_fpl,na.rm=TRUE)
+
+# median is 26%
+
+# recode data for cutoffs
+pov_data <- pov_data %>%
+  mutate(pov_100FPL_group=
+           case_when(
+             perc_below_100_fpl<20 ~ '100% Area FPL 0-19%',# not high poverty based on federal definition
+               perc_below_100_fpl>=20 & perc_below_100_fpl<40 ~ '100% Area FPL 20-39%', # high poverty based on federal definition
+               perc_below_100_fpl>=40 ~ '100% Area FPL 40% and above',
+             TRUE ~ 'Not Available'), # extremely high based on federal definition
+         pov_200FPL_group=
+           case_when(
+             perc_below_200_fpl<26 ~ '200% Area FPL 0-26%',
+               perc_below_200_fpl>=26 & perc_below_200_fpl<39 ~ '200% Area FPL 26-39%',
+               perc_below_200_fpl>=40 ~ '200% Area FPL 40% and above',
+            TRUE ~ 'Not Available'))
+
+         
+demo_pov_1 <- pov_data %>% 
+ group_by(pov_100FPL_group) %>%
+  summarise(count=n(),
+             .groups='drop')%>%
+  mutate(rate=count/sum(count)*100,
+          variable = 'poverty_100_fpl',
+         variable_name = 'Area Poverty at 100% FPL') %>%
+  rename(response=pov_100FPL_group) %>%
+    select(variable_name, variable, response, count, rate)
+
+demo_pov_2 <- pov_data %>% 
+ group_by(pov_200FPL_group) %>%
+  summarise(count=n(),
+             .groups='drop')%>%
+  mutate(rate=count/sum(count)*100,
+          variable = 'poverty_200_fpl',
+         variable_name = 'Area Poverty at 200% FPL') %>%
+  rename(response=pov_200FPL_group) %>%
+    select(variable_name, variable, response, count, rate)
+
+demo_pov_df <- rbind(demo_pov_1,demo_pov_2)
+
+
+```
+
+# Export demo_pov_df dataframe as a table 
+```{r}
+# Write table demographics_nh_race_df with metadata
+schema <- "youth_thriving"
+table_name <- "demographics_poverty"
+indicator <- "Frequencies and percentages for area poverty thresholds at 100% and 200% FPL. Cutoffs determined by combination of sample, LA County distribution, and guidelines from federal agencies"
+source <- "script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/getting_demographics.Rmd"
+qa_filepath <- "W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_poverty_frequencies"
+table_comment <- paste0(indicator, source)
+# dbWriteTable(con, c(schema, table_name), demo_pov_df,
+#              overwrite = FALSE, row.names = FALSE)
+
+# Add metadata for demographics_nh_race_df
+column_names <- colnames(demo_pov_df) # Get column names
+column_comments <- c(
+  'Variable category or FPL threshold used ',
+  'shorthand for FPL threshold used ',
+  'The Area Poverty Level range calculated using ACS data for respondent ZIP Code ',
+  'Denotes the count of respondents within area poverty level',
+    'Denotes the percent of respondents within area poverty level' )
+
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
+```
+
 # Export demographics_nh_race_df dataframe as a table 
 ```{r}
 # Write table demographics_nh_race_df with metadata
@@ -374,28 +485,6 @@ column_comments <- c(
 
 ```
 
-# Export demographics_detailed_race_df dataframe as a table 
-```{r}
-# Write table demographics_detailed_race_df with metadata
-schema <- "youth_thriving"
-table_name <- "demographics_detailed_race"
-indicator <- "Frequencies and percentages of detailed race categories, including mixed races. Universe: out of all respondents including NA"
-
-table_comment <- paste0(indicator, source)
-# dbWriteTable(con, c(schema, table_name), demographics_detailed_race_df,
-#              overwrite = FALSE, row.names = FALSE)
-
-# Add metadata for demographics_detailed_race_df
-column_names <- colnames(demographics_detailed_race_df) # Get column names
-column_comments <- c(
-  'This table uses detailed race categories',
-  'This column has all of the detailed race categories',
-  'Denotes the number of respondents with the corresponding racial identity',
-  'Denotes the percentage of respondents with the corresponding racial identity')
-
-# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments) 
-
-```
 
 # Export demographics_asian_ethnicity_df dataframe as a table 
 ```{r}
@@ -541,7 +630,7 @@ column_comments <- c(
 
 # Export demographics_spa_df dataframe as a table 
 ```{r}
-# Write table demographics_age_df with metadata
+# Write table demographics_spa_df with metadata
 schema <- "youth_thriving"
 table_name <- "demographics_spa"
 indicator <- "Frequencies and percentages of respondents in each SPA. Universe: out of all respondents including NA"
