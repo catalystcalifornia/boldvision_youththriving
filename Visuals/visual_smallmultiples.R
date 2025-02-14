@@ -53,7 +53,7 @@ font_axis_label <- "HelveticaNeueLTStdMdCn"
 source("W:\\RDA Team\\R\\credentials_source.R")
 con <- connect_to_db("bold_vision")
 
-fx_create_df <- function(con, tables, response_domain, variable) {
+fx_create_df <- function(con, tables, response_domain, variable, response_domain_table) {
   
   # Function to fetch data from a single table
   fetch_data <- function(table) {
@@ -88,36 +88,40 @@ fx_create_df <- function(con, tables, response_domain, variable) {
   }
   
   # Fetch and combine data from all tables, removing NULLs
-  all_data <- bind_rows(lapply(tables, fetch_data))
+  all_demo_data <- bind_rows(lapply(tables, fetch_data))
   
-  return(all_data)
+  #Adding all youth data 
+  tot_freq_all_youth <- dbGetQuery(con, sprintf("SELECT response, frequency AS count, weighted_percent AS rate, percent_cv AS rate_cv, variable, question, sub_question, variable_name, domain AS response_domain
+                                 FROM youth_thriving.%s WHERE variable = '%s'", response_domain_table, variable)) %>%
+    mutate(youth = "all youth",
+           youth_label = "All Youth",
+           source_table = response_domain_table)
+  
+  #combine with other data 
+  df_combined <- bind_rows(all_demo_data, tot_freq_all_youth)
+  
+  df_final <- df_combined %>%
+    filter(!grepl("^not ", .[[1]], ignore.case = TRUE)) %>%  # Filters out rows where first column starts with "not "
+    mutate(response = str_wrap(response, width = 8))
+  
+  return(df_final)
+  
 }
 
 
 ####STEP 3: Run Function with the list of tables that are of interest ####
 # List of tables
-tables <- c("tot_freq_bipoc", "tot_freq_disconnected", "tot_freq_lgbtqia",
-            "tot_freq_suspended", "tot_freq_systems_impacted", 
-            "tot_freq_undocumented", "tot_freq_unhoused")
+tables <- c("response_analysis_per_race", "response_analysis_per_bipoc", 
+            "response_analysis_per_disconnected", "response_analysis_per_lgbtqia",
+            "response_analysis_per_suspended", "response_analysis_per_systems_impacted", 
+            "response_analysis_per_undocumented", "response_analysis_per_unhoused")
 # Running function
-df_combined <- fx_create_df(con, tables, "Vibrant Communities", "ds") 
+df <- fx_create_df(con, tables, "Vibrant Communities", "ds", "tot_freq_vibrant_community") 
 
-#Adding all youth data 
-tot_freq_all_youth <- dbGetQuery(con, "SELECT response, frequency AS count, weighted_percent AS rate, percent_cv AS rate_cv, variable, question, sub_question, variable_name, domain AS response_domain
-                                 FROM youth_thriving.tot_freq_vibrant_community WHERE variable = 'ds'") %>%
-  mutate(youth = "all youth",
-         youth_label = "All Youth",
-         source_table = "tot_freq_vibrant_community")
 
-#combine with other data 
-df_combined <- bind_rows(df_combined, tot_freq_all_youth)
-
-df_filtered <- df_combined %>%
-  filter(!grepl("^not ", .[[1]], ignore.case = TRUE)) %>%  # Filters out rows where first column starts with "not "
-mutate(response = str_wrap(response, width = 8))
 
 #visual
-df_visual <- ggplot(df_filtered, aes(x = response, y = rate, fill = youth)) +
+df_visual <- ggplot(df, aes(x = response, y = rate, fill = youth)) +
   geom_bar(stat = "identity") +  # Use identity to plot actual counts
   # scale_fill_manual(values = c(
   #   "All Youth" = gray,
@@ -131,7 +135,7 @@ df_visual <- ggplot(df_filtered, aes(x = response, y = rate, fill = youth)) +
   # )) +
   facet_wrap(~ youth_label, scales = "free_y", nrow = 2) +  # Create small multiples
   #bar labels
-  geom_text(data = df_filtered,
+  geom_text(data = df,
             aes(label = paste0(round(rate, digits = 1), "%")),
             size = 4,
             stat="identity", colour = "black",
@@ -143,10 +147,10 @@ df_visual <- ggplot(df_filtered, aes(x = response, y = rate, fill = youth)) +
   labs(title = paste(str_wrap("Unhoused youth are least likely to report access to Libraries", whitespace_only = TRUE, width = 75), collapse = "\n"),
        x = paste(str_wrap("Youth Thriving Survey Responses", whitespace_only = TRUE, width = 95), collapse = "\n"),
        y = "",
-       caption= paste(str_wrap(paste0("Question: ", unique(df_filtered$question), " ",
-                                      unique(df_filtered$sub_question), ".\n",
-                                      " Component: ", unique(df_filtered$response_domain), ",\n",
-                                      " Subcomponent: ", unique(df_filtered$variable_name), ".\n",
+       caption= paste(str_wrap(paste0("Question: ", unique(df$question), " ",
+                                      unique(df$sub_question), ".\n",
+                                      " Component: ", unique(df$response_domain), ",\n",
+                                      " Subcomponent: ", unique(df$variable_name), ".\n",
                                       " Data Source: Bold Vision Youth Thriving Survey, 2024."),
                                whitespace_only = TRUE, width = 165), collapse = "\n")) +
   theme(legend.position = "none",
