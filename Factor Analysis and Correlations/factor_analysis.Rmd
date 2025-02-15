@@ -1,28 +1,34 @@
 ---
-title: "Factor Analysis"
-author: "Alicia Vo"
-date: "2024-12-2"
+title: "Bold Vision Research"
+# author: "Alicia Vo"
+# date: "2024-12-2"
 output: html_document
 ---
+
+# Step 0: Data Preparation
+Run these code chunks before running any subsequent steps in the research analysis (e.g. run step 0 before running step 2, no need to run step 1 to run step 2)
+```{r, include=FALSE, echo=FALSE}
 # Pull in data from postgres database
-```{r}
-knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(RPostgreSQL)
 library(lavaan)
 library(psych)
+library(kableExtra)
 
 # Connect to postgres
 source("W:\\RDA Team\\R\\credentials_source.R")
 con <- connect_to_db("bold_vision")
+
+source("W:\\RDA Team\\R\\Github\\RDA Functions\\main\\RDA-Functions\\Utility_Functions.R")
+
 # Pull in the survey data and data dictionary
 svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
 svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024")
 ```
 
-## Data Preparation
+```{r, include=FALSE, echo=FALSE}
 # Filter svy_dd and svy_data to only contain the likert questions needed for the factor analysis
-```{r}
+
 # In the data dictionary, variable_name = subcomponent and response_domain = component
 subcomponent_list <- c("Positive Emotions", "Self-Efficacy", "Hope For The Future", "Growth Mindset", "Psychological Distress", "Sparks", "Relationships/Support", "Freedom To Explore The Self", "Connectedness", "Critical Action", "Safe Access To Public Spaces For Social, Cultural, And Literary Opportunities", "Cultural Identity And Connection", "Experiences Of Racism And Discrimination", "Microaggressions", "Structural Racism", "Personal Safety")
 
@@ -34,17 +40,15 @@ small_svy_dd <- svy_dd %>%
 
 # small_svy_data only contains the columns of likert questions needed for the factor analysis
 small_svy_data <- svy_data %>%
-  select(all_of(small_svy_dd$variable))
+  select(response_id, all_of(small_svy_dd$variable))
 ```
 
-# In the survey data, change the responses of "Don't wish to answer", "Not sure", "Not Sure", 
-# "Does not apply to me", "Don't know" into NA values.
+```{r, include=FALSE, echo=FALSE}
+# In the survey data, change the responses of "Don't wish to answer", "Not sure", "Not Sure", "Does not apply to me", "Don't know" into NA values. Use this na_responses if trying to replicate results from Step 1. Here, we recode the "Don't know" responses into NA values. 
+#na_responses <- c("Don't wish to answer", "Not sure", "Not Sure", "Does not apply to me", "Don't know")
 
-# AV 12/4/24: For q10a, the response_5 option of "Not Sure" in the data dictionary 
-# should be changed to "Not sure" to maintain consistency - not the biggest deal though.
-```{r}
-# List of responses that should be replaced with NA
-na_responses <- c("Don't wish to answer", "Not sure", "Not Sure", "Does not apply to me", "Don't know")
+# In the survey data, change the responses of "Don't wish to answer", "Not sure", "Not Sure", "Does not apply to me" into NA values. Use this na_responses if trying to replicate results from Step 2. Here, we don't recode the "Don't know" responses into NA values. Note that the "Don't know" responses are only applicable to the "Vibrant Communities" questions in small_svy_dd.
+na_responses <- c("Don't wish to answer", "Not sure", "Not Sure", "Does not apply to me")
 
 # Iterate over each column in small_svy_data
 for (col in names(small_svy_data)) {
@@ -59,167 +63,116 @@ for (col in names(small_svy_data)) {
     if (length(valid_responses) > 0) {
       response_map <- setNames(as.list(valid_responses), seq_along(valid_responses))
       # Replace values in the column based on the response map
-      small_svy_data[[col]] <- sapply(small_svy_data[[col]], function(x) {
+      small_svy_data[[col]] <- unlist(lapply(small_svy_data[[col]], function(x) {
         if (!is.na(x) && response_map[[as.character(x)]] %in% na_responses) {
           NA
         } else {
           x
         }
-      })
+      }))
     }
   }
 }
 ```
 
+```{r, include=FALSE, echo=FALSE}
+# This chunk is needed for running factor score predictions in Step 2. For component "Vibrant Communities", we are recoding the "Don't know" responses to "No", instead of NA. There are too many "Don't know" responses for this component, causing us to have too many NA values, and thus, too many incomplete rows in predicted_results.
+
+small_svy_data <- small_svy_data %>%
+  mutate(across(c(do, dp, dq, dr, ds, dt, du, dv), ~ ifelse(. == 3, 1, .)))
+```
+
+```{r, include=FALSE, echo=FALSE}
 # Reverse the likert scales in the survey data for the scales that need reversing
-```{r}
+
 # Identify columns to reverse
 columns_to_reverse <- small_svy_dd$variable[grep("_rev$", small_svy_dd$likert_type)]
+
+# q10 is a special case of scale reversal; swap values 1 and 2
+columns_to_reverse <- columns_to_reverse[columns_to_reverse != "q10"]
+small_svy_data$q10 <- ifelse(
+  is.na(small_svy_data$q10), 
+  NA, 
+  ifelse(small_svy_data$q10 == 1, 2, 
+         ifelse(small_svy_data$q10 == 2, 1, small_svy_data$q10))
+)
 
 # Loop through each column to reverse
 for (col in columns_to_reverse) {
   # Get the maximum scale value from the 'likert' column
   scale_max <- as.numeric(sub("pt_scale", "", small_svy_dd$likert[small_svy_dd$variable == col]))
-  
   # Reverse the scale in small_svy_data
-  small_svy_data[[col]] <- scale_max + 1 - small_svy_data[[col]]
+  small_svy_data[[col]] <- ifelse(is.na(small_svy_data[[col]]),
+                                NA,
+                                scale_max + 1 - small_svy_data[[col]])
 }
 ```
+
+```{r, include=FALSE, echo=FALSE}
 ## Data Checks
+
 # Check that missing data is being eliminated from analysis (not adding zeros into analyses)
+
 # Check for “wild codes” or data values outside of the allowed range
-# Check that the responses of "Don't wish to answer", "Not sure", "Not Sure", 
+
+# Check that the responses of "Don't wish to answer", "Not sure", "Not Sure",
+
 # "Does not apply to me", "Don't know" are NA values
-```{r}
-# Step 1: Get unique counts for small_svy_data
-unique_counts <- sapply(small_svy_data, function(x) length(unique(x)))
 
-# Step 2: Filter relevant response columns dynamically
-# Identify columns in small_svy_dd that match the pattern "response_<number>"
-response_cols <- grep("^response_[0-9]+$", names(small_svy_dd), value = TRUE)
-
-# Step 3: Match small_svy_data columns with small_svy_dd using the variable column
-comparison <- merge(
-  data.frame(variable = names(unique_counts), unique_count = unique_counts),
-  small_svy_dd,
-  by = "variable"
-)
-
-# Print 
-for (i in 1:nrow(comparison)) {
-  column_name <- comparison$variable[i]
-  actual_unique_values <- unique(small_svy_data[[column_name]])
-  
-  # Replace NA with a string "NA" for printing
-  actual_unique_values <- ifelse(is.na(actual_unique_values), "NA", actual_unique_values)
-  
-  cat(
-    "Column:", column_name, 
-    "\nUnique Values Count:", comparison$unique_count[i], 
-    "\nUnique Values:", paste(sort(actual_unique_values), collapse = ", "), 
-    "\n\n"
-  )
-}
+# # Step 1: Get unique counts for small_svy_data
+# unique_counts <- sapply(small_svy_data, function(x) length(unique(x)))
+# 
+# # Step 2: Filter relevant response columns dynamically
+# # Identify columns in small_svy_dd that match the pattern "response_<number>"
+# response_cols <- grep("^response_[0-9]+$", names(small_svy_dd), value = TRUE)
+# 
+# # Step 3: Match small_svy_data columns with small_svy_dd using the variable column
+# comparison <- merge(
+#   data.frame(variable = names(unique_counts), unique_count = unique_counts),
+#   small_svy_dd,
+#   by = "variable"
+# )
+# 
+# # Print
+# for (i in 1:nrow(comparison)) {
+#   column_name <- comparison$variable[i]
+#   actual_unique_values <- unique(small_svy_data[[column_name]])
+# 
+#   # Replace NA with a string "NA" for printing
+#   actual_unique_values <- ifelse(is.na(actual_unique_values), "NA", actual_unique_values)
+# 
+#   cat(
+#     "Column:", column_name,
+#     "\nUnique Values Count:", comparison$unique_count[i],
+#     "\nUnique Values:", paste(sort(actual_unique_values), collapse = ", "),
+#     "\n\n"
+#   )
+# }
 ```
 
-# Create a function to run model fit measures
-```{r}
-run_model_fit_measures <- function(model_name) {
-  # Fit the data to a CFA model
-  fit.cat <- cfa(model_name, data=small_svy_data, mimic =c("MPlus"), std.lv = TRUE,
-               ordered = TRUE)
-  # Extract fit measures
-  chisq <- fitMeasures(fit.cat, "chisq.scaled")
-  # df <- fitMeasures(fit.cat, "df")
-  pvalue <- fitMeasures(fit.cat, "pvalue.scaled")
-  
-  cfi <- fitMeasures(fit.cat, "cfi.scaled")
-  
-  rmsea <- fitMeasures(fit.cat, "rmsea.scaled")
-  # rmsea_lower <- fitMeasures(fit.cat, "rmsea.ci.lower.scaled")
-  # rmsea_upper <- fitMeasures(fit.cat, "rmsea.ci.upper.scaled")
-  # rmsea_pvalue <- fitMeasures(fit.cat, "rmsea.pvalue.scaled")
-  
-  # Set thresholds for fit measures
-  threshold_chisq <- 0.05
-  threshold_cfi <- 0.95
-  threshold_rmsea <- 0.05
-  
-  # Extract the part before the =~
-  short_model_name <- sub(" =~.*", "", model_name)
-  # Evaluate and print interpretation
-  cat("========MODEL FIT MEASURES:", short_model_name,"\n")
-  cat("====Chi square:\n")
-  cat(
-    "Chi-squared:", chisq, 
-    # "\nDegrees of Freedom:", df, 
-    "\nP-value:", pvalue, 
-    "\nInterpretation: ", 
-    if (pvalue < threshold_chisq) 
-      paste0("Poor fit (significant at ", threshold_chisq, " level)\n") 
-    else 
-      paste0("Good fit (not significant at ", threshold_chisq, " level)\n")
-  )
-  
-  cat("====Comparative Fit Index (CFI):\n")
-  cat(
-    "CFI:", cfi, 
-    "\nInterpretation: ", 
-    if (cfi >= threshold_cfi) 
-      paste0("Good fit (CFI >= ", threshold_cfi, ")\n") 
-    else 
-      paste0("Poor fit (CFI < ", threshold_cfi, ")\n")
-  )
+```{r, include=FALSE, echo=FALSE}
+# Create a function for the entire process of confirmatory factor analysis (CFA),
+# including the model fit measures (only ran if the model is determined to be a good fit).
 
-  cat("====Root Mean Square Error of Approximation (RMSEA):\n")
-  cat(
-    "RMSEA:", rmsea, 
-    # "\n90% CI:", rmsea_lower, "-", rmsea_upper, 
-    # "\nP-value:", rmsea_pvalue, 
-    "\nInterpretation: ", 
-    if (rmsea <= threshold_rmsea) 
-      paste0("Good fit (RMSEA <= ", threshold_rmsea, ")\n") 
-    else 
-      paste0("Poor fit (RMSEA > ", threshold_rmsea, ")\n")
-  )
-  
-  # Determine overall model fit based on the 2/3 rule
-  good_fit_count <- sum(pvalue >= threshold_chisq, cfi >= threshold_cfi, rmsea <= threshold_rmsea)
-  
-  cat("\nMODEL FIT CONCLUSION\n")
-  cat("Number of fit measures met:", good_fit_count, "out of 3.\n")
-  
-  if (good_fit_count >= 2) {
-    cat("Conclusion: The model is a good fit, based on meeting at least 2 out of 3 fit measures.\n")
-    return(TRUE)
-  } 
-  else {
-    cat("Conclusion: The model is not a good fit, as it met fewer than 2 out of 3 fit measures.\n")
-    return(FALSE)
-  }  
-}
-```
-
-# Create a function for the entire process of confirmatory factor analysis (CFA), 
-# including the model fit measures and factor analysis (only ran if the model is determined to be a good fit)
-```{r}
 run_cfa <- function(model_name) {
   # If the model is determined to be a good fit, then obtain the factor loadings. 
-  # AV 12/6/24: The if statement is commented out for now as we conduct more research on model fit measures
+  # AV 12/6/24: The if statement is commented out for now, in order to see the factor loading scores regardless of the results of the model fit measures
   
  #if(run_model_fit_measures(model_name)==TRUE) {
+  
     # Fit the data to a CFA model
-    fit.cat <- cfa(model_name, data=small_svy_data, mimic =c("MPlus"), std.lv = TRUE,
+    fit.cat <- cfa(model_name, data=small_svy_data, std.lv = TRUE,
                ordered = TRUE)
     # Define threshold for factor loadings
-    threshold_factor_loading <- 0.8
+    threshold_factor_loading <- 0.6
     
     # Extract factor loadings and filter by threshold
     loadings_summary <- parameterEstimates(fit.cat, standardized = TRUE) %>% 
       filter(op == "=~") %>% 
-      select(Item = rhs, Standardized = est, ci.lower, ci.upper, SE = se, Z = z, `p-value` = pvalue) %>%
-      mutate(met_threshold = abs(Standardized) >= threshold_factor_loading)
-    
+      select(variable = rhs, factor_loading = est, ci.lower, ci.upper, se, p_value = pvalue) %>%
+      mutate(met_threshold = abs(factor_loading) >= threshold_factor_loading) %>%
+      arrange(desc(factor_loading)) # Reorder by factor_loading score in descending order
+          
     # Count how many loadings met the threshold
     count_met_threshold <- loadings_summary %>%
       filter(met_threshold) %>%
@@ -229,15 +182,48 @@ run_cfa <- function(model_name) {
     short_model_name <- sub(" =~.*", "", model_name)
     
     # Print results
-    cat("Number of factor loadings meeting the threshold (>=", threshold_factor_loading, "):", 
-        count_met_threshold, "out of", ... = nrow(loadings_summary), "factors,", short_model_name, "\n")
+    cat(short_model_name, "\n", "Number of factor loadings meeting the threshold 
+        (>=", threshold_factor_loading, "):", count_met_threshold, 
+        "out of", ... = nrow(loadings_summary), "items", "\n")
     print(loadings_summary)
+    cat("\n")
+    
+    # Select specific columns from small_svy_dd for the merge
+    small_svy_dd_selected <- small_svy_dd %>%
+    select(variable, question, sub_question, question_number,response_domain,variable_name)
+    
+    # Run model fit measures if the model uses 3 or more questions 
+    if(nrow(loadings_summary)<3)
+    {
+      fit_measures_df <- data.frame(cfi = NA, tli = NA, rmsea = NA, srmr = NA)
+    }
+    else
+    {
+      fit_measures <- fitMeasures(fit.cat,c("cfi","tli","rmsea","srmr"))
+      # Convert fit_measures into a data frame
+      fit_measures_df <- as.data.frame(t(as.matrix(fit_measures)))
+    }
+    
+    # Create a dataframe with the summary results
+    results_df <- loadings_summary %>%
+    mutate(model_name = short_model_name,
+           count_met_threshold = count_met_threshold,
+           total_vars = nrow(loadings_summary)) %>%
+    bind_cols(fit_measures_df) %>%
+    left_join(small_svy_dd_selected, by = c("variable")) %>% 
+    relocate(model_name, question, sub_question, factor_loading, met_threshold) 
+
+    # Return the dataframe
+    return(results_df)
  # }
 }
 ```
 
-# Create the string names for the subcomponent and component CFA models based on the data dictionary
-```{r}
+# Step 1: Factor Analysis 
+<p>Complete a confirmatory factor analysis to identify which items significantly load onto each of the youth thriving subcomponents and components. This will help us identify which items to proceed with in our analysis and identify when we may need to adjust components.</p>
+```{r, include=FALSE, echo=FALSE}
+# # Create the string names for the subcomponent and component CFA models based on the data dictionary
+
 # # Group variables by subcomponents and components
 # subcomponents <- small_svy_dd %>%
 #   group_by(variable_name) %>%
@@ -255,8 +241,7 @@ run_cfa <- function(model_name) {
 #     "_model <- 'subcomponent_",
 #     gsub("-", "_", gsub(",", "", tolower(gsub("/", "_", gsub(" ", "_", variable_name))))),
 #     " =~ ",
-#     variables, "'"
-#   ))
+#     variables, "'"))
 # 
 # # Create model strings for components
 # component_models <- components %>%
@@ -266,20 +251,18 @@ run_cfa <- function(model_name) {
 #     "_model <- 'component_",
 #     gsub("-", "_", gsub(",", "", tolower(gsub(" ", "_", gsub(",|and", "", response_domain))))),
 #     " =~ ",
-#     variables, "'"
-#   ))
+#     variables, "'"))
 # 
 # 
 # all_model_strings <- c(
 #   subcomponent_models$model_string,
-#   component_models$model_string
-# )
+#   component_models$model_string)
 
 # all_model_strings
 ```
 
-# Create the subcomponent and component CFA models
-```{r}
+```{r, include=FALSE, echo=FALSE}
+# Create the subcomponent and component models for CFA
 subcomponent_connectedness_model <- 'subcomponent_connectedness =~ dk + dl'
 subcomponent_critical_action_model <- 'subcomponent_critical_action =~ dm'
 subcomponent_cultural_identity_and_connection_model <- 'subcomponent_cultural_identity_and_connection =~ dx + dy + dz + ea + eb + ec'
@@ -292,7 +275,7 @@ subcomponent_personal_safety_model <- 'subcomponent_personal_safety =~ q19'
 subcomponent_positive_emotions_model <- 'subcomponent_positive_emotions =~ ck + cl + cm'
 subcomponent_psychological_distress_model <- 'subcomponent_psychological_distress =~ ct + cu + cv + cw + cx + cy'
 subcomponent_relationships_support_model <- 'subcomponent_relationships_support =~ q10a + q12a + dn'
-subcomponent_safe_access_to_public_spaces_for_social_cultural_and_literary_opportunities_model <- 'subcomponent_safe_access_to_public_spaces_for_social_cultural_and_literary_opportunities =~ do + dp + dq + dr + ds + dt + du + dv'
+subcomponent_safe_access_to_public_spaces <- 'subcomponent_safe_access_to_public_spaces =~ do + dp + dq + dr + ds + dt + du + dv'
 subcomponent_self_efficacy_model <- 'subcomponent_self_efficacy =~ cn + cq'
 subcomponent_sparks_model <- 'subcomponent_sparks =~ q10'
 subcomponent_structural_racism_model <- 'subcomponent_structural_racism =~ es + et + eu + ev + ew + ex + ey'
@@ -305,51 +288,396 @@ component_strong_minds_model <- 'component_strong_minds =~ ck + cl + cm + cr + c
 component_vibrant_communities_model <- 'component_vibrant_communities =~ do + dp + dq + dr + ds + dt + du + dv'
 ```
 
-# all_models contains all the models we want to run factor analysis on
-```{r}
-all_models <- c(
+```{r, include=FALSE, echo=FALSE}
+# Contains all the component models that have 3 or more question items 
+component_models <- c(
   component_caring_families_and_relationships_model,
   component_cultural_identity_model,
-  component_positive_identity_and_self_worth_model,
+  component_positive_identity_and_self_worth_model, 
   component_racial_justice_equity_and_inclusion_model,
-  # component_safety_model,
   component_strong_minds_model,
   component_vibrant_communities_model
 )
-```
 
-# Apply function run_cfa to the models
-```{r}
-cfa_results <- lapply(all_models, run_cfa)
-```
-
-################################## ARCHIVE #####################################
-# These are the models that have 3 or more question items per subcomponent or component
-```{r}
-all_models <- c(
-  # subcomponent_connectedness_model,
-  # subcomponent_critical_action_model,
-  subcomponent_cultural_identity_and_connection_model,
+# Contains all the subcomponent models that have 3 or more question items 
+subcomponent_models <- c(
   subcomponent_experiences_of_racism_and_discrimination_model,
-  # subcomponent_freedom_to_explore_the_self_model,
-  # subcomponent_growth_mindset_model,
-  # subcomponent_hope_for_the_future_model,
+  subcomponent_freedom_to_explore_the_self_model, 
   subcomponent_microaggressions_model,
-  # subcomponent_personal_safety_model,
-  # subcomponent_positive_emotions_model,
+  subcomponent_positive_emotions_model, 
   subcomponent_psychological_distress_model,
-  # subcomponent_relationships_support_model,
+  subcomponent_relationships_support_model, 
+  subcomponent_structural_racism_model
+)
+
+# Contains all the subcomponent and component models that have less than 3 question items
+remaining_models <- c(
+  component_safety_model, 
+  subcomponent_connectedness_model, 
+  subcomponent_critical_action_model, 
+  subcomponent_growth_mindset_model, 
+  subcomponent_hope_for_the_future_model, 
+  subcomponent_personal_safety_model, 
+  subcomponent_self_efficacy_model, 
+  subcomponent_sparks_model 
   # The model below is exactly the same as component_vibrant_communities_model
-  # subcomponent_safe_access_to_public_spaces_for_social_cultural_and_literary_opportunities_model, 
-  # subcomponent_self_efficacy_model,
-  # subcomponent_sparks_model,
-  subcomponent_structural_racism_model,
+  # subcomponent_safe_access_to_public_spaces,  
+  # The model below is exactly the same as component_cultural_identity_model
+  # subcomponent_cultural_identity_and_connection_model, 
+)
+```
+
+```{r}
+# Run confirmatory factor analysis (CFA) on the models
+
+# Get factor loadings for the components
+component_results <- do.call(rbind, lapply(component_models, run_cfa))
+
+# Get factor loadings for the subcomponents
+subcomponent_results <- do.call(rbind, lapply(subcomponent_models, run_cfa))
+
+# Get factor loadings for the components and subcomponents with less than 3 items
+remaining_results <- do.call(rbind, lapply(remaining_models, run_cfa))
+```
+<p>Note: subcomponent_safe_access_to_public_spaces is exactly the same as component_vibrant_communities_model. subcomponent_cultural_identity_and_connection_model is exactly the same as component_cultural_identity_model.</p>
+
+```{r}
+# This model combines component_positive_identity_and_self_worth_model and 
+# component_strong_minds_model into 1 model
+positive_identity_and_self_worth_AND_strong_minds_model <- 'positive_identity_and_self_worth_AND_strong_minds_model =~ cn + co + cp + cq + q10 + dd + de + df + dm + ck + cl + cm + cr + cs + ct + cu + cv + cw + cx + cy'
+
+positive_identity_and_self_worth_AND_strong_minds_model_result <- run_cfa(positive_identity_and_self_worth_AND_strong_minds_model)
+```
+
+```{r, include=FALSE, echo=FALSE}
+# Compile all the model results into a standard data frame
+all_results <- as.data.frame(rbind(component_results,subcomponent_results,remaining_results,positive_identity_and_self_worth_AND_strong_minds_model_result))
+
+# Write table with metadata
+table_name <- "factor_analysis"
+schema <- "youth_thriving"
+indicator <- "A table with the results of the factor analysis"
+source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Factor Analysis and Correlations/factor_analysis.Rmd "
+qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_factor_analysis.docx"
+table_comment <- paste0(indicator, source)
+# dbWriteTable(con, c(schema, table_name), all_results, overwrite = FALSE, row.names = FALSE)
+
+# Comment on table and columns
+column_names <- colnames(all_results) # Get column names
+column_comments <- c(
+  "indicates the component or subcomponent model the factor analysis is being run on",
+  "the question that this variable refers to",
+  "the subquestion that this variable refers to",
+  "the factor loading score of the variable, ranging from 0 to 1",
+  "t/f: does the factor loading score of the variable meet the threshold (currently set to 0.6) for what we consider to be a high score (i.e. the variable impacts the component or subcomponent substantially)?",
+  "refers to the column label or variable in the survey data",
+  "lower bound of the confidence interval for the factor loading score",
+  "upper bound of the confidence interval for the factor loading score",
+  "standard error of the factor loading score",
+  "p-value of the factor loading score",
+  "the number of variables in the component or subcomponent that meet the threshold for factor loading scores",
+  "the number of variables witin the component or subcomponent",
+  "model fit measure: CFI",
+  "model fit measure: TLI",
+  "model fit measure: RMSEA",
+  "model fit measure: SRMR",
+  "the question number that this variable refers to",
+  "the component this variable belongs to",
+  "the category this variable belongs to",
+  "the subcomponent this variable belongs to"
+)
+
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
+#dbDisconnect(con)
+```
+
+# Step 2: Item Reduction and Component Imputation
+<p>Use factor analysis final results to remove items from factor model. Items will be removed starting with items with a load less than 0.6. Factor analysis will then be rerun at different stages of the item reductions until all items in each component are above the threshold as items are reduced. 
+
+Once the final set of items are determined in the model, component scores will be imputed based on the factor model. This will give us an average score for every respondent based on our factor/component model. Select items that do not fit within a factor may be carried forward as separate explanatory variables for the regression (e.g., sparks, safety).</p>
+
+```{r, include=FALSE, echo=FALSE}
+# Pull in factor analysis table and filter for survey items that meet the 
+# factor score threshold of 0.6
+factor_analysis <- dbGetQuery(con, "SELECT * FROM youth_thriving.factor_analysis
+                              WHERE met_threshold=true")
+```
+
+```{r, include=FALSE, echo=FALSE}
+# Create the string names for the subcomponent and component CFA models 
+
+# Group by models and grab each model's variables
+ # all_models <- factor_analysis %>%
+ #   group_by(model_name) %>%
+ #   summarize(variables = paste(variable, collapse = " + "), .groups = "drop")
+
+ # Create model strings for CFA
+ # all_models_strings <- all_models %>%
+ #   mutate(model_string = paste0(
+ #     model_name, "_model",
+ #     " <- ",
+ #     "'",
+ #     model_name,
+ #     " =~ '",
+ #     variables, "'"))
+
+ # Display all the model strings
+ # all_models_strings$model_string
+```
+
+```{r, include=FALSE, echo=FALSE}
+component_caring_families_and_relationships_model <- 'component_caring_families_and_relationships =~ dl + dk + dn'
+component_cultural_identity_model <- 'component_cultural_identity =~ dz + dy + dx + ea + eb + ec'
+component_positive_identity_and_self_worth_model <- 'component_positive_identity_and_self_worth =~ co + cp + de + dd + df + cn'
+component_racial_justice_equity_and_inclusion_model <- 'component_racial_justice_equity_and_inclusion =~ ek + el + ei + em + en + ej + eh + ef + eg + ep + et + ew + eu + eq + eo + er + es + ev + ey + ex'
+component_safety_model <- 'component_safety =~ q19'
+component_strong_minds_model <- 'component_strong_minds =~ cy + cu + cw + cv + ct + cx'
+component_vibrant_communities_model <- 'component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds'
+positive_identity_and_self_worth_AND_strong_minds_model_model <- 'positive_identity_and_self_worth_AND_strong_minds_model =~ cy + cu + co + cp + cw + cn + cm + cr + dd + de'
+subcomponent_connectedness_model <- 'subcomponent_connectedness =~ dk + dl'
+subcomponent_critical_action_model <- 'subcomponent_critical_action =~ dm'
+subcomponent_experiences_of_racism_and_discrimination_model <- 'subcomponent_experiences_of_racism_and_discrimination =~ ek + el + ei + en + em + ej + eh + ef + eg'
+subcomponent_freedom_to_explore_the_self_model <- 'subcomponent_freedom_to_explore_the_self =~ de + dd + df'
+subcomponent_growth_mindset_model <- 'subcomponent_growth_mindset =~ cr'
+subcomponent_hope_for_the_future_model <- 'subcomponent_hope_for_the_future =~ co + cp'
+subcomponent_microaggressions_model <- 'subcomponent_microaggressions =~ ep + eq + eo + er'
+subcomponent_personal_safety_model <- 'subcomponent_personal_safety =~ q19'
+subcomponent_positive_emotions_model <- 'subcomponent_positive_emotions =~ cl + cm + ck'
+subcomponent_psychological_distress_model <- 'subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx'
+subcomponent_self_efficacy_model <- 'subcomponent_self_efficacy =~ cn'
+subcomponent_sparks_model <- 'subcomponent_sparks =~ q10'
+subcomponent_structural_racism_model <- 'subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex'
+subcomponent_self_efficacy_hope_model <- 'subcomponent_self_efficacy_hope =~ co + cp + cn + cq'
+```
+
+```{r, include=FALSE, echo=FALSE}
+# Contains all the component models that have 3 or more question items 
+component_models <- c(
   component_caring_families_and_relationships_model,
   component_cultural_identity_model,
-  component_positive_identity_and_self_worth_model,
+  component_positive_identity_and_self_worth_model, 
   component_racial_justice_equity_and_inclusion_model,
-  # component_safety_model,
   component_strong_minds_model,
+  component_vibrant_communities_model)
+
+# Contains all the subcomponent models that have 3 or more question items 
+subcomponent_models <- c(
+  subcomponent_experiences_of_racism_and_discrimination_model,
+  subcomponent_freedom_to_explore_the_self_model, 
+  subcomponent_microaggressions_model,
+  subcomponent_positive_emotions_model, 
+  subcomponent_psychological_distress_model,
+  subcomponent_structural_racism_model,
+  subcomponent_self_efficacy_hope_model)
+```
+
+```{r}
+# Run confirmatory factor analysis (CFA) on the models
+
+# Get factor loadings for the components
+component_results <- do.call(rbind, lapply(component_models, run_cfa))
+
+# Get factor loadings for the subcomponents
+subcomponent_results <- do.call(rbind, lapply(subcomponent_models, run_cfa))
+```
+
+```{r, include=FALSE, echo=FALSE}
+# Compile all the model results into a standard data frame
+all_results <- as.data.frame(rbind(component_results,subcomponent_results))
+
+# Write table with metadata
+table_name <- "factor_analysis_item_reduction"
+schema <- "youth_thriving"
+indicator <- "A table with the results of the factor analysis. In this table, factor analysis was only run on survey items that exceeded the factor score threshold of 0.6, based on the scores from table factor_analysis."
+source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Factor Analysis and Correlations/factor_analysis.Rmd "
+qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_item_reduction_component_imputation.docx"
+table_comment <- paste0(indicator, source)
+dbWriteTable(con, c(schema, table_name), all_results,
+             overwrite = TRUE, row.names = FALSE)
+
+# Comment on table and columns
+column_names <- colnames(all_results) # Get column names
+column_comments <- c(
+  "indicates the component or subcomponent model the factor analysis is being run on",
+  "the question that this variable refers to",
+  "the subquestion that this variable refers to",
+  "the factor loading score of the variable, ranging from 0 to 1",
+  "t/f: does the factor loading score of the variable meet the threshold (currently set to 0.6) for what we consider to be a high score (i.e. the variable impacts the component or subcomponent substantially)?",
+  "refers to the column label or variable in the survey data",
+  "lower bound of the confidence interval for the factor loading score",
+  "upper bound of the confidence interval for the factor loading score",
+  "standard error of the factor loading score",
+  "p-value of the factor loading score",
+  "the number of variables in the component or subcomponent that meet the threshold for factor loading scores",
+  "the number of variables witin the component or subcomponent",
+  "model fit measure: CFI",
+  "model fit measure: TLI",
+  "model fit measure: RMSEA",
+  "model fit measure: SRMR",
+  "the question number that this variable refers to",
+  "the component this variable belongs to",
+  "the category this variable belongs to",
+  "the subcomponent this variable belongs to"
+)
+
+add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
+#dbDisconnect(con)
+```
+
+```{r, include=FALSE, echo=FALSE}
+# Create a function to get the predicted factor scores
+run_predictions <- function(model_name) {
+  # Fit the data to a CFA model
+  fit.cat <- cfa(model_name, data=small_svy_data, std.lv = TRUE, ordered = TRUE)
+
+  # Calculate overall factor scores for the model 
+  # and attach the scores to the original data
+  idx <- lavInspect(fit.cat, "case.idx")
+  fscores <- lavPredict(fit.cat)
+  # Loop over factors
+  for (fs in colnames(fscores)) {small_svy_data[idx, fs] <- fscores[ , fs]}
+  
+  # The last column contains the predicted factor scores
+  return(small_svy_data %>% select(response_id, last_col()))
+}
+```
+
+```{r, include=FALSE, echo=FALSE}
+# measurement_models contains the (sub)component models needed for regression
+measurement_models <- c(
+  # Dependent variables, Y's
+  subcomponent_psychological_distress_model, 
+  component_positive_identity_and_self_worth_model,  
+  subcomponent_self_efficacy_hope_model,
+  # Explanatory variables, X's
+  component_caring_families_and_relationships_model,
+  component_cultural_identity_model,
+  subcomponent_microaggressions_model,
+  subcomponent_structural_racism_model,
   component_vibrant_communities_model
 )
 ```
+
+```{r, include=FALSE, echo=FALSE}
+# predicted_results contains the predicted factor scores for each variable we want to use in the regression
+predicted_results <- do.call(cbind, lapply(measurement_models, run_predictions))
+
+# Remove duplicate columns (i.e. the multiple response_id columns)
+predicted_results <- subset(predicted_results, select=which(!duplicated(names(predicted_results)))) 
+```
+
+```{r, include=FALSE, echo=FALSE}
+# There are too many NA values for the "Experiences of Racism and Discrimination" so we are not going to use predicted factor scores for this subcomponent. Instead, we are going to compute a summative score.
+sum_experiences <- small_svy_data %>%
+  mutate(subcomponent_experiences_of_racism_and_discrimination_sum = rowSums(select(., c(ef, eg, eh, ei, ej, ek, el, em, en)), na.rm = TRUE)) %>%
+  select(response_id,subcomponent_experiences_of_racism_and_discrimination_sum)
+
+# Merge subcomponent_experiences_of_racism_and_discrimination_sum with predicted_results
+predicted_results <- predicted_results %>%
+  left_join(sum_experiences, by="response_id")
+```
+
+```{r, include=FALSE, echo=FALSE}
+# Write table with metadata
+table_name <- "factor_analysis_predicted"
+schema <- "youth_thriving"
+indicator <- "A table with the predicted factor scores of the subcomponents and components to be used for regression."
+source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Factor Analysis and Correlations/factor_analysis.Rmd "
+qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_item_reduction_component_imputation.docx"
+table_comment <- paste0(indicator, source)
+dbWriteTable(con, c(schema, table_name), predicted_results,
+             overwrite = TRUE, row.names = FALSE)
+
+# Comment on table and columns
+column_names <- colnames(predicted_results) # Get column names
+column_comments <- c(
+  "Response id, unique for each survey respondent",
+  "Predicted factor scores for subcomponent psychological distress",
+  "Predicted factor scores for component positive identity and self worth",
+  "Predicted factor scores for subcomponent self efficacy and hope",
+  "Predicted factor scores for component caring families and relationships",
+  "Predicted factor scores for component cultural identity",
+  "Predicted factor scores for subcomponent microaggressions",
+  "Predicted factor scores for subcomponent structural racism",
+  "Predicted factor scores for component vibrant communities",
+  "Summative scores for subcomponent experiences of racism and discrimination"
+)
+
+add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
+#dbDisconnect(con)
+```
+
+```{r, include=FALSE, echo=FALSE}
+# Checking NA values and histograms of predicted factor scores
+
+predicted_results <- dbGetQuery(con, "SELECT * FROM youth_thriving.factor_analysis_predicted")
+
+# This shows the number of NA values for each (sub)component we want to use in the regression
+predicted_results %>% summarise_all(~sum(is.na(.)))
+
+# There were only 769 rows with no NA values, but now there are 2491 rows with no NA values following the changes made to "Vibrant Communities" and "Experiences of Racism and Discrimination"
+sum(complete.cases(predicted_results))
+
+# Checking the min, mean, and max factor scores for each (sub)component
+apply(predicted_results, 2, max, na.rm=TRUE)
+apply(predicted_results, 2, mean, na.rm=TRUE)
+apply(predicted_results, 2, min, na.rm=TRUE)
+
+# Checking the histograms for each (sub)component
+mapply(function(data, name) hist(data, main=name, na.rm=TRUE), 
+       as.data.frame(predicted_results), 
+       colnames(predicted_results))
+```
+
+```{r, include=FALSE, echo=FALSE}
+# QA item reduction: Did the item reduction improve the models?
+# Factor score threshold of 0.6
+factor_analysis_reduced <- dbGetQuery(con, "SELECT * FROM youth_thriving.factor_analysis_item_reduction
+                              WHERE total_vars>=3")
+factor_analysis_original <- dbGetQuery(con, "SELECT * FROM youth_thriving.factor_analysis
+                              WHERE total_vars>=3")
+
+# Calculate number of fit measures met for the original and reduced-item factor analysis
+factor_analysis_reduced <- factor_analysis_reduced %>%
+  mutate(cfi_met=ifelse(cfi>=.95, 1,0),
+         tli_met=ifelse(tli>=.95, 1,0),
+         rmsea_met=ifelse(rmsea<=.05, 1,0),
+         srmr_met=ifelse(srmr<.07, 1,0),
+         parameters_met_reduced=cfi_met+tli_met+rmsea_met+srmr_met)
+factor_analysis_original <- factor_analysis_original %>%
+  mutate(cfi_met=ifelse(cfi>=.95, 1,0),
+         tli_met=ifelse(tli>=.95, 1,0),
+         rmsea_met=ifelse(rmsea<=.05, 1,0),
+         srmr_met=ifelse(srmr<.07, 1,0),
+         parameters_met_original=cfi_met+tli_met+rmsea_met+srmr_met)
+
+# Seeing what variables were dropped for item reduction phase
+items_dropped <- setdiff(factor_analysis_original$variable, factor_analysis_reduced$variable) %>%
+  tibble(variable = .) %>%  # Convert the vector into a data frame
+  left_join(svy_dd, by = "variable") %>%
+  select(variable, question, sub_question, response_domain)
+
+# Compare number of fit measures met
+compare <- factor_analysis_reduced %>% 
+  distinct(model_name, cfi, tli, rmsea, srmr,parameters_met_reduced) %>%
+  left_join(factor_analysis_original %>% 
+              distinct(model_name, cfi, tli, rmsea, srmr,parameters_met_original), by="model_name") %>%
+  mutate(more_params_met = case_when(
+          parameters_met_reduced == parameters_met_original ~ "EQUAL",
+          parameters_met_reduced > parameters_met_original ~ "TRUE",
+          parameters_met_reduced < parameters_met_original ~ "FALSE")) %>%
+  select(model_name,parameters_met_reduced,parameters_met_original,more_params_met) %>%
+  filter(model_name%in% c("component_caring_families_and_relationships","component_positive_identity_and_self_worth","component_strong_minds"))
+```
+
+```{r, include=FALSE, echo=FALSE}
+# positive identity and self worth doesn't meet conditions in either model
+# test alternate
+subcomponent_self_efficicacy_hope_model <- 'subcomponent_self_efficacy_hope =~ co + cp + cn + cq'
+subcomponent_self_efficicacy_hope_model_result <- run_cfa(subcomponent_self_efficicacy_hope_model)
+# better fit proceed with this model that is a combo of self-efficacy and hope for future
+```
+
