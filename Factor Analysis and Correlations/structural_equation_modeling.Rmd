@@ -934,7 +934,7 @@ sem_output_2f <- get_sem_results(fit_2f) %>%
 ## Create postgres table
 ```{r, include=FALSE, echo=FALSE}
 # Compile all the model results into a standard data frame
-all_results <- as.data.frame(rbind(sem_output_1,sem_output_1a,sem_output_1b,sem_output_1c,sem_output_1d,sem_output_1e,sem_output_1f,sem_output_1g,sem_output_1h,sem_output_1i,sem_output_1j,sem_output_2,sem_output_2a))
+all_results <- as.data.frame(rbind(sem_output_1,sem_output_1a,sem_output_1b,sem_output_1c,sem_output_1d,sem_output_1e,sem_output_1f,sem_output_1g,sem_output_1h,sem_output_1i,sem_output_1j,sem_output_2,sem_output_2a,sem_output_2b,sem_output_2c,sem_output_2d,sem_output_2e,sem_output_2f))
 
 # Write table with metadata
 table_name <- "factor_analysis_sem_results"
@@ -952,11 +952,11 @@ column_comments <- c(
   "The model name. Model 1 and 2 include all the variables from the Research Plan, whereas the other models (e.g. 1a, 2a) have less variables",
   "Dependent variable",
   "Independent variable",  
-  "Ihe independent variable's coefficient, which ranges from 0 to 1",  
+  "The coefficient of the independent variable, which should range from 0 to 1",  
   "t/f: Is the p value less than 0.05?",
   "p-value of the coefficient",
-  "AIC value",
   "BIC value",
+  "AIC value",
   "R squared value",
   "The number of fit measures that met their respective thresholds. Fit measures are cfi, tli, rmsea, and srmr",
   "model fit measure: CFI",
