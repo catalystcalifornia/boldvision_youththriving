@@ -120,6 +120,7 @@ fx_create_df <- function(con, tables, response_domain, variable, response_domain
     # group_by(youth_label) %>% # Order by rate in descending order (highest to lowest)
     arrange(desc(rate)) 
     # ungroup()  # Remove the grouping
+    #ORDERING IS NOT CURRENTLY REFLECTEDON FINAL VISUAL...unsure why. 
   return(df_final)
   
 }
@@ -149,9 +150,6 @@ fx_vis_smallmultiples <- function(df, title_text, domain_text, variable_text) {
             aes(label = paste0(round(rate, digits = 1), "%")),
             size = 4,
             stat="identity", colour = "black",
-            # position = position_dodge(width = 1), 
-            # vjust = -.20 , 
-            # hjust= 1.15,
             fontface = "bold", family=font_bar_label) +  
   theme_minimal() +
   labs(title = paste(str_wrap(title_text, whitespace_only = TRUE, width = 75), collapse = "\n"),
@@ -179,23 +177,21 @@ fx_vis_smallmultiples <- function(df, title_text, domain_text, variable_text) {
      # grid line style
      panel.grid.minor = element_blank(),
      panel.grid.major = element_blank()) 
+  
+  ggsave(plot = df_visual, 
+         file = paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", 
+                       unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.svg"),
+         units = "in", width = 8, height = 5.5)
+  
+  return(df_visual)
 
-return(df_visual)
-
-ggsave(plot=df_visual, 
-       file=paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", domain_text, "/", variable_text,
-                   # unique(df$response_domain),"/", unique(df$variable), NOT SURE WHY THIS LINE Is NOT WORKING! 
-                   "_smallmultiples", ".svg"),
-       units = c("in"),  width = 8, height = 5.5)
 }
 
 
 ####Step 5: Run function to create visual ####
 fx_vis_smallmultiples(df = df_ex, 
-                      title_text = 'Unhoused youth are least likely to report access to Libraries',
-                      domain_text = 'Vibrant Communities',
-                      variable_text = 'ds_TEST')
-
+                      title_text = 'Unhoused youth are least likely to report access to Libraries')
+#See example here: W:\Project\OSI\Bold Vision\Youth Thriving Survey\Deliverables\Vibrant Communities 
 
 ###Step 6: Close database connection ####
 dbDisconnect(con)
