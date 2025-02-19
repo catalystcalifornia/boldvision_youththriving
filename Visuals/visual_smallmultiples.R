@@ -1,6 +1,6 @@
 # The purpose of this script is to develop a visual template for producing small multiple visuals for the BVYTS data analysis. 
 # Author: Maria Khan 
-# QA DODCUMENT: 
+# QA DODCUMENT: W:\Project\OSI\Bold Vision\Youth Thriving Survey\Documentation\QA_smallmultiplesfunction.docx
 
 ####STEP 1: Setting Up (Libraries, BV style, database connecction, etc)####
 library(extrafont)
