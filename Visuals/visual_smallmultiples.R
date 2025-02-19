@@ -78,7 +78,7 @@ fx_create_df <- function(con, tables, response_domain, variable, response_domain
     # Rename first column to youth
     colnames(df)[1] <- "youth"
     
-    # Add 'source_table' and 'youth' columns
+    # Add 'source_table' and 'youth_label' columns
     df <- df %>%
       mutate(source_table = table,
              youth_label = youth %>%
@@ -140,7 +140,7 @@ View(df_ex) #check example table, does everything look like it is working okay?
 
 ####STEP 4: Create a function to produce small multiple visuals from the df just produced####
 
-fx_vis_smallmultiples <- function(df, title_text, domain_text, variable_text) {
+fx_vis_smallmultiples <- function(df, title_text) {
 
   df_visual <- ggplot(df, aes(x = response, y = rate, fill = response)) +
   geom_bar(stat = "identity") +  # Use identity to plot actual counts
