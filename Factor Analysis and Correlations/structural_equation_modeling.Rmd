@@ -6,7 +6,7 @@ output: html_document
 ---
 
 ```{r, include=FALSE}
-# Step 0: Data Preparation
+# Step 0: Data Preparation --------
 
 options(scipen=999) # Turn off scientific notation
 options(width = 120) # Use wider boxes in the html output
@@ -82,6 +82,10 @@ for (col in names(small_svy_data)) {
 
 small_svy_data <- small_svy_data %>%
   mutate(across(c(do, dp, dq, dr, ds, dt, du, dv), ~ ifelse(. == 3, 1, .)))
+
+# check
+# table(small_svy_data$do,useNA='always')
+# table(raw_svy_data$do,useNA='always')
 ```
 
 ```{r, include=FALSE}
@@ -136,6 +140,13 @@ race_ethnicity_acs <- race_ethnicity_data %>%
   mutate(value = 1) %>%  # Create a helper column for pivoting
   pivot_wider(names_from = acs_race, values_from = value, values_fill = 0)
 
+# check
+# colSums(race_ethnicity_acs)
+# table(race_ethnicity_data$acs_race,useNA='always')
+# filter(race_ethnicity_data, response_id=='136135266')
+# filter(race_ethnicity_acs, response_id=='136135266')
+
+
 poverty_rates <- dbGetQuery(con, "SELECT response_id, perc_below_100_fpl, perc_below_200_fpl FROM youth_thriving.poverty_rate_data")  
 poverty_rates <- poverty_rates %>%
   mutate(high_poverty_area = ifelse(perc_below_200_fpl>=26.0,1,0))
@@ -179,6 +190,17 @@ svy_data <- svy_data %>%
                          ifelse(cs %in% c(2,3,4), 1, NA)),
       growth_mindset= rowMeans(across(c(cr_binary, cs_binary)), na.rm = TRUE)
   )
+
+table(svy_data$q19,useNA='always')
+table(svy_data$dm,useNA='always')
+table(svy_data$cr,useNA='always')
+table(svy_data$cs,useNA='always')
+sum(is.na(svy_data$cs))
+sum(is.na(svy_data$cr))
+raw_svy_data%>%filter(!is.na(org_sp_an))%>%count(q10)
+table(svy_data$q10,useNA='always')
+
+
 ```
 
 ```{r QA Check Data Prep, eval=FALSE, include=FALSE}
@@ -311,11 +333,18 @@ fit_1 <- sem(model_1, data = svy_data, std.lv = TRUE, missing = "fiml.x")
 sem_output_1 <- get_sem_results(fit_1) %>% 
   mutate(model_name="1") %>%
   select(model_name, everything())
+
+summary(fit_1, standardized = TRUE)
+fitMeasures(fit_1, c("chisq", "df", "pvalue", "cfi", "rmsea","tli","srmr","rsquare"), fm.args = list(robust = FALSE))
+lavInspect(fit_1, "rsquare")
+
+
 ```
 
 ```{r, eval = FALSE, include=FALSE}
 # QA Check on FIML: Number of observations used = 3444/3444
-# summary(fit_1, standardized = TRUE)
+summary(fit_1, standardized = TRUE,fit.measures=TRUE)
+
 ```
 
 ### Model 1a: running only (sub)components
