@@ -34,17 +34,6 @@ sogi <- dbGetQuery(con, "SELECT * FROM youth_thriving.gender_sexuality_data ")
 race <- dbGetQuery(con, "SELECT * FROM youth_thriving.race_ethnicity_data ")
 
 # Step 1: Setting up dataframe for average scores by demographics -----
-# standardize experiences of racism and discrimination
-imputed_scores <- imputed_scores %>%
-  mutate(subcomponent_experiences_of_racism_and_discrimination=scale(subcomponent_experiences_of_racism_and_discrimination_sum))
-
-# check
-min(imputed_scores$subcomponent_experiences_of_racism_and_discrimination)
-max(imputed_scores$subcomponent_experiences_of_racism_and_discrimination)
-
-# drop old column
-imputed_scores <- imputed_scores %>% select(-subcomponent_experiences_of_racism_and_discrimination_sum)
-
 # join data frames
 svy_df_orig <- svy_data_raw %>%
   left_join(imputed_scores) %>%
@@ -93,10 +82,10 @@ temp_df <- df %>%
   as_survey(weights=c(weights_final)) %>% # apply survey weights to dataframe
   filter(!is.na(!!sym(i)), !is.na(!!as.symbol(demo_var))) %>% # filter out NAs for the demographic var and component var
   group_by(!!sym(demo_var)) %>% # group by demographic variable
-  summarise(count=n(), # calculate the unweighted count meeting demo var and with values for component var
+  summarise(count=n(), # calculate the unweighted count for demo category that has values for component var
             avg=survey_mean(!!sym(i), vartype=c("se","ci"),level=.90)) %>% # get the average score
   rename(
-    # !!paste({{i}},"avg",sep="_"):=avg,
+    # !!paste({{i}},"avg",sep="_"):=avg, # old code that had data wide instead of long
     #      !!paste({{i}},"count",sep="_"):=count,
     #      !!paste({{i}},"se",sep="_"):=avg_se,
     #      !!paste({{i}},"low_ci",sep="_"):=avg_low,
@@ -134,7 +123,7 @@ svy_df <- svy_df %>%
 
 df_total<-avg_scores(df=svy_df,demo_var="total")
 
-# check that weighting is working but running mean without the srvy package
+# check that weighting is working by running mean without the srvy package
 mean(svy_df$subcomponent_psychological_distress,na.rm=TRUE)
 
 # Step 4: Compute for binary vars -----------------
