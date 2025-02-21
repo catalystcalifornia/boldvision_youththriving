@@ -159,7 +159,11 @@ df_lgbtia<-avg_scores(df=svy_df,demo_var="cishet_lgbtqia")
 
 # Step 6: Compute for Race -----------------
 # acs race categories, non-overlapping
-df_race<-avg_scores(df=svy_df,demo_var="acs_race")
+df_race <- avg_scores(df=svy_df,demo_var="nh_race") # use our race category
+
+table(df_race$subgroup)
+
+df_race <- df_race %>% filter(!subgroup %in% c("NA","do_not_wish")) # filter out those that didn't respond
 
 # aian, nhpi, swana alone or in combo
 # list of alone or in combo vars
