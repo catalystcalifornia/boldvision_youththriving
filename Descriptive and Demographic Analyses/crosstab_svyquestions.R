@@ -5,6 +5,7 @@
 #### STEP 1: Setting Up and Downloading Tables ####
 library(dplyr)
 library(RPostgreSQL)
+library(srvyr)
 options(scipen=999)
 
 # connect to postgres and pull credentials
@@ -16,26 +17,26 @@ svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
 #data dictionary
 svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 where response_type = 'mc' AND response_domain !='Demographics' AND response_domain != 'Info'")
 
-
 #### STEP 2: Create a function to cross tab two different variables ####
+
 cross_tab_df <- function(data, var1, var2) {
-  # Create a contingency table
-  tab <- table(data[[var1]], data[[var2]])
+  # Convert to survey design using weights
+  df_svy <- as_survey(data, weights = weights_final) %>%
+    filter(!is.na(!!sym(var1)), !is.na(!!sym(var2)))  # Remove NAs
   
-  # Convert table to data frame
-  df_counts <- as.data.frame(tab)
-  colnames(df_counts) <- c(var1, var2, "count")
+  # Compute weighted counts & rates
+  df_result <- df_svy %>%
+    group_by(!!sym(var1), !!sym(var2)) %>%
+    summarise(
+      count = survey_total(),
+      rate = survey_prop()  # Automatically ensures sum = 100%
+    ) %>%
+    mutate(rate = rate * 100) %>%  # Convert to percentages
+    ungroup()
   
-  # Calculate rate
-  df_rate <- as.data.frame(prop.table(tab) * 100)
-  colnames(df_rate) <- c(var1, var2, "rate")
-  
-  # Merge counts and rate
-  result_df <- left_join(df_counts, df_rate, by = c(var1, var2)) %>%
-    mutate(rate = round(rate, 2))  # Round percentages
-  
-  return(result_df)
+  return(df_result)
 }
+
 
 cross_dd_de <- cross_tab_df(svy_data, "dd", "de")
 View(cross_dd_de)
