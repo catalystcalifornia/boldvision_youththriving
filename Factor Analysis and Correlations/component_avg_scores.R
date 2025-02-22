@@ -301,7 +301,7 @@ dbWriteTable(con, c(schema, table_name), df_spa,
 add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
 
 ## Other binary vars table export ------
-df_final_sys <- rbind(df_arrested, df_disconnected, df_suspended, df_undocumented, df_unhoused)
+df_final_sys <- rbind(df_arrested, df_disconnected, df_suspended, df_undocumented, df_unhoused,df_si)
 
 table_name <- "factor_analysis_avg_scores_systems_involved"
 demographic <- " for systems involved indicators, e.g., ever arrested, disconnected frome ducation/school, ever suspended, undocumented, or unhoused "
