@@ -128,7 +128,7 @@ svy_data <- raw_svy_data %>%
 # Get demographic data from other tables
 demographics_binary_df <- dbGetQuery(con, "SELECT * FROM youth_thriving.demographics_binary_data")
 
-gender_sexuality_df <- dbGetQuery(con, "SELECT response_id, cishet_lgbtqia FROM youth_thriving.gender_sexuality_data")
+gender_sexuality_df <- dbGetQuery(con, "SELECT response_id, cisgender_mf, cishet_lgbtqia, cis_mf_trans_gnc FROM youth_thriving.gender_sexuality_data")
 
 race_ethnicity_data <- dbGetQuery(con, "SELECT response_id, nh_race FROM youth_thriving.race_ethnicity_data")
 # Create binary columns for each unique nh_race value
@@ -725,7 +725,7 @@ sem_output_1j.2 <- get_sem_results(fit_1j.2) %>%
   select(model_name, everything())
 ```
 
-## Create postgres table for 1j.2
+#### Create postgres table for 1j.2
 ```{r, include=FALSE, echo=FALSE}
 # Compile all the model results into a standard data frame
 all_results <- as.data.frame(sem_output_1j.2)
@@ -737,8 +737,155 @@ indicator <- "A table with the results of the structural equation modeling for m
 source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Factor Analysis and Correlations/structural_equation_modeling.Rmd "
 qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_structural_equation_modeling.docx"
 table_comment <- paste0(indicator, source)
-dbWriteTable(con, c(schema, table_name), all_results,
-             overwrite = TRUE, row.names = FALSE)
+# dbWriteTable(con, c(schema, table_name), all_results, overwrite = TRUE, row.names = FALSE)
+
+# Comment on table and columns
+column_names <- colnames(all_results) # Get column names
+column_comments <- c(
+  "The model name",
+  "Dependent variable",
+  "Independent variable",  
+  "The coefficient of the independent variable",  
+  "t/f: Is the p value less than 0.05?",
+  "p-value of the coefficient",
+  "BIC value",
+  "AIC value",
+  "R squared value",
+  "The number of fit measures that met their respective thresholds. Fit measures are cfi, tli, rmsea, and srmr",
+  "model fit measure: CFI",
+  "model fit measure: TLI",
+  "model fit measure: RMSEA",
+  "model fit measure: SRMR"
+)
+
+add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
+#dbDisconnect(con)
+```
+
+### Model 1j.4: adding cisgender
+```{r Model 1j.4, warning=FALSE, echo=FALSE}
+gender_svy_data <- svy_data %>%
+  mutate(cis_male = ifelse(cis_mf_trans_gnc=="cisgender male",1,0),
+         cis_female = ifelse(cis_mf_trans_gnc=="cisgender female",1,0))
+
+model_1j.4 <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds
+  subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx
+
+  # Regression
+  subcomponent_psychological_distress ~ component_caring_families_and_relationships +
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    component_vibrant_communities + 
+    personal_safety +
+    race_latinx + race_nh_asian + race_nh_black + race_nh_twoormor + race_nh_aian + race_nh_other + race_nh_nhpi + race_nh_swana +
+    cishet_lgbtqia +
+    systems_impacted +
+    is_adult +
+    high_poverty_area +
+    sparks+
+    cis_female
+'
+fit_1j.4 <- sem(model_1j.4, data = gender_svy_data, std.lv = TRUE, missing = "fiml.x")
+ 
+sem_output_1j.4 <- get_sem_results(fit_1j.4) %>% 
+  mutate(model_name="1j.4") %>%
+  select(model_name, everything())
+```
+
+### Model 1j.5: FINAL
+Q19. How often do you worry about your own safety while in the neighborhood you live in now?
+5 = Never
+4 = Rarely
+3 = Sometimes
+2 = Most of the time
+1 = All of the time
+```{r Model 1j.5, warning=FALSE, echo=FALSE}
+model_1j.5 <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds
+  subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx
+
+  # Regression
+  subcomponent_psychological_distress ~ component_caring_families_and_relationships +
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    component_vibrant_communities + 
+    personal_safety_1 + personal_safety_2 + personal_safety_3 + personal_safety_4 +
+    race_latinx + race_nh_asian + race_nh_black + race_nh_twoormor + race_nh_aian + race_nh_other + race_nh_nhpi + race_nh_swana +
+    cishet_lgbtqia +
+    systems_impacted +
+    sparks +
+    undocumented
+'
+fit_1j.5 <- sem(model_1j.5, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+ 
+sem_output_1j.5 <- get_sem_results(fit_1j.5) %>% 
+  mutate(model_name="1j.5") %>%
+  select(model_name, everything())
+```
+
+### Model 1j.6: FINAL; subsetted by cisgender respondents only
+Analysis: Being cisgender female is associated with more psychological distress, compared to being cisgender male. Latinx becomes not statistically significant, compared to model 1j.5.
+```{r Model 1j.6, warning=FALSE, echo=FALSE}
+cisgender_svy_data <- svy_data %>% 
+  filter(!is.na(cisgender_mf))
+
+model_1j.6 <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds
+  subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx
+
+  # Regression
+  subcomponent_psychological_distress ~ component_caring_families_and_relationships +
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    component_vibrant_communities + 
+    personal_safety_1 + personal_safety_2 + personal_safety_3 + personal_safety_4 +
+    race_latinx + race_nh_asian + race_nh_black + race_nh_twoormor + race_nh_aian + race_nh_other + race_nh_nhpi + race_nh_swana +
+    cishet_lgbtqia +
+    systems_impacted +
+    sparks +
+    undocumented +
+    cisgender_mf
+'
+fit_1j.6 <- sem(model_1j.6, data = cisgender_svy_data, std.lv = TRUE, missing = "fiml.x")
+ 
+sem_output_1j.6 <- get_sem_results(fit_1j.6) %>% 
+  mutate(model_name="1j.6") %>%
+  select(model_name, everything())
+```
+
+#### Create postgres table for 1j.5 and 1j.6
+```{r, include=FALSE, echo=FALSE}
+# Compile all the model results into a standard data frame
+all_results <- as.data.frame(rbind(sem_output_1j.5,sem_output_1j.6))
+
+# Write table with metadata
+table_name <- "factor_analysis_sem_results_1j.5_1j.6"
+schema <- "youth_thriving"
+indicator <- "A table with the results of the structural equation modeling for model 1j.5 and 1j.6. These two models represent the finalized models for dependent variable psychological distress. Model 1j.6 is only ran on cisgender respondents in order to compare cis males and cis females."
+source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Factor Analysis and Correlations/structural_equation_modeling.Rmd "
+qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_structural_equation_modeling.docx"
+table_comment <- paste0(indicator, source)
+# dbWriteTable(con, c(schema, table_name), all_results, overwrite = TRUE, row.names = FALSE)
 
 # Comment on table and columns
 column_names <- colnames(all_results) # Get column names
@@ -999,7 +1146,7 @@ model_2e <- '
     component_cultural_identity + 
     personal_safety +
     opportunities_for_community_involvement +
-    latino + nh_asian + nh_black + nh_twoormor + nh_aian +nh_other + nh_pacisl +
+    race_latinx + race_nh_asian + race_nh_black + race_nh_twoormor + race_nh_aian + race_nh_other + race_nh_nhpi + race_nh_swana +
     cishet_lgbtqia +
     systems_impacted +
     unhoused +
@@ -1018,8 +1165,7 @@ sem_output_2e <- get_sem_results(fit_2e) %>%
 
 ### Model 2f: removing spa
 
-Analysis:
-
+Analysis: BIC decreased a bit.
 ```{r Model 2f: removing spa, warning = FALSE, echo = FALSE}
 model_2f <- '
   # Measurement model
@@ -1031,15 +1177,15 @@ model_2f <- '
   subcomponent_self_efficacy_hope ~ component_caring_families_and_relationships + 
     component_cultural_identity + 
     personal_safety +
-    opportunities_for_community_involvement +
-    latino + nh_asian + nh_black + nh_twoormor + nh_aian +nh_other + nh_pacisl +
+    opportunities_for_community_involvement + 
+    race_latinx + race_nh_asian + race_nh_black + race_nh_twoormor + race_nh_aian + race_nh_other + race_nh_nhpi + race_nh_swana +
     cishet_lgbtqia +
     systems_impacted +
     unhoused +
     is_adult +
     suspended + 
     high_poverty_area +
-    undocumented +
+    undocumented
 '
 fit_2f <- sem(model_2f, data = svy_data, std.lv = TRUE, missing = "fiml.x")
 
@@ -1048,8 +1194,392 @@ sem_output_2f <- get_sem_results(fit_2f) %>%
   select(model_name, everything())
 ```
 
-## Create postgres table
+### Model 2f.1: adding sparks, SPA, continuous poverty; removing is_adult
 
+Analysis: sparks is statistically significant. perc_below_200_fpl and spa are not statistically significant. BIC decreased.
+
+```{r Model 2f.1, warning = FALSE, echo = FALSE}
+model_2f.1 <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_self_efficacy_hope =~ co + cp + cn + cq
+  
+  # Regression
+  subcomponent_self_efficacy_hope ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    personal_safety +
+    opportunities_for_community_involvement + 
+    race_latinx + race_nh_asian + race_nh_black + race_nh_twoormor + race_nh_aian + race_nh_other + race_nh_nhpi + race_nh_swana +
+    cishet_lgbtqia +
+    systems_impacted +
+    unhoused +
+    suspended + 
+    perc_below_200_fpl +
+    undocumented+
+    sparks + 
+    spa_1 + spa_2 + spa_3 + spa_4 + spa_6 + spa_7 + spa_8
+'
+fit_2f.1 <- sem(model_2f.1, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+
+sem_output_2f.1 <- get_sem_results(fit_2f.1) %>% 
+  mutate(model_name="2f.1") %>%
+  select(model_name, everything())
+```
+
+### Model 2f.2: removing spa
+
+Analysis: BIC decreased. perc_below_200_fpl is not statistically significant.
+
+```{r Model 2f.2, warning = FALSE, echo = FALSE}
+model_2f.2 <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_self_efficacy_hope =~ co + cp + cn + cq
+  
+  # Regression
+  subcomponent_self_efficacy_hope ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    personal_safety +
+    opportunities_for_community_involvement + 
+    race_latinx + race_nh_asian + race_nh_black + race_nh_twoormor + race_nh_aian + race_nh_other + race_nh_nhpi + race_nh_swana +
+    cishet_lgbtqia +
+    systems_impacted +
+    unhoused +
+    suspended + 
+    perc_below_200_fpl +
+    undocumented+
+    sparks
+'
+fit_2f.2 <- sem(model_2f.2, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+
+sem_output_2f.2 <- get_sem_results(fit_2f.2) %>% 
+  mutate(model_name="2f.2") %>%
+  select(model_name, everything())
+```
+
+### Model 2f.3: removing perc_below_200_fpl
+Analysis: BIC increased. 
+
+```{r Model 2f.3, warning = FALSE, echo = FALSE}
+model_2f.3 <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_self_efficacy_hope =~ co + cp + cn + cq
+  
+  # Regression
+  subcomponent_self_efficacy_hope ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    personal_safety +
+    opportunities_for_community_involvement + 
+    race_latinx + race_nh_asian + race_nh_black + race_nh_twoormor + race_nh_aian + race_nh_other + race_nh_nhpi + race_nh_swana +
+    cishet_lgbtqia +
+    systems_impacted +
+    unhoused +
+    suspended + 
+    undocumented+
+    sparks
+'
+fit_2f.3 <- sem(model_2f.3, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+
+sem_output_2f.3 <- get_sem_results(fit_2f.3) %>% 
+  mutate(model_name="2f.3") %>%
+  select(model_name, everything())
+```
+
+### Model 2f.4: adding perc_below_200_fpl back, removing suspended
+Analysis: BIC increased compared to model 2f.2.
+
+```{r Model 2f.4, warning = FALSE, echo = FALSE}
+model_2f.4 <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_self_efficacy_hope =~ co + cp + cn + cq
+  
+  # Regression
+  subcomponent_self_efficacy_hope ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    personal_safety +
+    opportunities_for_community_involvement + 
+    race_latinx + race_nh_asian + race_nh_black + race_nh_twoormor + race_nh_aian + race_nh_other + race_nh_nhpi + race_nh_swana +
+    cishet_lgbtqia +
+    systems_impacted +
+    unhoused +
+    perc_below_200_fpl +
+    undocumented+
+    sparks
+'
+fit_2f.4 <- sem(model_2f.4, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+
+sem_output_2f.4 <- get_sem_results(fit_2f.4) %>% 
+  mutate(model_name="2f.4") %>%
+  select(model_name, everything())
+```
+
+### Model 2f.5: adding suspended back, removing systems_impacted
+Analysis: BIC increased compared to model 2f.2.
+
+```{r Model 2f.5, warning = FALSE, echo = FALSE}
+model_2f.5 <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_self_efficacy_hope =~ co + cp + cn + cq
+  
+  # Regression
+  subcomponent_self_efficacy_hope ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    personal_safety +
+    opportunities_for_community_involvement + 
+    race_latinx + race_nh_asian + race_nh_black + race_nh_twoormor + race_nh_aian + race_nh_other + race_nh_nhpi + race_nh_swana +
+    cishet_lgbtqia +
+    unhoused +
+    suspended + 
+    perc_below_200_fpl +
+    undocumented+
+    sparks 
+'
+fit_2f.5 <- sem(model_2f.5, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+
+sem_output_2f.5 <- get_sem_results(fit_2f.5) %>% 
+  mutate(model_name="2f.5") %>%
+  select(model_name, everything())
+```
+
+### Model 2f.6: adding systems_impacted back, removing undocumented
+Analysis: BIC decreased compared to model 2f.2.
+
+```{r Model 2f.6, warning = FALSE, echo = FALSE}
+model_2f.6 <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_self_efficacy_hope =~ co + cp + cn + cq
+  
+  # Regression
+  subcomponent_self_efficacy_hope ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    personal_safety +
+    opportunities_for_community_involvement + 
+    race_latinx + race_nh_asian + race_nh_black + race_nh_twoormor + race_nh_aian + race_nh_other + race_nh_nhpi + race_nh_swana +
+    cishet_lgbtqia +
+    unhoused +
+    suspended + 
+    perc_below_200_fpl +
+    systems_impacted+
+    sparks 
+'
+fit_2f.6 <- sem(model_2f.6, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+
+sem_output_2f.6 <- get_sem_results(fit_2f.6) %>% 
+  mutate(model_name="2f.6") %>%
+  select(model_name, everything())
+```
+
+#### Create postgres table for 2f.6
+```{r, include=FALSE, echo=FALSE}
+# Compile all the model results into a standard data frame
+all_results <- as.data.frame(sem_output_2f.6)
+
+# Write table with metadata
+table_name <- "factor_analysis_sem_results_2f.6"
+schema <- "youth_thriving"
+indicator <- "A table with the results of the structural equation modeling for model 2f.6."
+source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Factor Analysis and Correlations/structural_equation_modeling.Rmd "
+qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_structural_equation_modeling.docx"
+table_comment <- paste0(indicator, source)
+# dbWriteTable(con, c(schema, table_name), all_results, overwrite = TRUE, row.names = FALSE)
+
+# Comment on table and columns
+column_names <- colnames(all_results) # Get column names
+column_comments <- c(
+  "The model name",
+  "Dependent variable",
+  "Independent variable",  
+  "The coefficient of the independent variable",  
+  "t/f: Is the p value less than 0.05?",
+  "p-value of the coefficient",
+  "BIC value",
+  "AIC value",
+  "R squared value",
+  "The number of fit measures that met their respective thresholds. Fit measures are cfi, tli, rmsea, and srmr",
+  "model fit measure: CFI",
+  "model fit measure: TLI",
+  "model fit measure: RMSEA",
+  "model fit measure: SRMR"
+)
+
+add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
+#dbDisconnect(con)
+```
+
+### Model 2f.7: removing suspended
+Analysis: BIC decreased. Therefore, amongst the "f" models, model 2f.6 has the lowest BIC. However, model 2f.1 is the only "f" model that meets 2 fit measures.
+
+```{r Model 2f.7, warning = FALSE, echo = FALSE}
+model_2f.7 <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_self_efficacy_hope =~ co + cp + cn + cq
+  
+  # Regression
+  subcomponent_self_efficacy_hope ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    personal_safety +
+    opportunities_for_community_involvement + 
+    race_latinx + race_nh_asian + race_nh_black + race_nh_twoormor + race_nh_aian + race_nh_other + race_nh_nhpi + race_nh_swana +
+    cishet_lgbtqia +
+    unhoused +
+    perc_below_200_fpl +
+    systems_impacted+
+    sparks 
+'
+fit_2f.7 <- sem(model_2f.7, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+
+sem_output_2f.7 <- get_sem_results(fit_2f.7) %>% 
+  mutate(model_name="2f.7") %>%
+  select(model_name, everything())
+```
+
+### Model 2g: adding secondary variables disconnected and arrested to model 2f.6
+Analysis: BIC decreased.
+
+```{r Model 2g, warning = FALSE, echo = FALSE}
+model_2g <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_self_efficacy_hope =~ co + cp + cn + cq
+  
+  # Regression
+  subcomponent_self_efficacy_hope ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    personal_safety +
+    opportunities_for_community_involvement + 
+    race_latinx + race_nh_asian + race_nh_black + race_nh_twoormor + race_nh_aian + race_nh_other + race_nh_nhpi + race_nh_swana +
+    cishet_lgbtqia +
+    unhoused +
+    suspended + 
+    perc_below_200_fpl +
+    systems_impacted+
+    sparks +
+    disconnected+
+    arrested
+'
+fit_2g <- sem(model_2g, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+
+sem_output_2g <- get_sem_results(fit_2g) %>% 
+  mutate(model_name="2g") %>%
+  select(model_name, everything())
+```
+
+### Model 2g.1: adding secondary variable subcomponent_psychological_distress
+Analysis: BIC increased.
+
+```{r Model 2g.1, warning = FALSE, echo = FALSE}
+model_2g.1 <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_self_efficacy_hope =~ co + cp + cn + cq
+  subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx
+
+  # Regression
+  subcomponent_self_efficacy_hope ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    personal_safety +
+    opportunities_for_community_involvement + 
+    race_latinx + race_nh_asian + race_nh_black + race_nh_twoormor + race_nh_aian + race_nh_other + race_nh_nhpi + race_nh_swana +
+    cishet_lgbtqia +
+    unhoused +
+    suspended + 
+    perc_below_200_fpl +
+    systems_impacted+
+    sparks +
+    disconnected+
+    arrested+
+    subcomponent_psychological_distress
+'
+fit_2g.1 <- sem(model_2g.1, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+
+sem_output_2g.1 <- get_sem_results(fit_2g.1) %>% 
+  mutate(model_name="2g.1") %>%
+  select(model_name, everything())
+```
+
+### Model 2h: adding component_vibrant_communities back to 2f.6
+Analysis: component_vibrant_communities not stat sig. BIC increased.
+
+```{r Model 2h, warning = FALSE, echo = FALSE}
+model_2h <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_self_efficacy_hope =~ co + cp + cn + cq
+  component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds
+
+  
+  # Regression
+  subcomponent_self_efficacy_hope ~ component_caring_families_and_relationships + 
+    component_cultural_identity +
+    component_vibrant_communities+
+    personal_safety +
+    opportunities_for_community_involvement + 
+    race_latinx + race_nh_asian + race_nh_black + race_nh_twoormor + race_nh_aian + race_nh_other + race_nh_nhpi + race_nh_swana +
+    cishet_lgbtqia +
+    unhoused +
+    suspended + 
+    perc_below_200_fpl +
+    systems_impacted+
+    sparks 
+'
+fit_2h <- sem(model_2h, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+
+sem_output_2h <- get_sem_results(fit_2h) %>% 
+  mutate(model_name="2h") %>%
+  select(model_name, everything())
+```
+
+### Model 2i: removing systems_impacted and suspended from 2f.6
+Analysis: component_vibrant_communities not stat sig. BIC increased.
+
+```{r Model 2i, warning = FALSE, echo = FALSE}
+model_2i <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_self_efficacy_hope =~ co + cp + cn + cq
+
+  # Regression
+  subcomponent_self_efficacy_hope ~ component_caring_families_and_relationships + 
+    component_cultural_identity +
+    personal_safety +
+    opportunities_for_community_involvement + 
+    race_latinx + race_nh_asian + race_nh_black + race_nh_twoormor + race_nh_aian + race_nh_other + race_nh_nhpi + race_nh_swana +
+    cishet_lgbtqia +
+    unhoused +
+    perc_below_200_fpl +
+    sparks 
+'
+fit_2i <- sem(model_2i, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+
+sem_output_2i <- get_sem_results(fit_2i) %>% 
+  mutate(model_name="2i") %>%
+  select(model_name, everything())
+```
+
+```{r}
+# Compile all the model results into a standard data frame
+all_results <- as.data.frame(rbind(sem_output_2f,sem_output_2f.1,sem_output_2f.2,sem_output_2f.3,sem_output_2f.4,sem_output_2f.5,sem_output_2f.6,sem_output_2f.7))
+```
+
+
+## Create postgres table for 1-1j, 2-2f
 ```{r, include=FALSE, echo=FALSE}
 # Compile all the model results into a standard data frame
 all_results <- as.data.frame(rbind(sem_output_1,sem_output_1a,sem_output_1b,sem_output_1c,sem_output_1d,sem_output_1e,sem_output_1f,sem_output_1g,sem_output_1h,sem_output_1i,sem_output_1j,sem_output_2,sem_output_2a,sem_output_2b,sem_output_2c,sem_output_2d,sem_output_2e,sem_output_2f))
