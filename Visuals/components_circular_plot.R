@@ -7,13 +7,15 @@ library(tidyverse)
 library(stringr)
 library(extrafont)
 library(showtext)
+library(ggtext)
+library(ggchicklet)
 # library(geofacet)
 # # install.packages("geofacet")
 
 # connect to postgres and source functions
 source("W:\\RDA Team\\R\\credentials_source.R")
 
-con <- connect_to_db("bold_vision")
+con <- connect_to_db_updated("bold_vision")
 
 # pulling in data for each demographic
 df_total <- dbGetQuery(con, "SELECT * 
@@ -130,6 +132,7 @@ font_add(family = "Manifold CF", regular = "W:/Project/OSI/Bold Vision/BV 2021/D
 font_add(family = "HelveticaNeueLTStdMdCn", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Helvetica Neue LT Std/HelveticaNeueLTStd-MdCn.otf")
 font_add(family = "HelveticaNeueLTStdHvCn", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Helvetica Neue LT Std/HelveticaNeueLTStd-HvCn.otf")
 font_add(family = "HelveticaNeueLTStdMdCnO", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Helvetica Neue LT Std/HelveticaNeueLTStd-MdCnO.otf")
+font_add(family = "HelveticaNeueLTStdMd", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Helvetica Neue LT Std/HelveticaNeueLTStd-Md.otf")
 
 
 # font_import()
@@ -200,19 +203,20 @@ label_data$hjust<-ifelse( angle < -90, 1, 0)
 label_data$angle<-ifelse(angle < -90, angle+180, angle)
 # ----- ------------------------------------------- ---- #
 
-ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
+p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
   geom_bar(aes(fill=avg_adjusted),stat = "identity", 
            # position = "dodge2",
-           alpha=.9, show.legend=TRUE) +  
+           alpha=1, show.legend=TRUE) +  
   # scale_fill_gradient(low="#FDDFF3",high="#F75EC1") +
-  scale_fill_gradientn("Lowest to Highest Freedom From Psychological Distress",
-  colours=c("#FDDFF3","#FA9EDA","#F97ECD","#F75EC1"),
-  labels=c("Lowest","","Highest")
+  scale_fill_gradientn("Freedom From Psychological Distress",
+  colours=c("#FDDFF3","#FA9EDA","#F97ECD","#F75EC1")
+  ,
+  labels=c("<- Lower","","Higher ->")
   )+
   # Make the guide for the fill discrete
   guides(
     fill = guide_colorsteps(
-      barwidth = 15, barheight = .5, title.position = "top", title.hjust = .5
+      barwidth = 15, barheight = .5, title.position = "top", title.hjust = .00
     )
   ) +
   # scale_fill_manual(values = c(
@@ -230,17 +234,20 @@ ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
   xlab("")+
   # Add labels
   labs(
-    title = "\nYouth Vary in How They Are Thriving in Their Mental Health",
-    subtitle = paste(
-      "\nPredicted average level of freedom from psychological distress by youth identities.\n",
-      "LGBTQIA+, Asian, systems impacted, and cisgender woman/girl youth", 
-      "experience the most significant differences in freedom from psychological distress.",
+    title = "Average Predicted <span style ='color: #F75EC1;'>Freedom from Psychological Distress </span>",
+    subtitle = paste
+      ("\nLA County youth vary in how they are thriving emotionally. LGBTQIA+, systems",
+      "impacted, cisgender women/girl, and Asian youth experience the most ",
+      "significant differences.",
       sep = "\n"
     ),
     caption = "\nBold Vision, Youth Thriving Survey, 2024.") +
   theme_minimal() +
-  theme(legend.title = element_text(size = 9, colour = "black", family= font_axis_label),
+  theme(legend.title = element_text(hjust = 0.75,size = 12, family= font_axis_label),
+        legend.text = element_text(hjust = 0.5,size = 12, family= font_axis_label),
         legend.position = "bottom", # no legend title
+        legend.margin=margin(0,0,0,0),
+        legend.box.margin=margin(-2,-2,-2,-2),
         # define style for axis text
         axis.text.y=element_blank(),
         # axis.text.y = element_text(size = 9, colour = "black", family= font_axis_label, face = "bold"),
@@ -249,27 +256,33 @@ ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
         axis.title.x=element_blank(),
         # axis.title.x = element_text(size = 12, colour = "black", family = font_axis_label, face = "bold"),
         # define style for title and caption
-        plot.caption = element_text(hjust = 0.5, size = 10, colour = "black", family = font_caption, face = "plain"),
-        # plot.title = element_text(hjust = 0.0, size = 18, colour = "black", family = font_title, face = "bold"),
+        plot.caption = element_text(hjust = 0.0, size = 12, colour = "black", family = font_caption, face = "plain"),
         plot.subtitle = 
-          element_text(hjust = 0.05, size = 12, colour = "black", family = font_title), 
+          element_text(hjust = 0.0, size = 14, family = font_subtitle), 
         plot.title = 
-          element_text(hjust = 0.05, size = 16, colour = "black", family = font_title), 
+          element_markdown(hjust = 0.0, size = 20, family = font_title, lineheight=1)
+        # ,
+        #   element_text(hjust = 0.0, size = 20, colour = "black", family = font_title)
+        , 
         # grid line style
         panel.grid = element_blank(),
         # plot.margin = unit(rep(-1,4), "cm")  
+        # plot.margin=margin(0,0,0,0)
         ) + 
   coord_polar() +
   # Add the labels, using the label_data dataframe that we have created before
-  geom_text(data=label_data, aes(x=id, y=avg_adjusted+.05, label=youth_label, hjust=hjust), color="black", family=font_axis_label,alpha=0.6, size=4, angle= label_data$angle, inherit.aes = FALSE ) 
+  geom_text(data=label_data, aes(x=id, y=avg_adjusted+.03, label=youth_label, hjust=hjust), color="black", family=font_axis_label,alpha=0.6, size=5, angle= label_data$angle, inherit.aes = FALSE ) 
 
 
+showtext_opts(dpi=300)
 
-p
 ggsave(plot=p, 
-       file="W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/Component_Summary_component.png",
+       file="W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/Strong Minds/Component_Summary.png",
        units = c("in"),  width = 8, height = 8)
 
+ggsave(plot=p, 
+       file="W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/Strong Minds/Component_Summary.pdf",
+       units = c("in"),  width = 8, height = 8)
 
 
 # ----- Saving old code
