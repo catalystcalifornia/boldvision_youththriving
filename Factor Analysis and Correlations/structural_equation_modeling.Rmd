@@ -111,6 +111,14 @@ for (col in columns_to_reverse) {
 }
 ```
 
+```{r}
+# Updating column names of small_svy_data for readability and understandability
+test <- small_svy_dd %>%
+  select(-c(variable_category)) %>%
+  rename(subcomponent_name = variable_name, 
+         component_name = response_domain)
+```
+
 ```{r, include=FALSE}
 # Create df svy_data, which contains all the columns of raw_survey_data, but the matching columns from small_svy_data are used instead.
 
