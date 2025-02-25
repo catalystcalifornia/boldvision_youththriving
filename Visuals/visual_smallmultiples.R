@@ -10,7 +10,7 @@ library(dplyr)
 library(data.table)
 library(sf)
 library(ggplot2)
-library(RPostgreSQL)
+library(RPostgres)
 library(formattable)
 library(svglite)
 library(stringr)
@@ -136,7 +136,7 @@ tables <- c("response_analysis_per_race", "response_analysis_per_bipoc",
 # Running function
 df_ex <- fx_create_df(con, tables, "Vibrant Communities", "ds", "tot_freq_vibrant_community") 
 
-View(df_ex) #check example table, does everything look like it is working okay? 
+# View(df_ex) #check example table, does everything look like it is working okay? 
 
 ####STEP 4: Create a function to produce small multiple visuals from the df just produced####
 
@@ -147,12 +147,12 @@ fx_vis_smallmultiples <- function(df, title_text) {
   facet_wrap(~ youth_label, scales = "free_y", nrow = 2) +  # Create small multiples
   #bar labels
   geom_text(data = df,
-            aes(label = paste0(round(rate, digits = 1), "%")),
-            size = 4,
+            aes(label = paste0(round(rate, digits = 0), "%")),
+            size = 3.2,
             stat="identity", colour = "black",
             fontface = "bold", family=font_bar_label) +  
   theme_minimal() +
-  labs(title = paste(str_wrap(title_text, whitespace_only = TRUE, width = 75), collapse = "\n"),
+  labs(title = paste(str_wrap(title_text, whitespace_only = TRUE, width = 65), collapse = "\n"),
        x = "",  #"paste(str_wrap("Youth Thriving Survey Responses", whitespace_only = TRUE, width = 95), collapse = "\n")",
        y = "",
        fill = "Youth Thriving Survey Responses:",  # Legend title
@@ -160,10 +160,10 @@ fx_vis_smallmultiples <- function(df, title_text) {
                                       unique(df$sub_question), ".\n",
                                       " Component: ", unique(df$response_domain), ",\n",
                                       " Subcomponent: ", unique(df$variable_name), ".\n",
-                                      " Data Source: Bold Vision Youth Thriving Survey, 2024."),
+                                      " Data Source: Catalyst California calculations of Bold Vision Youth Thriving Survey, 2024."),
                                whitespace_only = TRUE, width = 165), collapse = "\n")) +
   # Define custom BV colors 
-  scale_fill_manual(values = c(yellow, pink, dark_pink, orange)) + 
+  scale_fill_manual(values = c(yellow, pink, dark_pink, orange, dark_green)) + 
   theme(legend.position = "bottom",  # Show legend on the right
      # remove axis text
      axis.text.x = element_blank(), 
@@ -189,8 +189,8 @@ fx_vis_smallmultiples <- function(df, title_text) {
 
 
 ####Step 5: Run function to create visual ####
-fx_vis_smallmultiples(df = df_ex, 
-                      title_text = 'Unhoused youth are least likely to report access to Libraries')
+# fx_vis_smallmultiples(df = df_ex, 
+#                       title_text = 'Unhoused youth are least likely to report access to Libraries')
 #See example here: W:\Project\OSI\Bold Vision\Youth Thriving Survey\Deliverables\Vibrant Communities 
 
 ###Step 6: Close database connection ####
