@@ -9,7 +9,7 @@ library(extrafont)
 library(showtext)
 library(ggtext)
 library(ggchicklet)
-# library(RPostgreSQL)
+library(RPostgreSQL)
 # library(geofacet)
 # # install.packages("geofacet")
 
@@ -395,6 +395,118 @@ ggsave(plot=p,
 
 ggsave(plot=p, 
        file="W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/Racial Justice, Equity, And Inclusion/Component_Summary_Microaggressions.pdf",
+       units = c("in"),  width = 8, height = 8)
+
+# Step 6: Run circular bar plot for another component -------
+# filter for the component
+df <- df_all %>% filter(component_label=='Caring Families And Relationships')
+
+# factor labels for ordering subgroups
+df$youth_label_factor <- factor(df$youth_label, levels = subgroups)
+
+df <- df %>%
+  arrange(avg_adjusted)
+
+
+# ----- This section prepare a dataframe for labels ---- #
+# add id
+df$id<- seq(1, nrow(df))
+
+# Get the name and the y position of each label
+label_data <- df
+
+# calculate the ANGLE of the labels
+number_of_bar <- nrow(df)
+angle <-  90 - 360 * (label_data$id-0.5) /number_of_bar     # I substract 0.5 because the letter must have the angle of the center of the bars. Not extreme right(1) or extreme left (0)
+
+# calculate the alignment of labels: right or left
+# If I am on the left part of the plot, my labels have currently an angle < -90
+label_data$hjust<-ifelse( angle < -90, 1, 0)
+
+# flip angle BY to make them readable
+label_data$angle<-ifelse(angle < -90, angle+180, angle)
+# ----- ------------------------------------------- ---- #
+
+p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
+  geom_bar(aes(fill=avg_adjusted),stat = "identity", 
+           # position = "dodge2",
+           alpha=1, show.legend=TRUE) +  
+  # scale_fill_gradient(low="#FDDFF3",high="#F75EC1") +
+  scale_fill_gradientn("Caring Families And Relationships",
+                       colours=c("#FFE599","#FFD966","#FFCC33","#FFBF00")
+                       ,
+                       labels=c("<- Lower","","Higher ->")
+  )+
+  # Make the guide for the fill discrete
+  guides(
+    fill = guide_colorsteps(
+      barwidth = 15, barheight = .5, title.position = "top", title.hjust = .5
+    )
+  ) +
+  # scale_fill_manual(values = c(
+  #   "Caring Families And Relationships" = light_green,
+  #   "Freedom From Microaggressions" = light_blue,
+  #   "Self-Efficacy And Hope" = dark_pink,
+  #   "Freedom From Structural Racism" = dark_blue,
+  #   "Freedom From Discrimination"=blue,
+  #   "Cultural Identity" = yellow,
+  #   "Freedom From Psychological Distress" = pink,
+  #   "Vibrant Communities" = dark_green
+  # )) +
+  ylim(-.25,1.3) +
+  ylab("")+
+  xlab("")+
+  # Add labels
+  labs(
+    title = "Average Predicted <span style ='color: #FFBF00;'>Caring Families And Relationships </span>",
+    subtitle = paste
+    ("\nLA County youth vary in the support they have from family, adults,",
+      "and other relationships. Unhoused, systems impacted, and",
+      "undocumented youth and youth of another race are least likely to",
+      "to have caring families and relationships.",
+      sep = "\n"
+    ),
+    caption = "\nCatalyst California's calculations of Bold Vision, Youth Thriving Survey, 2024.") +
+  theme_minimal() +
+  theme(legend.title = element_text(hjust = 0.5,size = 14, family= font_axis_label),
+        legend.text = element_text(hjust = 0.5,size = 14, family= font_axis_label),
+        legend.position = "bottom", # no legend title
+        legend.margin=margin(0,0,0,0),
+        legend.box.margin=margin(-2,-2,-2,-2),
+        # define style for axis text
+        axis.text.y=element_blank(),
+        # axis.text.y = element_text(size = 9, colour = "black", family= font_axis_label, face = "bold"),
+        axis.text.x=element_blank(),
+        # axis.text.x=element_text(size = 11, colour = "black", family = font_axis_label),
+        axis.title.x=element_blank(),
+        # axis.title.x = element_text(size = 12, colour = "black", family = font_axis_label, face = "bold"),
+        # define style for title and caption
+        plot.caption = element_text(hjust = 0.0, size = 11, colour = "black", family = font_caption, face = "plain"),
+        plot.subtitle = 
+          element_text(hjust = 0.0, size = 14, family = font_subtitle), 
+        plot.title = 
+          element_markdown(hjust = 0.0, size = 20, family = font_title, lineheight=1)
+        # ,
+        #   element_text(hjust = 0.0, size = 20, colour = "black", family = font_title)
+        , 
+        # grid line style
+        panel.grid = element_blank(),
+        # plot.margin = unit(rep(-1,4), "cm")  
+        # plot.margin=margin(0,0,0,0)
+  ) + 
+  coord_polar() +
+  # Add the labels, using the label_data dataframe that we have created before
+  geom_text(data=label_data, aes(x=id, y=avg_adjusted+.02, label=youth_label, hjust=hjust), color="black", family=font_axis_label,alpha=0.6, size=4, angle= label_data$angle, inherit.aes = FALSE ) 
+
+
+showtext_opts(dpi=300)
+
+ggsave(plot=p, 
+       file="W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/Caring Families And Relationships/circular_plot_caring_families_and_relationships.png",
+       units = c("in"),  width = 8, height = 8)
+
+ggsave(plot=p, 
+       file="W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/Caring Families And Relationships/circular_plot_caring_families_and_relationships.pdf",
        units = c("in"),  width = 8, height = 8)
 
 # # ----- Saving old code
