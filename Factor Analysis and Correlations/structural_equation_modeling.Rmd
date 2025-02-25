@@ -1,0 +1,971 @@
+---
+title: "Structural Equation Modeling for Bold Vision Youth Thriving Survey"
+author: "Alicia Vo"
+date: "2025-02-10"
+output: html_document
+---
+
+```{r, include=FALSE}
+# Step 0: Data Preparation
+
+options(scipen=999) # Turn off scientific notation
+options(width = 120) # Use wider boxes in the html output
+
+library(tidyverse)
+library(RPostgreSQL)
+library(lavaan)
+library(psych)
+
+# Used to get RDA function for adding table comments
+source("W:\\RDA Team\\R\\Github\\RDA Functions\\main\\RDA-Functions\\Utility_Functions.R")
+
+# Connect to postgres
+source("W:\\RDA Team\\R\\credentials_source.R")
+con <- connect_to_db("bold_vision")
+
+# Pull in the survey data and data dictionary
+raw_svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
+svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024")
+```
+
+```{r, include=FALSE}
+# Filter svy_dd and raw_svy_data to only contain the likert questions needed for the factor analysis
+
+# In the data dictionary, variable_name = subcomponent and response_domain = component
+subcomponent_list <- c("Positive Emotions", "Self-Efficacy", "Hope For The Future", "Growth Mindset", "Psychological Distress", "Sparks", "Relationships/Support", "Freedom To Explore The Self", "Connectedness", "Critical Action", "Safe Access To Public Spaces For Social, Cultural, And Literary Opportunities", "Cultural Identity And Connection", "Experiences Of Racism And Discrimination", "Microaggressions", "Structural Racism", "Personal Safety")
+
+component_list <- c("Strong Minds", "Positive Identity And Self-Worth", "Caring Families And Relationships", "Vibrant Communities", "Cultural Identity", "Racial Justice, Equity, And Inclusion", "Safety")
+
+# small_svy_dd only contains the likert questions needed for the factor analysis
+small_svy_dd <- svy_dd %>%
+  filter(response_domain %in% component_list & !(is.na(likert_type)))
+
+# small_svy_data only contains the columns of likert questions needed for the factor analysis
+small_svy_data <- raw_svy_data %>%
+  select(response_id, all_of(small_svy_dd$variable))
+```
+
+```{r, include=FALSE}
+# In the survey data, change the responses of "Don't wish to answer", "Not sure", "Not Sure", "Does not apply to me", "Don't know" into NA values. Use this na_responses if trying to replicate results from Step 1. Here, we recode the "Don't know" responses into NA values. 
+#na_responses <- c("Don't wish to answer", "Not sure", "Not Sure", "Does not apply to me", "Don't know")
+
+# In the survey data, change the responses of "Don't wish to answer", "Not sure", "Not Sure", "Does not apply to me" into NA values. Use this na_responses if trying to replicate results from Step 2. Here, we don't recode the "Don't know" responses into NA values. Note that the "Don't know" responses are only applicable to the "Vibrant Communities" questions in small_svy_dd.
+na_responses <- c("Don't wish to answer", "Not sure", "Not Sure", "Does not apply to me")
+
+# Iterate over each column in small_svy_data
+for (col in names(small_svy_data)) {
+  # Get the corresponding row in the data dictionary
+  dd_row <- small_svy_dd[small_svy_dd$variable == col, ]
+  
+  if (nrow(dd_row) > 0) { # Ensure there is a matching dictionary entry
+    # Get response_# columns
+    valid_responses <- dd_row[1, grepl("^response_[0-9]+$", names(dd_row))]
+    valid_responses <- valid_responses[!is.na(valid_responses)]  # Exclude NAs explicitly
+    # Create response_map only if valid responses exist
+    if (length(valid_responses) > 0) {
+      response_map <- setNames(as.list(valid_responses), seq_along(valid_responses))
+      # Replace values in the column based on the response map
+      small_svy_data[[col]] <- unlist(lapply(small_svy_data[[col]], function(x) {
+        if (!is.na(x) && response_map[[as.character(x)]] %in% na_responses) {
+          NA
+        } else {
+          x
+        }
+      }))
+    }
+  }
+}
+```
+
+```{r, include=FALSE}
+# This chunk is needed for running factor score predictions in Step 2. For component "Vibrant Communities", we are recoding the "Don't know" responses to "No", instead of NA. There are too many "Don't know" responses for this component, causing us to have too many NA values, and thus, too many incomplete rows in predicted_results.
+
+small_svy_data <- small_svy_data %>%
+  mutate(across(c(do, dp, dq, dr, ds, dt, du, dv), ~ ifelse(. == 3, 1, .)))
+```
+
+```{r, include=FALSE}
+# Reverse the likert scales in the survey data for the scales that need reversing
+
+# Identify columns to reverse
+columns_to_reverse <- small_svy_dd$variable[grep("_rev$", small_svy_dd$likert_type)]
+
+# q10 is a special case of scale reversal; swap values 1 and 2
+columns_to_reverse <- columns_to_reverse[columns_to_reverse != "q10"]
+small_svy_data$q10 <- ifelse(
+  is.na(small_svy_data$q10), 
+  NA, 
+  ifelse(small_svy_data$q10 == 1, 2, 
+         ifelse(small_svy_data$q10 == 2, 1, small_svy_data$q10))
+)
+
+# Loop through each column to reverse
+for (col in columns_to_reverse) {
+  # Get the maximum scale value from the 'likert' column
+  scale_max <- as.numeric(sub("pt_scale", "", small_svy_dd$likert[small_svy_dd$variable == col]))
+  # Reverse the scale in small_svy_data
+  small_svy_data[[col]] <- ifelse(is.na(small_svy_data[[col]]),
+                                NA,
+                                scale_max + 1 - small_svy_data[[col]])
+}
+```
+
+```{r, include=FALSE}
+# Create df svy_data, which contains all the columns of raw_survey_data, but the matching columns from small_svy_data are used instead.
+
+# Get the common columns between raw_svy_data and small_svy_data, except for response_id
+matching_cols <- intersect(names(raw_svy_data), names(small_svy_data))
+matching_cols <- matching_cols[!matching_cols %in% c("response_id")]
+
+# Replace matching columns in raw_svy_data with those from small_svy_data to make the new df, svy_data
+svy_data <- raw_svy_data %>%
+  select(-all_of(matching_cols)) %>% # Drop matching columns
+  left_join(small_svy_data, by = "response_id") # Re-add them from small_svy_data
+```
+
+```{r, include=FALSE}
+# Get demographic data from other tables
+
+demographics_binary_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.demographics_binary_data")
+
+gender_sexuality_data <- dbGetQuery(con, "SELECT response_id, cishet_lgbtqia FROM youth_thriving.gender_sexuality_data")
+
+race_ethnicity_data <- dbGetQuery(con, "SELECT response_id, acs_race FROM youth_thriving.race_ethnicity_data")
+# Create binary columns for each unique acs_race value
+race_ethnicity_acs <- race_ethnicity_data %>%
+  mutate(value = 1) %>%  # Create a helper column for pivoting
+  pivot_wider(names_from = acs_race, values_from = value, values_fill = 0)
+
+poverty_rates <- dbGetQuery(con, "SELECT response_id, perc_below_100_fpl, perc_below_200_fpl FROM youth_thriving.poverty_rate_data")  
+poverty_rates <- poverty_rates %>%
+  mutate(high_poverty_area = ifelse(perc_below_200_fpl>=26.0,1,0))
+```
+
+```{r, include=FALSE}
+# Merge all data frames into svy_data using response_id
+svy_data <- svy_data %>%
+  left_join(demographics_binary_data, by = "response_id") %>%
+  left_join(gender_sexuality_data, by = "response_id") %>%
+  left_join(race_ethnicity_acs, by = "response_id") %>%
+  left_join(poverty_rates, by = "response_id")
+
+# Create binary columns for SPAs
+svy_data <- svy_data %>%
+  mutate(org_sp_an = as.character(org_sp_an)) %>%  # Ensure it's character to work with pivoting
+  filter(!is.na(org_sp_an)) %>%  # Remove NA values, 31 observations
+  mutate(value = 1) %>%  # Helper column for pivoting
+  pivot_wider(names_from = org_sp_an, values_from = value, 
+              names_prefix = "spa_", values_fill = 0)
+
+# Create new columns, which will be the SEM variables
+svy_data <- svy_data %>%
+  mutate(
+      # Create binary column is_adult
+      is_adult = ifelse(age_minor_adult == 1, 0, 
+                        ifelse(age_minor_adult == 2, 1, NA)),
+      # Create binary column personal_safety. Note that q19 has a reverse frequency scale.
+      personal_safety = ifelse(q19 == 5, 1, 
+                       ifelse(q19 %in% c(1,2,3,4), 0, NA)), 
+      # Create binary column sparks. Note that q10 has a reverse frequency scale.
+      sparks = ifelse(q10 == 1, 0, 
+                     ifelse(q10 == 2, 1, NA)),
+      # Create binary column opportunities_for_community_involvement
+      opportunities_for_community_involvement = ifelse(dm == 1, 0, 
+                         ifelse(dm %in% c(2,3,4), 1, NA)),
+      # Create new column growth_mindset (change variables cr and cs to be binary and take the mean) 
+      cr_binary = ifelse(cr == 1, 0, 
+                         ifelse(cr %in% c(2,3,4), 1, NA)),
+      cs_binary = ifelse(cs == 1, 0, 
+                         ifelse(cs %in% c(2,3,4), 1, NA)),
+      growth_mindset= rowMeans(across(c(cr_binary, cs_binary)), na.rm = TRUE)
+  )
+```
+
+```{r QA Check Data Prep, eval=FALSE, include=FALSE}
+# QA: Check that growth_mindset is calculated correctly
+# test <- svy_data %>% select(c(cr, cs, growth_mindset))
+
+# QA: Check that personal_safety was created correctly
+# test <- svy_data %>% 
+#   select(c("response_id","q19", "personal_safety")) %>% 
+#   left_join(raw_svy_data[,c("response_id","q19")], by="response_id") %>% 
+#   select(-c("response_id")) %>% 
+#   unique(.)
+# table(svy_data$personal_safety)
+#    0    1 
+# 2777  559 
+
+# QA: Check that sparks was created correctly
+# test <- svy_data %>% 
+#   select(c(response_id, q10, sparks)) %>% 
+#   left_join(raw_svy_data[,c("response_id","q10")], by="response_id")
+# unique(test[,c("q10.x", "sparks","q10.y")])
+
+# QA: Check that opportunities_for_community_involvement was created correctly
+# test <- svy_data %>%
+#   select(c(response_id, dm, opportunities_for_community_involvement)) %>%
+#   left_join(raw_svy_data[,c("response_id","dm")], by="response_id")
+# unique(test[,c("dm.x", "opportunities_for_community_involvement","dm.y")])
+
+# QA: Check that opportunities_for_community_involvement was created correctly
+# test <- svy_data %>%
+#   select(c(cr, cr_binary, cs, cs_binary, growth_mindset))  %>%
+#   unique(.)
+# table(svy_data$growth_mindset)
+  # 0  0.5    1 
+  # 20  120 3256 
+
+# QA: Check that race dummy columns were created correctly
+# test <- race_ethnicity_acs%>%
+#  left_join(race_ethnicity_data, by = "response_id")
+
+# QA: Check on missing data
+# test <- svy_data %>% summarise_all(~sum(is.na(.)))
+```
+
+# Step 3: Regression Analysis
+```{r, include=FALSE}
+# Function that places fit measures output into a dataframe. Does not use robust standard errors because it takes too long to run.
+get_fit_measures <- function(fitted_model){
+  # Convert fitMeasures output into a tidy data frame
+  fit_measures_output <- data.frame(
+    measure = c("cfi", "tli", "rmsea", "srmr"),
+    value = fitMeasures(fitted_model, c("cfi", "tli", "rmsea", "srmr"), fm.args = list(robust = FALSE))
+  )
+  
+  # Use pivot_wider to reshape the data
+  fit_measures_output <- fit_measures_output %>%
+    pivot_wider(names_from = measure, values_from = value)
+  
+  # Count the number of fit measures that meet the criteria
+  fit_measures_output <- fit_measures_output %>%
+    mutate(
+      fit_measures_met = rowSums(cbind(
+        cfi > 0.95,
+        tli > 0.95,
+        rmsea < 0.05,
+        srmr < 0.07
+      )),
+      aic = AIC(fitted_model),
+      bic = BIC(fitted_model),
+      r_squared = tail(data.frame(lavInspect(fitted_model, "rsquare")), n=1)[1,1]
+    ) %>%
+    select(r_squared, fit_measures_met, everything())
+  return(fit_measures_output)
+}
+
+# Function that places SEM output into a dataframe. Note that std.lv only standardizes the latent variables.
+get_sem_results <- function(fitted_model){
+  sem_output <- parameterEstimates(fitted_model, standardized = TRUE) %>%
+  filter(op %in% c("~")) %>% # Filter for the regression results
+  mutate(p_is_significant = ifelse(round(pvalue,2)<0.05,TRUE,FALSE)) %>%
+  mutate(across(everything())) %>%  
+  bind_cols(get_fit_measures(fitted_model)) %>%  
+  select(c(lhs,rhs,std.lv,p_is_significant,pvalue,bic,aic,r_squared,fit_measures_met,cfi,tli,rmsea,srmr)) %>%
+  arrange(desc(std.lv)) # Rearrange the dataframe so that std.lv values are in descending order
+  return(sem_output)
+}
+```
+
+## Dependent variable: subcomponent_psychological_distress
+### Model 1: all variables
+Reference groups: race is nh_white, spa is spa_1
+```{r Model 1: all variables, echo=FALSE, warning = FALSE}
+model_1 <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds
+  subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx
+  subcomponent_experiences_of_racism_and_discrimination =~ ei + em + eh + eg
+  subcomponent_self_efficacy_hope =~ co + cp + cn + cq
+  
+  # Regression
+  subcomponent_psychological_distress ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    component_vibrant_communities + 
+    subcomponent_experiences_of_racism_and_discrimination + 
+    personal_safety + 
+    growth_mindset + 
+    opportunities_for_community_involvement +
+    latino + nh_asian + nh_black + nh_twoormor + nh_aian +nh_other + nh_pacisl +
+    cishet_lgbtqia +
+    systems_impacted +
+    unhoused +
+    is_adult +
+    spa_2 + spa_3 + spa_4 + spa_5 + spa_6 + spa_7 + spa_8 +
+    suspended + 
+    high_poverty_area +
+    undocumented +
+    disconnected +
+    sparks + 
+    arrested +
+    subcomponent_self_efficacy_hope
+'
+fit_1 <- sem(model_1, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+
+sem_output_1 <- get_sem_results(fit_1) %>% 
+  mutate(model_name="1") %>%
+  select(model_name, everything())
+```
+
+```{r, eval = FALSE, include=FALSE}
+# QA Check on FIML: Number of observations used = 3444/3444
+# summary(fit_1, standardized = TRUE)
+```
+
+### Model 1a: running only (sub)components
+Analysis: subcomponent_experiences_of_racism_and_discrimination is not statistically significant. When comparing the coefficient sizes, it's interesting to see how the effects are ordered from greatest to least by individual racism > family > cultural group > local community. As if, as the "group" or "category" of population increases in size, the effect on the individual decreases.
+```{r Model 1a: only (sub)components, warning = FALSE, echo = FALSE}
+model_1a <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds
+  subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx
+  subcomponent_experiences_of_racism_and_discrimination =~ ei + em + eh + eg
+  
+  # Regression
+  subcomponent_psychological_distress ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    component_vibrant_communities + 
+    subcomponent_experiences_of_racism_and_discrimination
+'
+fit_1a <- sem(model_1a, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+
+sem_output_1a <- get_sem_results(fit_1a) %>% 
+  mutate(model_name="1a") %>%
+  select(model_name, everything())
+```
+
+```{r, eval = FALSE, include=FALSE}
+# QA Check: Looking at the cases that were ignored (per the lavaan warning), it seems like there's just too much missing data so FIML doesn't work for these cases.
+# test <- svy_data[c(682, 812, 1008, 1375, 1529, 1548, 1656, 2145, 2303, 2378, 2712, 2927, 2975, 3073, 3077, 3177), ]
+```
+
+### Model 1b: adding non-imputed components/observed variables; removing subcomponent_experiences_of_racism_and_discrimination
+Analysis: subcomponent_microaggressions and personal_safety have the largest coefficients. opportunities_for_community_involvement is not statistically significant. growth_mindset is almost statistically significant. 
+```{r Model 1b: adding non-imputed components/observed variables; removing subcomponent_experiences_of_racism_and_discrimination, echo=FALSE, warning = FALSE}
+model_1b <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds
+  subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx
+
+  # Regression
+  subcomponent_psychological_distress ~ component_caring_families_and_relationships +
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    component_vibrant_communities + 
+    personal_safety +
+    growth_mindset +
+    opportunities_for_community_involvement
+'
+fit_1b <- sem(model_1b, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+
+sem_output_1b <- get_sem_results(fit_1b) %>% 
+  mutate(model_name="1b") %>%
+  select(model_name, everything())
+``` 
+
+### Model 1c: adding some demographics and subcomponent_experiences_of_racism_and_discrimination back in; removing opportunities_for_community_involvement
+Analysis: Being LGBTQIA+, Asian, and systems impacted have the largest negative impact on psychological well-being. Growth mindset is not statistically significant, yet the narrative around the importance of growth mindset is quite prevalent. The strength of this narrative aligns with America's infatuation with rugged individualism and "pulling yourself up by your own bootstraps." These results suggest that reducing prejudice/discrimination and enacting systems changes would actually have a larger effect on positively influencing youth well-being outcomes. subcomponent_experiences_of_racism_and_discrimination is still not statistically significant.
+
+Systems-impacted, Q24. At any point have you: Lived in foster care, spent time in juvenile hall or probation camp, spent time in jail or prison, lived in a group home or residential program, or lived with relatives who were responsible for you legally?
+```{r Model 1c: adding some demographics and subcomponent_experiences_of_racism_and_discrimination back in; removing opportunities_for_community_involvement, echo=FALSE, warning = FALSE}
+model_1c <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds
+  subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx
+  subcomponent_experiences_of_racism_and_discrimination =~ ei + em + eh + eg
+  
+  # Regression
+  subcomponent_psychological_distress ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    component_vibrant_communities + 
+    subcomponent_experiences_of_racism_and_discrimination + 
+    personal_safety +
+    growth_mindset +
+    latino + nh_asian + nh_black + nh_twoormor + nh_aian +nh_other + nh_pacisl +
+    cishet_lgbtqia +
+    systems_impacted +
+    is_adult +
+    high_poverty_area +
+    undocumented
+'
+fit_1c <- sem(model_1c, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+ 
+sem_output_1c <- get_sem_results(fit_1c) %>% 
+  mutate(model_name="1c") %>%
+  select(model_name, everything())
+```  
+
+### Model 1d: adding unhoused; removing growth_mindset and subcomponent_experiences_of_racism_and_discrimination
+Analysis: unhoused is not statistically significant. undocumented is almost statistically significant.
+```{r Model 1d: adding unhoused; removing growth_mindset and subcomponent_experiences_of_racism_and_discrimination, echo=FALSE, warning = FALSE}
+model_1d <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds
+  subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx
+
+  # Regression
+  subcomponent_psychological_distress ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    component_vibrant_communities + 
+    personal_safety +
+    latino + nh_asian + nh_black + nh_twoormor + nh_aian +nh_other + nh_pacisl +
+    cishet_lgbtqia +
+    systems_impacted +
+    unhoused +
+    is_adult +
+    high_poverty_area +
+    undocumented
+'
+fit_1d <- sem(model_1d, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+ 
+sem_output_1d <- get_sem_results(fit_1d) %>% 
+  mutate(model_name="1d") %>%
+  select(model_name, everything())
+```   
+
+### Model 1e: adding suspended; removing unhoused demographic variable
+Analysis: suspended is not statistically significant.
+```{r Model 1e: adding suspended; removing unhoused demographic variable, echo=FALSE, warning = FALSE}
+model_1e <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds
+  subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx
+  subcomponent_experiences_of_racism_and_discrimination =~ ei + em + eh + eg
+  
+  # Regression
+  subcomponent_psychological_distress ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    component_vibrant_communities + 
+    subcomponent_experiences_of_racism_and_discrimination + 
+    personal_safety +
+    latino + nh_asian + nh_black + nh_twoormor + nh_aian +nh_other + nh_pacisl +
+    cishet_lgbtqia +
+    systems_impacted +
+    is_adult +
+    suspended +
+    high_poverty_area +
+    undocumented
+'
+fit_1e <- sem(model_1e, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+ 
+sem_output_1e <- get_sem_results(fit_1e) %>% 
+  mutate(model_name="1e") %>%
+  select(model_name, everything())
+```   
+
+### Model 1f: adding disconnected; removing suspended
+Analysis: disconnected is not statistically significant.
+```{r Model 1f: adding disconnected; removing suspended, warning = FALSE, echo=FALSE}
+model_1f <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds
+  subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx
+  subcomponent_experiences_of_racism_and_discrimination =~ ei + em + eh + eg
+  
+  # Regression
+  subcomponent_psychological_distress ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    component_vibrant_communities + 
+    subcomponent_experiences_of_racism_and_discrimination + 
+    personal_safety +
+    latino + nh_asian + nh_black + nh_twoormor + nh_aian +nh_other + nh_pacisl +
+    cishet_lgbtqia +
+    systems_impacted +
+    is_adult +
+    high_poverty_area +
+    undocumented +
+    disconnected
+'
+fit_1f <- sem(model_1f, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+ 
+sem_output_1f <- get_sem_results(fit_1f) %>% 
+  mutate(model_name="1f") %>%
+  select(model_name, everything())
+```   
+ 
+### Model 1g: adding arrested; removing disconnected
+Analysis: arrested is not statistically significant.
+```{r Model 1g: adding arrested; removing disconnected, warning=FALSE, echo=FALSE}
+model_1g <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds
+  subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx
+  subcomponent_experiences_of_racism_and_discrimination =~ ei + em + eh + eg
+  
+  # Regression
+  subcomponent_psychological_distress ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    component_vibrant_communities + 
+    subcomponent_experiences_of_racism_and_discrimination + 
+    personal_safety +
+    latino + nh_asian + nh_black + nh_twoormor + nh_aian +nh_other + nh_pacisl +
+    cishet_lgbtqia +
+    systems_impacted +
+    is_adult +
+    high_poverty_area +
+    undocumented +
+    arrested
+'
+fit_1g <- sem(model_1g, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+ 
+sem_output_1g <- get_sem_results(fit_1g) %>% 
+  mutate(model_name="1g") %>%
+  select(model_name, everything())
+```   
+
+### Model 1h: adding sparks; removing arrested
+Analysis: sparks is statistically significant and the largest positive coefficient. undocumented is not statistically significant.
+```{r Model 1h: adding sparks; removing arrested, warning=FALSE, echo=FALSE}
+model_1h <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds
+  subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx
+
+  # Regression
+  subcomponent_psychological_distress ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    component_vibrant_communities + 
+    personal_safety +
+    latino + nh_asian + nh_black + nh_twoormor + nh_aian +nh_other + nh_pacisl +
+    cishet_lgbtqia +
+    systems_impacted +
+    is_adult +
+    high_poverty_area +
+    undocumented +
+    sparks
+'
+fit_1h <- sem(model_1h, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+ 
+sem_output_1h <- get_sem_results(fit_1h) %>% 
+  mutate(model_name="1h") %>%
+  select(model_name, everything())
+```
+ 
+### Model 1i: add spa; removing high_poverty_area and undocumented
+Analysis: Only spa_6 (South) is statistically significant. Recall that the reference group is spa_1 (Antelope Valley).
+```{r Model 1i: add spa; removing high_poverty_area and undocumented, warning=FALSE, echo=FALSE}
+model_1i <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds
+  subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx
+
+  # Regression
+  subcomponent_psychological_distress ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    component_vibrant_communities + 
+    personal_safety +
+    latino + nh_asian + nh_black + nh_twoormor + nh_aian +nh_other + nh_pacisl +
+    cishet_lgbtqia +
+    systems_impacted +
+    is_adult +
+    spa_2 + spa_3 + spa_4 + spa_5 + spa_6 + spa_7 + spa_8 +
+    sparks
+'
+fit_1i <- sem(model_1i, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+ 
+sem_output_1i <- get_sem_results(fit_1i) %>% 
+  mutate(model_name="1i") %>%
+  select(model_name, everything())
+```
+ 
+### Model 1j: add high_poverty_area back in; remove spa
+Analysis: Having a spark, experiencing less microaggressions, and feeling safe are associated with more freedom from psychological distress. Being LGBTQIA+, Asian, and systems-impacted is associated with more psychological distress.
+
+Model Reasoning: All (sub)components are included in the model except for subcomponent_experiences_of_racism_and_discrimination, because it is not statistically significant in any of the tested models. personal_safety is the only individual score item that is statistically significant, so it is included. Demographic variables that are statistically significant are included. Demographic variables that are not statistically significant are included if they are useful control variables (e.g. is_adult, high_poverty_area) or they must be included in the model in order to accurately interpret the categorical variable's coefficients (e.g. nh_twoormor)
+```{r Model 1j: add high_poverty_area back in; remove spa, warning=FALSE, echo=FALSE}
+model_1j <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds
+  subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx
+
+  # Regression
+  subcomponent_psychological_distress ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    component_vibrant_communities + 
+    personal_safety +
+    latino + nh_asian + nh_black + nh_twoormor + nh_aian +nh_other + nh_pacisl +
+    cishet_lgbtqia +
+    systems_impacted +
+    is_adult +
+    high_poverty_area +
+    sparks
+'
+fit_1j <- sem(model_1j, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+ 
+sem_output_1j <- get_sem_results(fit_1j) %>% 
+  mutate(model_name="1j") %>%
+  select(model_name, everything())
+```
+
+### Model 1k: adding subcomponent_self_efficacy_hope
+Analysis: The BIC increases, indicating worse model fit compared to model_1j.
+```{r Model 1k: adding subcomponent_self_efficacy_hope, warning=FALSE, echo=FALSE}
+model_1k <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds
+  subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx
+  subcomponent_self_efficacy_hope =~ co + cp + cn + cq
+
+  # Regression
+  subcomponent_psychological_distress ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    component_vibrant_communities + 
+    personal_safety +
+    latino + nh_asian + nh_black + nh_twoormor + nh_aian +nh_other + nh_pacisl +
+    cishet_lgbtqia +
+    systems_impacted +
+    is_adult +
+    high_poverty_area +
+    sparks +
+    subcomponent_self_efficacy_hope
+'
+fit_1k <- sem(model_1k, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+ 
+sem_output_1k <- get_sem_results(fit_1k) %>% 
+  mutate(model_name="1k") %>%
+  select(model_name, everything())
+```
+ 
+```{r, eval = FALSE, include=FALSE}
+spa_list <- unique(svy_data[,c('spa_final_respondent','spa_name_final_respondent')])
+```
+
+```{r QA Check on FIML, eval = FALSE, include=FALSE}
+# QA check on full information maximum likelihood (FIML) for the missing survey data
+
+# No FIML at all                                                          
+# Number of observations used = 2530/3444
+# fit_1a <- sem(model_1, data = svy_data, std.lv = TRUE)
+# summary(fit_1a, standardized = TRUE)
+
+# FIML, but not for the observed independent variables
+# Number of observations used = 3262/3444
+# fit_1b <- sem(model_1, data = svy_data, std.lv = TRUE, missing = "fiml")
+# summary(fit_1b, standardized = TRUE)
+```
+
+### Model 2: all variables
+```{r Model 2: all variables, echo=FALSE, warning = FALSE}
+model_2 <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds
+  subcomponent_self_efficacy_hope =~ co + cp + cn + cq
+  subcomponent_experiences_of_racism_and_discrimination =~ ei + em + eh + eg
+  subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx
+  
+  # Regression
+  subcomponent_self_efficacy_hope ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    component_vibrant_communities + 
+    subcomponent_experiences_of_racism_and_discrimination + 
+    personal_safety + 
+    growth_mindset + 
+    opportunities_for_community_involvement +
+    latino + nh_asian + nh_black + nh_twoormor + nh_aian +nh_other + nh_pacisl +
+    cishet_lgbtqia +
+    systems_impacted +
+    unhoused +
+    is_adult +
+    spa_2 + spa_3 + spa_4 + spa_5 + spa_6 + spa_7 + spa_8 +
+    suspended + 
+    high_poverty_area +
+    undocumented +
+    disconnected +
+    sparks + 
+    arrested +
+    subcomponent_psychological_distress
+'
+fit_2 <- sem(model_2, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+
+sem_output_2 <- get_sem_results(fit_2) %>% 
+  mutate(model_name="2") %>%
+  select(model_name, everything())
+```
+
+### Model 2a: running only (sub)components
+Analysis: component_vibrant_communities and subcomponent_microaggressions are not statistically significant.
+```{r Model 2a: only (sub)components, warning = FALSE, echo = FALSE}
+model_2a <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds
+  subcomponent_self_efficacy_hope =~ co + cp + cn + cq
+  
+  # Regression
+  subcomponent_self_efficacy_hope ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    component_vibrant_communities
+'
+fit_2a <- sem(model_2a, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+
+sem_output_2a <- get_sem_results(fit_2a) %>% 
+  mutate(model_name="2a") %>%
+  select(model_name, everything())
+```
+
+### Model 2b: adding non-imputed components/observed variables
+Analysis: growth_mindset is likely too similar to subcomponent_self_efficacy_hope because the coefficient shouldn't be >1.
+```{r Model 2b: adding non-imputed components/observed variables, warning = FALSE, echo = FALSE}
+model_2b <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds
+  subcomponent_experiences_of_racism_and_discrimination =~ ei + em + eh + eg
+  subcomponent_self_efficacy_hope =~ co + cp + cn + cq
+  
+  # Regression
+  subcomponent_self_efficacy_hope ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    component_vibrant_communities + 
+    subcomponent_experiences_of_racism_and_discrimination +
+    personal_safety +
+    growth_mindset +
+    opportunities_for_community_involvement
+'
+fit_2b <- sem(model_2b, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+
+sem_output_2b <- get_sem_results(fit_2b) %>% 
+  mutate(model_name="2b") %>%
+  select(model_name, everything())
+```
+
+### Model 2c: removing growth_mindset
+Analysis: opportunities_for_community_involvement is now significant. Racism subcomponents are not significant.
+```{r Model 2c: removing growth_mindset, warning = FALSE, echo = FALSE}
+model_2c <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds
+  subcomponent_experiences_of_racism_and_discrimination =~ ei + em + eh + eg
+  subcomponent_self_efficacy_hope =~ co + cp + cn + cq
+  
+  # Regression
+  subcomponent_self_efficacy_hope ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    component_vibrant_communities + 
+    subcomponent_experiences_of_racism_and_discrimination +
+    personal_safety +
+    opportunities_for_community_involvement
+'
+fit_2c <- sem(model_2c, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+
+sem_output_2c <- get_sem_results(fit_2c) %>% 
+  mutate(model_name="2c") %>%
+  select(model_name, everything())
+```
+
+### Model 2d: removing racism subcomponents
+Analysis: BIC decreased substantially.
+```{r Model 2d: removing racism subcomponents, warning = FALSE, echo = FALSE}
+model_2d <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds
+  subcomponent_self_efficacy_hope =~ co + cp + cn + cq
+  
+  # Regression
+  subcomponent_self_efficacy_hope ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    component_vibrant_communities + 
+    personal_safety +
+    opportunities_for_community_involvement
+'
+fit_2d <- sem(model_2d, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+
+sem_output_2d <- get_sem_results(fit_2d) %>% 
+  mutate(model_name="2d") %>%
+  select(model_name, everything())
+```
+
+### Model 2e: adding demographics, removing component_vibrant_communities
+Analysis: BIC decreased. spa_3 (San Gabriel) is statistically significant.
+```{r Model 2e: adding demographics, removing component_vibrant_communities, warning = FALSE, echo = FALSE}
+model_2e <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_self_efficacy_hope =~ co + cp + cn + cq
+  
+  # Regression
+  subcomponent_self_efficacy_hope ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    personal_safety +
+    opportunities_for_community_involvement +
+    latino + nh_asian + nh_black + nh_twoormor + nh_aian +nh_other + nh_pacisl +
+    cishet_lgbtqia +
+    systems_impacted +
+    unhoused +
+    is_adult +
+    spa_2 + spa_3 + spa_4 + spa_5 + spa_6 + spa_7 + spa_8 +
+    suspended + 
+    high_poverty_area +
+    undocumented +
+'
+fit_2e <- sem(model_2e, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+
+sem_output_2e <- get_sem_results(fit_2e) %>% 
+  mutate(model_name="2e") %>%
+  select(model_name, everything())
+```
+
+### Model 2f: removing spa
+Analysis: 
+```{r Model 2f: removing spa, warning = FALSE, echo = FALSE}
+model_2f <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_self_efficacy_hope =~ co + cp + cn + cq
+  
+  # Regression
+  subcomponent_self_efficacy_hope ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    personal_safety +
+    opportunities_for_community_involvement +
+    latino + nh_asian + nh_black + nh_twoormor + nh_aian +nh_other + nh_pacisl +
+    cishet_lgbtqia +
+    systems_impacted +
+    unhoused +
+    is_adult +
+    suspended + 
+    high_poverty_area +
+    undocumented +
+'
+fit_2f <- sem(model_2f, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+
+sem_output_2f <- get_sem_results(fit_2f) %>% 
+  mutate(model_name="2f") %>%
+  select(model_name, everything())
+```
+
+## Create postgres table
+```{r, include=FALSE, echo=FALSE}
+# Compile all the model results into a standard data frame
+all_results <- as.data.frame(rbind(sem_output_1,sem_output_1a,sem_output_1b,sem_output_1c,sem_output_1d,sem_output_1e,sem_output_1f,sem_output_1g,sem_output_1h,sem_output_1i,sem_output_1j,sem_output_2,sem_output_2a,sem_output_2b,sem_output_2c,sem_output_2d,sem_output_2e,sem_output_2f))
+
+# Write table with metadata
+table_name <- "factor_analysis_sem_results"
+schema <- "youth_thriving"
+indicator <- "A table with the results of the structural equation modeling"
+source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Factor Analysis and Correlations/structural_equation_modeling.Rmd "
+qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_structural_equation_modeling.docx"
+table_comment <- paste0(indicator, source)
+dbWriteTable(con, c(schema, table_name), all_results,
+             overwrite = TRUE, row.names = FALSE)
+
+# Comment on table and columns
+column_names <- colnames(all_results) # Get column names
+column_comments <- c(
+  "The model name. Model 1 and 2 include all the variables from the Research Plan, whereas the other models (e.g. 1a, 2a) have less variables",
+  "Dependent variable",
+  "Independent variable",  
+  "The coefficient of the independent variable, which should range from 0 to 1",  
+  "t/f: Is the p value less than 0.05?",
+  "p-value of the coefficient",
+  "BIC value",
+  "AIC value",
+  "R squared value",
+  "The number of fit measures that met their respective thresholds. Fit measures are cfi, tli, rmsea, and srmr",
+  "model fit measure: CFI",
+  "model fit measure: TLI",
+  "model fit measure: RMSEA",
+  "model fit measure: SRMR"
+)
+
+add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
+#dbDisconnect(con)
+```
