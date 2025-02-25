@@ -9,13 +9,14 @@ library(extrafont)
 library(showtext)
 library(ggtext)
 library(ggchicklet)
+# library(RPostgreSQL)
 # library(geofacet)
 # # install.packages("geofacet")
 
 # connect to postgres and source functions
 source("W:\\RDA Team\\R\\credentials_source.R")
 
-con <- connect_to_db_updated("bold_vision")
+con <- connect_to_db("bold_vision")
 
 # pulling in data for each demographic
 df_total <- dbGetQuery(con, "SELECT * 
@@ -164,7 +165,7 @@ subgroups
 
 # list of components to focus on
 component_labels$component_label
-components<-c("Freedom From Psychological Distress","Self-Efficacy And Hope","Microaggressions","Caring Families And Relationships","Cultural Identity","Freedom From Structural Racism","Vibrant Communities")
+components<-c("Freedom From Psychological Distress","Self-Efficacy And Hope","Freedom From Microaggressions","Caring Families And Relationships","Cultural Identity","Freedom From Structural Racism","Vibrant Communities")
 components
 
 # filter dataframe
@@ -216,7 +217,119 @@ p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
   # Make the guide for the fill discrete
   guides(
     fill = guide_colorsteps(
-      barwidth = 15, barheight = .5, title.position = "top", title.hjust = .00
+      barwidth = 15, barheight = .5, title.position = "top", title.hjust = .5
+    )
+  ) +
+  # scale_fill_manual(values = c(
+  #   "Caring Families And Relationships" = light_green,
+  #   "Freedom From Microaggressions" = light_blue,
+  #   "Self-Efficacy And Hope" = dark_pink,
+  #   "Freedom From Structural Racism" = dark_blue,
+  #   "Freedom From Discrimination"=blue,
+  #   "Cultural Identity" = yellow,
+  #   "Freedom From Psychological Distress" = pink,
+  #   "Vibrant Communities" = dark_green
+  # )) +
+  ylim(-.25,1.5) +
+  ylab("")+
+  xlab("")+
+  # Add labels
+  labs(
+    title = "Average Predicted <span style ='color: #F75EC1;'>Freedom from Psychological Distress </span>",
+    subtitle = paste
+      ("\nLA County youth vary in how they are thriving emotionally. LGBTQIA+, systems",
+      "impacted, cisgender women/girl, and Asian youth experience the most ",
+      "significant differences.",
+      sep = "\n"
+    ),
+    caption = "\nBold Vision, Youth Thriving Survey, 2024.") +
+  theme_minimal() +
+  theme(legend.title = element_text(hjust = 0.5,size = 14, family= font_axis_label),
+        legend.text = element_text(hjust = 0.5,size = 14, family= font_axis_label),
+        legend.position = "bottom", # no legend title
+        legend.margin=margin(0,0,0,0),
+        legend.box.margin=margin(-2,-2,-2,-2),
+        # define style for axis text
+        axis.text.y=element_blank(),
+        # axis.text.y = element_text(size = 9, colour = "black", family= font_axis_label, face = "bold"),
+        axis.text.x=element_blank(),
+        # axis.text.x=element_text(size = 11, colour = "black", family = font_axis_label),
+        axis.title.x=element_blank(),
+        # axis.title.x = element_text(size = 12, colour = "black", family = font_axis_label, face = "bold"),
+        # define style for title and caption
+        plot.caption = element_text(hjust = 0.0, size = 11, colour = "black", family = font_caption, face = "plain"),
+        plot.subtitle = 
+          element_text(hjust = 0.0, size = 14, family = font_subtitle), 
+        plot.title = 
+          element_markdown(hjust = 0.0, size = 20, family = font_title, lineheight=1)
+        # ,
+        #   element_text(hjust = 0.0, size = 20, colour = "black", family = font_title)
+        , 
+        # grid line style
+        panel.grid = element_blank(),
+        # plot.margin = unit(rep(-1,4), "cm")  
+        # plot.margin=margin(0,0,0,0)
+        ) + 
+  coord_polar() +
+  # Add the labels, using the label_data dataframe that we have created before
+  geom_text(data=label_data, aes(x=id, y=avg_adjusted+.03, label=youth_label, hjust=hjust), color="black", family=font_axis_label,alpha=0.6, size=4, angle= label_data$angle, inherit.aes = FALSE ) 
+
+
+showtext_opts(dpi=300)
+
+ggsave(plot=p, 
+       file="W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/Strong Minds/Component_Summary.png",
+       units = c("in"),  width = 8, height = 8)
+
+ggsave(plot=p, 
+       file="W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/Strong Minds/Component_Summary.pdf",
+       units = c("in"),  width = 8, height = 8)
+
+
+# Step 5: Run circular bar plot for another component -------
+# filter for the component
+df <- df_all %>% filter(component_label=='Freedom From Microaggressions')
+
+# factor labels for ordering subgroups
+df$youth_label_factor <- factor(df$youth_label, levels = subgroups)
+
+df <- df %>%
+  arrange(avg_adjusted)
+
+
+# ----- This section prepare a dataframe for labels ---- #
+# add id
+df$id<- seq(1, nrow(df))
+
+# Get the name and the y position of each label
+label_data <- df
+
+# calculate the ANGLE of the labels
+number_of_bar <- nrow(df)
+angle <-  90 - 360 * (label_data$id-0.5) /number_of_bar     # I substract 0.5 because the letter must have the angle of the center of the bars. Not extreme right(1) or extreme left (0)
+
+# calculate the alignment of labels: right or left
+# If I am on the left part of the plot, my labels have currently an angle < -90
+label_data$hjust<-ifelse( angle < -90, 1, 0)
+
+# flip angle BY to make them readable
+label_data$angle<-ifelse(angle < -90, angle+180, angle)
+# ----- ------------------------------------------- ---- #
+
+p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
+  geom_bar(aes(fill=avg_adjusted),stat = "identity", 
+           # position = "dodge2",
+           alpha=1, show.legend=TRUE) +  
+  # scale_fill_gradient(low="#FDDFF3",high="#F75EC1") +
+  scale_fill_gradientn("Freedom From Microaggressions",
+                       colours=c("#D4D0F0","#AAA0E0","#7F71D1","#2A12B2")
+                       ,
+                       labels=c("<- Lower","","Higher ->")
+  )+
+  # Make the guide for the fill discrete
+  guides(
+    fill = guide_colorsteps(
+      barwidth = 15, barheight = .5, title.position = "top", title.hjust = .5
     )
   ) +
   # scale_fill_manual(values = c(
@@ -234,17 +347,17 @@ p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
   xlab("")+
   # Add labels
   labs(
-    title = "Average Predicted <span style ='color: #F75EC1;'>Freedom from Psychological Distress </span>",
+    title = "Average Predicted <span style ='color: #2A12B2;'>Freedom from Microaggressions </span>",
     subtitle = paste
-      ("\nLA County youth vary in how they are thriving emotionally. LGBTQIA+, systems",
+    ("\nLA County youth vary in how they are thriving emotionally. LGBTQIA+, systems",
       "impacted, cisgender women/girl, and Asian youth experience the most ",
       "significant differences.",
       sep = "\n"
     ),
     caption = "\nBold Vision, Youth Thriving Survey, 2024.") +
   theme_minimal() +
-  theme(legend.title = element_text(hjust = 0.75,size = 12, family= font_axis_label),
-        legend.text = element_text(hjust = 0.5,size = 12, family= font_axis_label),
+  theme(legend.title = element_text(hjust = 0.5,size = 14, family= font_axis_label),
+        legend.text = element_text(hjust = 0.5,size = 14, family= font_axis_label),
         legend.position = "bottom", # no legend title
         legend.margin=margin(0,0,0,0),
         legend.box.margin=margin(-2,-2,-2,-2),
@@ -256,7 +369,7 @@ p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
         axis.title.x=element_blank(),
         # axis.title.x = element_text(size = 12, colour = "black", family = font_axis_label, face = "bold"),
         # define style for title and caption
-        plot.caption = element_text(hjust = 0.0, size = 12, colour = "black", family = font_caption, face = "plain"),
+        plot.caption = element_text(hjust = 0.0, size = 11, colour = "black", family = font_caption, face = "plain"),
         plot.subtitle = 
           element_text(hjust = 0.0, size = 14, family = font_subtitle), 
         plot.title = 
@@ -268,220 +381,219 @@ p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
         panel.grid = element_blank(),
         # plot.margin = unit(rep(-1,4), "cm")  
         # plot.margin=margin(0,0,0,0)
-        ) + 
+  ) + 
   coord_polar() +
   # Add the labels, using the label_data dataframe that we have created before
-  geom_text(data=label_data, aes(x=id, y=avg_adjusted+.03, label=youth_label, hjust=hjust), color="black", family=font_axis_label,alpha=0.6, size=5, angle= label_data$angle, inherit.aes = FALSE ) 
+  geom_text(data=label_data, aes(x=id, y=avg_adjusted+.03, label=youth_label, hjust=hjust), color="black", family=font_axis_label,alpha=0.6, size=4, angle= label_data$angle, inherit.aes = FALSE ) 
 
 
 showtext_opts(dpi=300)
 
 ggsave(plot=p, 
-       file="W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/Strong Minds/Component_Summary.png",
+       file="W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/Racial Justice, Equity, And Inclusion/Component_Summary_Microaggressions.png",
        units = c("in"),  width = 8, height = 8)
 
 ggsave(plot=p, 
-       file="W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/Strong Minds/Component_Summary.pdf",
+       file="W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/Racial Justice, Equity, And Inclusion/Component_Summary_Microaggressions.pdf",
        units = c("in"),  width = 8, height = 8)
 
-
-# ----- Saving old code
-
-# factor labels for ordering in the summative graph
-df_all$component_label <- factor(df_all$component_label, levels = c("Freedom From Psychological Distress",
-                                                                    "Self-Efficacy And Hope",
-                                                                    "Cultural Identity",
-                                                                    "Caring Families And Relationships",
-                                                                    "Vibrant Communities", 
-                                                                    "Freedom From Microaggressions",
-                                                                    "Freedom From Discrimination",
-                                                                    "Freedom From Structural Racism"))
-
-
-# Make the plot
-df_test <- df_all %>% filter(subgroup=='all youth')
-
-p <- ggplot(df_test, aes(x=component_label, y=avg_adjusted, fill=component_label)) +
-  geom_bar(stat = "identity", position = "dodge") +   
-  scale_fill_manual(values = c(
-    "Caring Families And Relationships" = light_green,
-    "Freedom From Microaggressions" = light_blue,
-    "Self-Efficacy And Hope" = dark_pink,
-    "Freedom From Structural Racism" = dark_blue,
-    "Freedom From Discrimination"=blue,
-    "Cultural Identity" = yellow,
-    "Freedom From Psychological Distress" = pink,
-    "Vibrant Communities" = dark_green
-  )) +    
-  ylim(-.25,1) +
-  ylab("")+
-  labs(
-    subtitle="All Youth"
-  ) +
-  theme_minimal() +
-  theme(legend.title = element_blank(),
-        # legend.position = "bottom", # no legend title 
-        # define style for axis text
-        axis.text.y=element_blank(),
-        # axis.text.y = element_text(size = 9, colour = "black", family= font_axis_label, face = "bold"),
-        axis.text.x=element_blank(),
-        axis.title.x=element_blank(),
-        # axis.title.x = element_text(size = 12, colour = "black", family = font_axis_label, face = "bold"),
-        # define style for title and caption
-        plot.caption = element_text(hjust = 0.0, size = 8, colour = "black", family = font_caption, face = "plain"),
-        # plot.title = element_text(hjust = 0.0, size = 18, colour = "black", family = font_title, face = "bold"),
-        plot.subtitle = 
-          element_text(hjust = 0.0, size = 12, colour = "black", family = font_title), 
-        # grid line style
-        panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank()) + 
-  coord_polar()
-
-p
-
-ggsave(plot=p, 
-       file="W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/Component_Summary_test.png",
-       units = c("in"),  width = 8, height = 8)
-
-# Set a number of 'empty bar' to add at the end of each group
-df <- df_all %>% filter(!subgroup %in% c("all youth", "nh_aian","nh_nhpi"))
-
-df$component_label <- factor(df$component_label, levels = c("Freedom From Psychological Distress",
-                                                            "Self-Efficacy And Hope",
-                                                            "Cultural Identity",
-                                                            "Caring Families And Relationships",
-                                                            "Vibrant Communities", 
-                                                            "Freedom From Microaggressions",
-                                                            "Freedom From Discrimination",
-                                                            "Freedom From Structural Racism"))
-
-
-empty_bar <- 4
-to_add <- data.frame( matrix(NA, empty_bar*nlevels(df$component_label), ncol(df)) )
-colnames(to_add) <- colnames(df)
-to_add$component_label <- rep(levels(df$component_label), each=empty_bar)
-df <- rbind(df, to_add)
-df <- df %>% arrange(component_label)
-df$id<- seq(1, nrow(df))
-
-# Get the name and the y position of each label
-label_data <- df
-number_of_bar <- nrow(label_data)
-angle <- 90 - 360 * (label_data$id-0.5) /number_of_bar     # I substract 0.5 because the letter must have the angle of the center of the bars. Not extreme right(1) or extreme left (0)
-label_data$hjust <- ifelse( angle < -90, 1, 0)
-label_data$angle <- ifelse(angle < -90, angle+180, angle)
-
-# prepare a data frame for base lines
-base_data <- df %>% 
-  group_by(component_label) %>% 
-  summarize(start=min(id), end=max(id) - empty_bar) %>% 
-  rowwise() %>% 
-  mutate(title=mean(c(start, end)))
-
-
-p<-ggplot(df, aes(x=as.factor(id), y=avg_adjusted, fill=component_label, group=as.factor(component_label))) +
-  geom_bar(stat = "identity", position = "dodge") +   
-  scale_fill_manual(values = c(
-    "Caring Families And Relationships" = light_green,
-    "Freedom From Microaggressions" = light_blue,
-    "Self-Efficacy And Hope" = dark_pink,
-    "Freedom From Structural Racism" = dark_blue,
-    "Freedom From Discrimination"=blue,
-    "Cultural Identity" = yellow,
-    "Freedom From Psychological Distress" = pink,
-    "Vibrant Communities" = dark_green
-  )) +    
-  ylim(-.25,1) +
-  ylab("")+
-  xlab("")+
-  theme_minimal() +
-  theme(legend.title = element_blank(),
-        # legend.position = "none", # no legend title
-        # define style for axis text
-        axis.text.y=element_blank(),
-        # axis.text.y = element_text(size = 9, colour = "black", family= font_axis_label, face = "bold"),
-        axis.text.x=element_blank(),
-        axis.title.x=element_blank(),
-        # axis.title.x = element_text(size = 12, colour = "black", family = font_axis_label, face = "bold"),
-        # define style for title and caption
-        plot.caption = element_text(hjust = 0.0, size = 8, colour = "black", family = font_caption, face = "plain"),
-        # plot.title = element_text(hjust = 0.0, size = 18, colour = "black", family = font_title, face = "bold"),
-        plot.subtitle = 
-          element_text(hjust = 0.0, size = 12, colour = "black", family = font_title), 
-        # grid line style
-        panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank()) + 
-  coord_polar() +
-  geom_text(data=label_data, aes(x=id, y=avg_adjusted+.025, label=subgroup, hjust=hjust), color="black", fontface="plain", family=font_axis_label, alpha=0.6, size=5, angle= label_data$angle, inherit.aes = FALSE ) 
-
-p
-ggsave(plot=p, 
-       file="W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/Component_Summary.png",
-       units = c("in"),  width = 8, height = 8)
-
-
-# Set a number of 'empty bar' to add at the end of each group
-df <- df_all %>% filter(!subgroup %in% c("all youth", "nh_aian","nh_nhpi"))
-
+# # ----- Saving old code
+# 
+# # factor labels for ordering in the summative graph
+# df_all$component_label <- factor(df_all$component_label, levels = c("Freedom From Psychological Distress",
+#                                                                     "Self-Efficacy And Hope",
+#                                                                     "Cultural Identity",
+#                                                                     "Caring Families And Relationships",
+#                                                                     "Vibrant Communities", 
+#                                                                     "Freedom From Microaggressions",
+#                                                                     "Freedom From Discrimination",
+#                                                                     "Freedom From Structural Racism"))
+# 
+# 
+# # Make the plot
+# df_test <- df_all %>% filter(subgroup=='all youth')
+# 
+# p <- ggplot(df_test, aes(x=component_label, y=avg_adjusted, fill=component_label)) +
+#   geom_bar(stat = "identity", position = "dodge") +   
+#   scale_fill_manual(values = c(
+#     "Caring Families And Relationships" = light_green,
+#     "Freedom From Microaggressions" = light_blue,
+#     "Self-Efficacy And Hope" = dark_pink,
+#     "Freedom From Structural Racism" = dark_blue,
+#     "Freedom From Discrimination"=blue,
+#     "Cultural Identity" = yellow,
+#     "Freedom From Psychological Distress" = pink,
+#     "Vibrant Communities" = dark_green
+#   )) +    
+#   ylim(-.25,1) +
+#   ylab("")+
+#   labs(
+#     subtitle="All Youth"
+#   ) +
+#   theme_minimal() +
+#   theme(legend.title = element_blank(),
+#         # legend.position = "bottom", # no legend title 
+#         # define style for axis text
+#         axis.text.y=element_blank(),
+#         # axis.text.y = element_text(size = 9, colour = "black", family= font_axis_label, face = "bold"),
+#         axis.text.x=element_blank(),
+#         axis.title.x=element_blank(),
+#         # axis.title.x = element_text(size = 12, colour = "black", family = font_axis_label, face = "bold"),
+#         # define style for title and caption
+#         plot.caption = element_text(hjust = 0.0, size = 8, colour = "black", family = font_caption, face = "plain"),
+#         # plot.title = element_text(hjust = 0.0, size = 18, colour = "black", family = font_title, face = "bold"),
+#         plot.subtitle = 
+#           element_text(hjust = 0.0, size = 12, colour = "black", family = font_title), 
+#         # grid line style
+#         panel.grid.minor = element_blank(),
+#         panel.grid.major = element_blank()) + 
+#   coord_polar()
+# 
+# p
+# 
+# ggsave(plot=p, 
+#        file="W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/Component_Summary_test.png",
+#        units = c("in"),  width = 8, height = 8)
+# 
+# # Set a number of 'empty bar' to add at the end of each group
+# df <- df_all %>% filter(!subgroup %in% c("all youth", "nh_aian","nh_nhpi"))
+# 
+# df$component_label <- factor(df$component_label, levels = c("Freedom From Psychological Distress",
+#                                                             "Self-Efficacy And Hope",
+#                                                             "Cultural Identity",
+#                                                             "Caring Families And Relationships",
+#                                                             "Vibrant Communities", 
+#                                                             "Freedom From Microaggressions",
+#                                                             "Freedom From Discrimination",
+#                                                             "Freedom From Structural Racism"))
+# 
+# 
 # empty_bar <- 4
-# to_add <- data.frame( matrix(NA, empty_bar*nlevels(df$subgroup), ncol(df)) )
+# to_add <- data.frame( matrix(NA, empty_bar*nlevels(df$component_label), ncol(df)) )
 # colnames(to_add) <- colnames(df)
-# to_add$subgroup <- rep(levels(df$subgroup), each=empty_bar)
+# to_add$component_label <- rep(levels(df$component_label), each=empty_bar)
 # df <- rbind(df, to_add)
-# df <- df %>% arrange(subgroup)
+# df <- df %>% arrange(component_label)
 # df$id<- seq(1, nrow(df))
-
+# 
 # # Get the name and the y position of each label
 # label_data <- df
 # number_of_bar <- nrow(label_data)
 # angle <- 90 - 360 * (label_data$id-0.5) /number_of_bar     # I substract 0.5 because the letter must have the angle of the center of the bars. Not extreme right(1) or extreme left (0)
 # label_data$hjust <- ifelse( angle < -90, 1, 0)
 # label_data$angle <- ifelse(angle < -90, angle+180, angle)
-
+# 
 # # prepare a data frame for base lines
 # base_data <- df %>% 
 #   group_by(component_label) %>% 
 #   summarize(start=min(id), end=max(id) - empty_bar) %>% 
 #   rowwise() %>% 
 #   mutate(title=mean(c(start, end)))
-
-
-p<- ggplot(df, aes(x=subgroup, y=avg_adjusted, fill=component_label, group=component_label)) +
-  geom_bar(stat = "identity", position = "dodge") +   
-  scale_fill_manual(values = c(
-    "Caring Families And Relationships" = light_green,
-    "Freedom From Microaggressions" = light_blue,
-    "Self-Efficacy And Hope" = dark_pink,
-    "Freedom From Structural Racism" = dark_blue,
-    "Freedom From Discrimination"=blue,
-    "Cultural Identity" = yellow,
-    "Freedom From Psychological Distress" = pink,
-    "Vibrant Communities" = dark_green
-  )) +    
-  ylim(-.25,1) +
-  ylab("")+
-  xlab("")+
-  theme_minimal() +
-  theme(legend.title = element_blank(),
-        # legend.position = "none", # no legend title
-        # define style for axis text
-        axis.text.y=element_blank(),
-        # axis.text.y = element_text(size = 9, colour = "black", family= font_axis_label, face = "bold"),
-        # axis.text.x=element_blank(),
-        axis.title.x=element_blank(),
-        # axis.title.x = element_text(size = 12, colour = "black", family = font_axis_label, face = "bold"),
-        # define style for title and caption
-        plot.caption = element_text(hjust = 0.0, size = 8, colour = "black", family = font_caption, face = "plain"),
-        # plot.title = element_text(hjust = 0.0, size = 18, colour = "black", family = font_title, face = "bold"),
-        plot.subtitle = 
-          element_text(hjust = 0.0, size = 12, colour = "black", family = font_title), 
-        # grid line style
-        panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank()) + 
-  coord_polar() 
-
-
-p
-ggsave(plot=p, 
-       file="W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/Component_Summary_subgroup.png",
-       units = c("in"),  width = 8, height = 8)
+# 
+# 
+# p<-ggplot(df, aes(x=as.factor(id), y=avg_adjusted, fill=component_label, group=as.factor(component_label))) +
+#   geom_bar(stat = "identity", position = "dodge") +   
+#   scale_fill_manual(values = c(
+#     "Caring Families And Relationships" = light_green,
+#     "Freedom From Microaggressions" = light_blue,
+#     "Self-Efficacy And Hope" = dark_pink,
+#     "Freedom From Structural Racism" = dark_blue,
+#     "Freedom From Discrimination"=blue,
+#     "Cultural Identity" = yellow,
+#     "Freedom From Psychological Distress" = pink,
+#     "Vibrant Communities" = dark_green
+#   )) +    
+#   ylim(-.25,1) +
+#   ylab("")+
+#   xlab("")+
+#   theme_minimal() +
+#   theme(legend.title = element_blank(),
+#         # legend.position = "none", # no legend title
+#         # define style for axis text
+#         axis.text.y=element_blank(),
+#         # axis.text.y = element_text(size = 9, colour = "black", family= font_axis_label, face = "bold"),
+#         axis.text.x=element_blank(),
+#         axis.title.x=element_blank(),
+#         # axis.title.x = element_text(size = 12, colour = "black", family = font_axis_label, face = "bold"),
+#         # define style for title and caption
+#         plot.caption = element_text(hjust = 0.0, size = 8, colour = "black", family = font_caption, face = "plain"),
+#         # plot.title = element_text(hjust = 0.0, size = 18, colour = "black", family = font_title, face = "bold"),
+#         plot.subtitle = 
+#           element_text(hjust = 0.0, size = 12, colour = "black", family = font_title), 
+#         # grid line style
+#         panel.grid.minor = element_blank(),
+#         panel.grid.major = element_blank()) + 
+#   coord_polar() +
+#   geom_text(data=label_data, aes(x=id, y=avg_adjusted+.025, label=subgroup, hjust=hjust), color="black", fontface="plain", family=font_axis_label, alpha=0.6, size=5, angle= label_data$angle, inherit.aes = FALSE ) 
+# 
+# p
+# ggsave(plot=p, 
+#        file="W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/Component_Summary.png",
+#        units = c("in"),  width = 8, height = 8)
+# 
+# 
+# # Set a number of 'empty bar' to add at the end of each group
+# df <- df_all %>% filter(!subgroup %in% c("all youth", "nh_aian","nh_nhpi"))
+# 
+# # empty_bar <- 4
+# # to_add <- data.frame( matrix(NA, empty_bar*nlevels(df$subgroup), ncol(df)) )
+# # colnames(to_add) <- colnames(df)
+# # to_add$subgroup <- rep(levels(df$subgroup), each=empty_bar)
+# # df <- rbind(df, to_add)
+# # df <- df %>% arrange(subgroup)
+# # df$id<- seq(1, nrow(df))
+# 
+# # # Get the name and the y position of each label
+# # label_data <- df
+# # number_of_bar <- nrow(label_data)
+# # angle <- 90 - 360 * (label_data$id-0.5) /number_of_bar     # I substract 0.5 because the letter must have the angle of the center of the bars. Not extreme right(1) or extreme left (0)
+# # label_data$hjust <- ifelse( angle < -90, 1, 0)
+# # label_data$angle <- ifelse(angle < -90, angle+180, angle)
+# 
+# # # prepare a data frame for base lines
+# # base_data <- df %>% 
+# #   group_by(component_label) %>% 
+# #   summarize(start=min(id), end=max(id) - empty_bar) %>% 
+# #   rowwise() %>% 
+# #   mutate(title=mean(c(start, end)))
+# 
+# 
+# p<- ggplot(df, aes(x=subgroup, y=avg_adjusted, fill=component_label, group=component_label)) +
+#   geom_bar(stat = "identity", position = "dodge") +   
+#   scale_fill_manual(values = c(
+#     "Caring Families And Relationships" = light_green,
+#     "Freedom From Microaggressions" = light_blue,
+#     "Self-Efficacy And Hope" = dark_pink,
+#     "Freedom From Structural Racism" = dark_blue,
+#     "Freedom From Discrimination"=blue,
+#     "Cultural Identity" = yellow,
+#     "Freedom From Psychological Distress" = pink,
+#     "Vibrant Communities" = dark_green
+#   )) +    
+#   ylim(-.25,1) +
+#   ylab("")+
+#   xlab("")+
+#   theme_minimal() +
+#   theme(legend.title = element_blank(),
+#         # legend.position = "none", # no legend title
+#         # define style for axis text
+#         axis.text.y=element_blank(),
+#         # axis.text.y = element_text(size = 9, colour = "black", family= font_axis_label, face = "bold"),
+#         # axis.text.x=element_blank(),
+#         axis.title.x=element_blank(),
+#         # axis.title.x = element_text(size = 12, colour = "black", family = font_axis_label, face = "bold"),
+#         # define style for title and caption
+#         plot.caption = element_text(hjust = 0.0, size = 8, colour = "black", family = font_caption, face = "plain"),
+#         # plot.title = element_text(hjust = 0.0, size = 18, colour = "black", family = font_title, face = "bold"),
+#         plot.subtitle = 
+#           element_text(hjust = 0.0, size = 12, colour = "black", family = font_title), 
+#         # grid line style
+#         panel.grid.minor = element_blank(),
+#         panel.grid.major = element_blank()) + 
+#   coord_polar() 
+# 
+# 
+# p
+# ggsave(plot=p, 
+#        file="W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/Component_Summary_subgroup.png",
+#        units = c("in"),  width = 8, height = 8)
