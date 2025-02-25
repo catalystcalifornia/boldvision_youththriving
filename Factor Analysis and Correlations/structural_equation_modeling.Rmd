@@ -22,7 +22,7 @@ source("W:\\RDA Team\\R\\Github\\RDA Functions\\main\\RDA-Functions\\Utility_Fun
 
 # Connect to postgres
 source("W:\\RDA Team\\R\\credentials_source.R")
-con <- connect_to_db_updated("bold_vision")
+con <- connect_to_db("bold_vision")
 
 # Pull in the survey data and data dictionary
 raw_svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
@@ -832,6 +832,37 @@ model_1j.5 <- '
     subcomponent_structural_racism + 
     component_vibrant_communities + 
     personal_safety_1 + personal_safety_2 + personal_safety_3 + personal_safety_4 +
+    race_latinx + race_nh_asian + race_nh_black + race_nh_twoormor + race_nh_aian + race_nh_other + race_nh_nhpi + race_nh_swana +
+    cishet_lgbtqia +
+    systems_impacted +
+    sparks +
+    undocumented
+'
+fit_1j.5 <- sem(model_1j.5, data = svy_data, std.lv = TRUE, missing = "fiml.x")
+ 
+sem_output_1j.5 <- get_sem_results(fit_1j.5) %>% 
+  mutate(model_name="1j.5") %>%
+  select(model_name, everything())
+```
+
+running on just personal_safety
+```{r Model 1j.5, warning=FALSE, echo=FALSE}
+model_1j.5 <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds
+  subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx
+
+  # Regression
+  subcomponent_psychological_distress ~ component_caring_families_and_relationships +
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    component_vibrant_communities + 
+    personal_safety +
     race_latinx + race_nh_asian + race_nh_black + race_nh_twoormor + race_nh_aian + race_nh_other + race_nh_nhpi + race_nh_swana +
     cishet_lgbtqia +
     systems_impacted +
