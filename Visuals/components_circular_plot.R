@@ -230,7 +230,7 @@ p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
   #   "Freedom From Psychological Distress" = pink,
   #   "Vibrant Communities" = dark_green
   # )) +
-  ylim(-.25,1.5) +
+  ylim(-.25,1.3) +
   ylab("")+
   xlab("")+
   # Add labels
@@ -242,7 +242,7 @@ p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
       "significant differences.",
       sep = "\n"
     ),
-    caption = "\nBold Vision, Youth Thriving Survey, 2024.") +
+    caption = "\nCatalyst California's calculations of Bold Vision, Youth Thriving Survey, 2024.") +
   theme_minimal() +
   theme(legend.title = element_text(hjust = 0.5,size = 14, family= font_axis_label),
         legend.text = element_text(hjust = 0.5,size = 14, family= font_axis_label),
@@ -272,7 +272,7 @@ p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
         ) + 
   coord_polar() +
   # Add the labels, using the label_data dataframe that we have created before
-  geom_text(data=label_data, aes(x=id, y=avg_adjusted+.03, label=youth_label, hjust=hjust), color="black", family=font_axis_label,alpha=0.6, size=4, angle= label_data$angle, inherit.aes = FALSE ) 
+  geom_text(data=label_data, aes(x=id, y=avg_adjusted+.02, label=youth_label, hjust=hjust), color="black", family=font_axis_label,alpha=0.6, size=4, angle= label_data$angle, inherit.aes = FALSE ) 
 
 
 showtext_opts(dpi=300)
@@ -324,7 +324,7 @@ p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
   scale_fill_gradientn("Freedom From Microaggressions",
                        colours=c("#D4D0F0","#AAA0E0","#7F71D1","#2A12B2")
                        ,
-                       labels=c("<- Lower","","Higher ->")
+                       labels=c("<- Lower","","","Higher ->")
   )+
   # Make the guide for the fill discrete
   guides(
@@ -342,19 +342,19 @@ p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
   #   "Freedom From Psychological Distress" = pink,
   #   "Vibrant Communities" = dark_green
   # )) +
-  ylim(-.25,1) +
+  ylim(-.25,1.3) +
   ylab("")+
   xlab("")+
   # Add labels
   labs(
     title = "Average Predicted <span style ='color: #2A12B2;'>Freedom from Microaggressions </span>",
     subtitle = paste
-    ("\nLA County youth vary in how they are thriving emotionally. LGBTQIA+, systems",
-      "impacted, cisgender women/girl, and Asian youth experience the most ",
-      "significant differences.",
+    ("\nLA County youth vary in how likely they are to live their lives free from",
+    "microaggressions. Undocumented, Black, unhoused, and SWANA youth",
+    "are more likely to experience microaggressions.",
       sep = "\n"
     ),
-    caption = "\nBold Vision, Youth Thriving Survey, 2024.") +
+    caption = "\nCatalyst California's calculations of Bold Vision, Youth Thriving Survey, 2024.") +
   theme_minimal() +
   theme(legend.title = element_text(hjust = 0.5,size = 14, family= font_axis_label),
         legend.text = element_text(hjust = 0.5,size = 14, family= font_axis_label),
@@ -384,7 +384,7 @@ p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
   ) + 
   coord_polar() +
   # Add the labels, using the label_data dataframe that we have created before
-  geom_text(data=label_data, aes(x=id, y=avg_adjusted+.03, label=youth_label, hjust=hjust), color="black", family=font_axis_label,alpha=0.6, size=4, angle= label_data$angle, inherit.aes = FALSE ) 
+  geom_text(data=label_data, aes(x=id, y=avg_adjusted+.02, label=youth_label, hjust=hjust), color="black", family=font_axis_label,alpha=0.6, size=4, angle= label_data$angle, inherit.aes = FALSE ) 
 
 
 showtext_opts(dpi=300)
