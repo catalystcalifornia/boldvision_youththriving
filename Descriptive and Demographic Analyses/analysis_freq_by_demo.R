@@ -78,7 +78,7 @@ fx_freq_table  <- function(demographic_variable) {
     df_final_per_demo <- df_almost_final %>%
       relocate(!!sym(demographic_variable)) %>%
       select(all_of(demographic_variable), response, count, rate, rate_cv, moe, 
-             variable, question, sub_question, question_number, 
+             variable, question, sub_question, question_number, likert_type,
              variable_name, response_domain)
     
     combined_data_list[[i]] <- df_final_per_demo
@@ -100,7 +100,7 @@ write_survey_data_to_db <- function(df, demographic_variable) {
   table_name <- paste0("response_analysis_per_", demographic_variable)
   
   # Write data to database
-  dbWriteTable(con, c('youth_thriving', table_name), df,
+  dbWriteTable(con, DBI::Id(schema = "youth_thriving", table = table_name), df,
                overwrite = FALSE, row.names = FALSE)
   
   # Create table comment
@@ -119,31 +119,38 @@ write_survey_data_to_db <- function(df, demographic_variable) {
     "COMMENT ON TABLE youth_thriving.", table_name, " IS '", table_comment, "';"
   ))
   
-  # Add comments to columns
-  dbSendQuery(con, paste0("
-    COMMENT ON COLUMN youth_thriving.", table_name, ".variable IS 
-      'refers to the column label or variable in the survey data';
-    COMMENT ON COLUMN youth_thriving.", table_name, ".question IS 
-      'the question that this variable refers to';
-    COMMENT ON COLUMN youth_thriving.", table_name, ".sub_question IS 
-      'the subquestion that this variable refers to';
-    COMMENT ON COLUMN youth_thriving.", table_name, ".variable_name IS 
-      'the survey SUBcomponent this variable falls under';
-    COMMENT ON COLUMN youth_thriving.", table_name, ".response_domain IS 
-      'the survey component this variable falls under';
-    COMMENT ON COLUMN youth_thriving.", table_name, ".", demographic_variable, " IS 
-      '", demographic_variable, " youth';
-    COMMENT ON COLUMN youth_thriving.", table_name, ".response IS 
-      'the response that the data is about';
-    COMMENT ON COLUMN youth_thriving.", table_name, ".count IS 
-      'the count of ", demographic_variable, " youth that selected this response';
-    COMMENT ON COLUMN youth_thriving.", table_name, ".rate IS 
-      'the weighted % of", demographic_variable, " youth who selected this response out of the total number of ", demographic_variable, " youth who answered this question';
-    COMMENT ON COLUMN youth_thriving.", table_name, ".rate_cv IS 
-      'a weighted coefficient of variation for this rate';
-    COMMENT ON COLUMN youth_thriving.", table_name, ".moe IS 
-      'a weighted margin of error for this rate';
-  "))
+  # Define the table schema and name
+  schema_name <- "youth_thriving"
+  
+  # Define the actual column name dynamically
+  demographic_col <- demographic_variable  # e.g., "bipoc", "lgbtqia", etc.
+  
+  # List of column comments, correctly setting the demographic column name
+  column_comments <- list(
+    "variable" = "Refers to the column label or variable in the survey data",
+    "question" = "The question that this variable refers to",
+    "sub_question" = "The subquestion that this variable refers to",
+    "variable_name" = "The survey SUBcomponent this variable falls under",
+    "response_domain" = "The survey component this variable falls under",
+    demographic_col = paste0(demographic_col, " youth"),  # This fixes the issue
+    "response" = "The response that the data is about",
+    "count" = paste0("The count of ", demographic_col, " youth that selected this response"),
+    "rate" = paste0("The weighted % of ", demographic_col, 
+                    " youth who selected this response out of the total number of ", 
+                    demographic_col, " youth who answered this question"),
+    "rate_cv" = "A weighted coefficient of variation for this rate",
+    "moe" = "A weighted margin of error for this rate",
+    "likert_type" = "Likert scale type"
+  )
+  
+  # Iterate through each column and send the COMMENT query individually
+  for (col in names(column_comments)) {
+    query <- paste0(
+      "COMMENT ON COLUMN ", schema_name, ".", table_name, ".", col, " IS '", column_comments[[col]], "';"
+    )
+    dbSendQuery(con, query)
+  }
+  
 }
 
 
@@ -159,14 +166,14 @@ df_merged_per_lgbtqia <- fx_freq_table("lgbtqia")
 
 #FIRST CHECK THE TABLES IN THE ENVIRONMENT AND THEN PUSH TO POSTGRES
 
-# write_survey_data_to_db(df_merged_per_bipoc, "bipoc")
-# write_survey_data_to_db(df_merged_per_disconnected, "disconnected")
-# write_survey_data_to_db(df_merged_per_systems_impacted, "systems_impacted")
-# write_survey_data_to_db(df_merged_per_arrested, "arrested")
-# write_survey_data_to_db(df_merged_per_suspended, "suspended")
-# write_survey_data_to_db(df_merged_per_undocumented, "undocumented")
-# write_survey_data_to_db(df_merged_per_unhoused, "unhoused")
-# write_survey_data_to_db(df_merged_per_lgbtqia, "lgbtqia")
+write_survey_data_to_db(df_merged_per_bipoc, "bipoc")
+write_survey_data_to_db(df_merged_per_disconnected, "disconnected")
+write_survey_data_to_db(df_merged_per_systems_impacted, "systems_impacted")
+write_survey_data_to_db(df_merged_per_arrested, "arrested")
+write_survey_data_to_db(df_merged_per_suspended, "suspended")
+write_survey_data_to_db(df_merged_per_undocumented, "undocumented")
+write_survey_data_to_db(df_merged_per_unhoused, "unhoused")
+write_survey_data_to_db(df_merged_per_lgbtqia, "lgbtqia")
 
   
 ####Step 5: CLOSE database connection! ####

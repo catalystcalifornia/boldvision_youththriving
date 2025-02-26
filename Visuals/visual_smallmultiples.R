@@ -102,7 +102,7 @@ fx_create_df <- function(con, tables, response_domain, variable, response_domain
   all_demo_data <- bind_rows(lapply(tables, fetch_data))
   
   #adding all youth data 
-  tot_freq_all_youth <- dbGetQuery(con, sprintf("SELECT response, frequency AS count, weighted_percent AS rate, percent_cv AS rate_cv, variable, question, sub_question, variable_name, domain AS response_domain
+  tot_freq_all_youth <- dbGetQuery(con, sprintf("SELECT response, frequency AS count, weighted_percent AS rate, percent_cv AS rate_cv, variable, question, sub_question, likert_type, variable_name, domain AS response_domain
                                  FROM youth_thriving.%s WHERE variable = '%s'", response_domain_table, variable)) %>%
     mutate(youth = "all youth",
            youth_label = "All Youth",
@@ -110,17 +110,46 @@ fx_create_df <- function(con, tables, response_domain, variable, response_domain
   
   #combine with other data 
   df_combined <- bind_rows(all_demo_data, tot_freq_all_youth)
-  
+
   #filter for rows that are not needed like not bipoc, not lgbtqia, etc.and those that have responses we don't want like Don't knows, etc. 
-  df_final <- df_combined %>%
+  df_almost_final <- df_combined %>%
     filter(!grepl("^not ", .[[1]], ignore.case = TRUE)) %>%  # Filters out rows where first column starts with "not "
     filter(!response %in% c("Don't wish to answer", "Don't know", "Not sure", "Not Sure", "Does not apply to me")) %>% #Fiters out rows with responses we don't want to visualize
     mutate(response = str_wrap(response, width = 8)) %>% #wrapping for better labeling in the visuals
     mutate(youth_label = str_wrap(youth_label, width = 11)) %>%
-    # group_by(youth_label) %>% # Order by rate in descending order (highest to lowest)
     arrange(desc(rate)) 
-    # ungroup()  # Remove the grouping
-    #ORDERING IS NOT CURRENTLY REFLECTEDON FINAL VISUAL...unsure why. 
+  
+  #define factor levels in order we want them 
+  #NOTE THAT Don't Wish to Answer, Not Sure, and Does Not Apply to Me ARE OMMITTED IN THIS STEP
+  true_factors<-c("Never true","Sometimes true","Often true","Always true") 
+  time_factors<-c("None of the time","A little of the time","Some of the time","Most of the time","All of the time")
+  time_factors_reverse<-c("All of the time", "Most of the time", "Some of the time", "A little of the time", "None of the time") #reverse so a greater number means a good outcome and a smaller number means a bad outcome
+  yes_factors<-c("No", "Yes")
+  yes_factors_reverse <- c("Yes", "No") #reverse so a greater number means a good outcome and a smaller number means a bad outcome
+  count_factors<-c("None","One","Two","Three or more")
+  freq_factors<-c("Never","Rarely","Sometimes","Most of the time","All of the time")
+  freq_factors_reverse<-c("All of the time", "Most of the time","Sometimes", "Rarely","Never") #reverse so a greater number means a good outcome and a smaller number means a bad outcome
+  
+   df_final <- df_almost_final %>%
+    mutate(
+      factor_levels = if_else(likert_type == 'true_scale', list(true_factors),
+                              if_else(likert_type == 'count_scale', list(count_factors),
+                                      if_else(likert_type == 'freq_scale', list(freq_factors),
+                                              if_else(likert_type == 'freq_scale_rev', list(freq_factors_reverse),
+                                                      if_else(likert_type == 'yes_scale', list(yes_factors),
+                                                              if_else(likert_type == 'yes_scale_rev', list(yes_factors_reverse),
+                                                                      if_else(likert_type == 'time_scale', list(time_factors),
+                                                                              if_else(likert_type == 'time_scale_rev', list(time_factors_reverse),
+                                                                                      list(character(0))))))))))) %>%
+  rowwise() %>%  
+  mutate(
+    response = factor(response, levels = unlist(factor_levels)),  # Ensure `factor_levels` is unlisted
+    factor_score = as.numeric(response)  # Convert to numeric for scoring
+  ) %>%
+  ungroup() %>%  
+  filter(!is.na(response))  # Remove rows where response is NA
+  
+  print(df_combined)
   return(df_final)
   
 }
@@ -189,8 +218,8 @@ fx_vis_smallmultiples <- function(df, title_text) {
 
 
 ####Step 5: Run function to create visual ####
-# fx_vis_smallmultiples(df = df_ex, 
-#                       title_text = 'Unhoused youth are least likely to report access to Libraries')
+fx_vis_smallmultiples(df = df_ex,
+                      title_text = 'Unhoused youth are least likely to report access to Libraries')
 #See example here: W:\Project\OSI\Bold Vision\Youth Thriving Survey\Deliverables\Vibrant Communities 
 
 ###Step 6: Close database connection ####
