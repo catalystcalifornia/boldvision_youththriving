@@ -59,6 +59,13 @@ View(df_cy)
 fx_vis_smallmultiples(df = df_cy, title_text = 'White youth are most likely to never feel worthless and LGBTQIA youth are least likely to'
                       ,likert_factors = time_factors, graph_orderby = "None of the time")
 
+#dm
+df_dm <- fx_create_df(con, tables, "Positive Identity And Self-Worth", "dm", "tot_freq_positive_identity") 
+View(df_dm)
+fx_vis_smallmultiples(df = df_dm, title_text = 'Undocumented, Disconneceted (not in school or working), Unhoused and Systems Impacted youth are least likely to report having opportunities to get involved with their community'
+                      ,likert_factors = true_factors, graph_orderby = "Always true")
+
+
 # ####visualizing key findings for Youth Council presentation 10/19/24 (NOTE: Charts are archived since data has been updated since then)#### 
 # 
 # fx_single_barchart(question_number_i = '18', sub_question_i = 'Contact with the police', #these are the inputs, i stands for insert/input of the variable of interest we want to look at
