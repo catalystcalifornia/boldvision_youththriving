@@ -5,15 +5,59 @@ source('Visuals\\visual_functions.R')
 source('W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\GitHub\\MK\\boldvision_youththriving\\Visuals\\visual_smallmultiples.R')
 
 #### Visualizing for Youth Council Presentation 03/08/25 ####
-
+#dl
 df_dl <- fx_create_df(con, tables, "Caring Families And Relationships", "dl", "tot_freq_caring_families") 
-
 View(df_dl)
-
 fx_vis_smallmultiples(df = df_dl, title_text = 'Most LA County youth often or always feel they can go to someone with a problem'
-                      ,likert_factors = true_factors, graph_orderby = "Always true"
-                      )
+                      ,likert_factors = true_factors, graph_orderby = "Always true")
 
+#q10
+df_q10 <- fx_create_df(con, tables, "Positive Identity And Self-Worth", "q10", "tot_freq_positive_identity") 
+View(df_q10)
+fx_vis_smallmultiples(df = df_q10, title_text = 'LGBTQIA youth are least likely to believe they have a spark and undocumented youth are most likely to report having a spark'
+                      ,likert_factors = yes_factors_reverse, graph_orderby = "Yes")
+
+#eo
+df_eo <- fx_create_df(con, tables, "Racial Justice, Equity, And Inclusion", "eo", "tot_freq_racial_justice") 
+View(df_eo)
+fx_vis_smallmultiples(df = df_eo, title_text = 'Undocumented, SWANA, and Black youth are most likely to hear a hurtful joke/comment about their race'
+                      ,likert_factors = freq_factors_reverse, graph_orderby = "Never")
+                      
+#et
+df_et <- fx_create_df(con, tables, "Racial Justice, Equity, And Inclusion", "et", "tot_freq_racial_justice") 
+View(df_et)
+fx_vis_smallmultiples(df = df_et, title_text = 'Undocumented, Unhoused, and LGBTQIA youth report poor quality health services most of the time or all of the time get in the way of their best life'
+                      ,likert_factors = freq_factors_reverse, graph_orderby = "Never")
+
+#co
+df_co <- fx_create_df(con, tables, "Positive Identity And Self-Worth", "co", "tot_freq_positive_identity") 
+View(df_co)
+fx_vis_smallmultiples(df = df_co, title_text = 'AIAN and Black youth are most likely to report always feeling hopeful for their future and Asian and LGBTQIA youth were least likely to'
+                      ,likert_factors = true_factors, graph_orderby = "Always true")
+
+# #cl did this one by accident, don't need for this meeting
+# df_cl <- fx_create_df(con, tables, "Strong Minds", "cl", "tot_freq_strong_minds") 
+# View(df_cl)
+# fx_vis_smallmultiples(df = df_cl, title_text = 'SWANA, NHPI, and AIAN youth are most likely to report always feeling excited about things'
+#                       ,likert_factors = true_factors, graph_orderby = "Always true")
+
+#dl
+df_dl <- fx_create_df(con, tables, "Caring Families And Relationships", "dl", "tot_freq_strong_minds") 
+View(df_dl)
+fx_vis_smallmultiples(df = df_dl, title_text = 'NHPI and Undocumented youth are least likely to always feel they have someone to go to with a problem'
+                      ,likert_factors = true_factors, graph_orderby = "Always true")
+
+#dz
+df_dz <- fx_create_df(con, tables, "Cultural Identity", "dz", "tot_freq_cultural_identity") 
+View(df_dz)
+fx_vis_smallmultiples(df = df_dz, title_text = 'SWANA, NHPI, and AIAN youth most often reported that their culture helps them feel good about who they are'
+                      ,likert_factors = true_factors, graph_orderby = "Always true")
+
+#cy
+df_cy <- fx_create_df(con, tables, "Strong Minds", "cy", "tot_freq_strong_minds") 
+View(df_cy)
+fx_vis_smallmultiples(df = df_cy, title_text = 'White youth are most likely to never feel worthless and LGBTQIA youth are least likely to'
+                      ,likert_factors = time_factors, graph_orderby = "None of the time")
 
 # ####visualizing key findings for Youth Council presentation 10/19/24 (NOTE: Charts are archived since data has been updated since then)#### 
 # 

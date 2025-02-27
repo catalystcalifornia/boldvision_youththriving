@@ -171,7 +171,7 @@ fx_vis_smallmultiples <- function(df, title_text, likert_factors, graph_orderby
                               )) +
   geom_bar(stat = "identity") +  # Use identity to plot actual counts
   # Define custom BV colors 
-  scale_fill_manual(values = c(yellow, pink, dark_pink, orange)) + 
+  scale_fill_manual(values = c(yellow, pink, dark_pink, orange, "#FFA55C")) + 
   facet_wrap(~ youth_label, scales = "free_x", nrow = 2, strip.position = "bottom") +  # Create small multiples
   #bar labels
   geom_text(data = df,
@@ -192,7 +192,7 @@ fx_vis_smallmultiples <- function(df, title_text, likert_factors, graph_orderby
                                       " Note: AIAN- Alaskan Indian and American Native, BIPOC- Black Indigeneous People of Color, 
                                       LGBTQIA- Lesbian, Gay, Bisexual, Transgender, Queer, Intersex, and Asexual, SWANA- South West Asian and North African,
                                       NHPI- Native Hawaiian and Pacific Islander"),
-                               whitespace_only = TRUE, width = 165), collapse = "\n")) +
+                               whitespace_only = TRUE, width = 120), collapse = "\n")) +
   theme(legend.position = "bottom",  # Show legend on the right
      # remove axis text
      axis.text.x = element_blank(), 
