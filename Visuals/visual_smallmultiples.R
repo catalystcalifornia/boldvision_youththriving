@@ -44,11 +44,11 @@ loadfonts(device = "win")
 windowsFonts()
 showtext_auto()
 # define fonts in chart
-font_title <- "Manifold CF"
-font_subtitle <- "Manifold CF"
-font_caption <- "HelveticaNeueLTStdMdCn"
-font_bar_label <- "HelveticaNeueLTStdHvCn"
-font_axis_label <- "HelveticaNeueLTStdMdCn"
+font_title <- "HelveticaNeueLTStdHvCn"
+font_subtitle <- "HelveticaNeueLTStdMdCn"
+font_caption <- "Manifold Regular"
+font_bar_label <- "Manifold Regular"
+font_axis_label <- "Manifold Regular"
 
 
 source("W:\\RDA Team\\R\\credentials_source.R")
@@ -91,7 +91,8 @@ fx_create_df <- function(con, tables, response_domain, variable, response_domain
                  str_detect(youth_label, "swana") ~ str_to_upper(youth_label),
                  str_detect(youth_label, "aian") ~ str_to_upper(youth_label),
                  str_detect(youth_label, "nhpi") ~ str_to_upper(youth_label),
-                 str_detect(youth_label, "twoormor") ~ "Two or More",  # Rename "Twoormor" to "Two or More"
+                 str_detect(youth_label, "twoormor") ~ "Multiracial",  # Rename "Twoormor" to "Two or More"
+                 str_detect(youth_label, "latinx") ~ "Latine",  # Rename "Latinx" to "Latine
                  TRUE ~ str_to_title(youth_label)  # Capitalize first letter of each word otherwise
                )) 
     
@@ -112,54 +113,25 @@ fx_create_df <- function(con, tables, response_domain, variable, response_domain
   df_combined <- bind_rows(all_demo_data, tot_freq_all_youth)
 
   #filter for rows that are not needed like not bipoc, not lgbtqia, etc.and those that have responses we don't want like Don't knows, etc. 
-  df_almost_final <- df_combined %>%
+  df_final <- df_combined %>%
     filter(!grepl("^not ", .[[1]], ignore.case = TRUE)) %>%  # Filters out rows where first column starts with "not "
     filter(!response %in% c("Don't wish to answer", "Don't know", "Not sure", "Not Sure", "Does not apply to me")) %>% #Fiters out rows with responses we don't want to visualize
-    mutate(response = str_wrap(response, width = 8)) %>% #wrapping for better labeling in the visuals
+    # mutate(response = str_wrap(response, width = 8)) %>% #wrapping for better labeling in the visuals
     mutate(youth_label = str_wrap(youth_label, width = 11)) %>%
     arrange(desc(rate)) 
   
-  #define factor levels in order we want them 
-  #NOTE THAT Don't Wish to Answer, Not Sure, and Does Not Apply to Me ARE OMMITTED IN THIS STEP
-  true_factors<-c("Never true","Sometimes true","Often true","Always true") 
-  time_factors<-c("None of the time","A little of the time","Some of the time","Most of the time","All of the time")
-  time_factors_reverse<-c("All of the time", "Most of the time", "Some of the time", "A little of the time", "None of the time") #reverse so a greater number means a good outcome and a smaller number means a bad outcome
-  yes_factors<-c("No", "Yes")
-  yes_factors_reverse <- c("Yes", "No") #reverse so a greater number means a good outcome and a smaller number means a bad outcome
-  count_factors<-c("None","One","Two","Three or more")
-  freq_factors<-c("Never","Rarely","Sometimes","Most of the time","All of the time")
-  freq_factors_reverse<-c("All of the time", "Most of the time","Sometimes", "Rarely","Never") #reverse so a greater number means a good outcome and a smaller number means a bad outcome
-  
-   df_final <- df_almost_final %>%
-    mutate(
-      factor_levels = if_else(likert_type == 'true_scale', list(true_factors),
-                              if_else(likert_type == 'count_scale', list(count_factors),
-                                      if_else(likert_type == 'freq_scale', list(freq_factors),
-                                              if_else(likert_type == 'freq_scale_rev', list(freq_factors_reverse),
-                                                      if_else(likert_type == 'yes_scale', list(yes_factors),
-                                                              if_else(likert_type == 'yes_scale_rev', list(yes_factors_reverse),
-                                                                      if_else(likert_type == 'time_scale', list(time_factors),
-                                                                              if_else(likert_type == 'time_scale_rev', list(time_factors_reverse),
-                                                                                      list(character(0))))))))))) %>%
-  rowwise() %>%  
-  mutate(
-    response = factor(response, levels = unlist(factor_levels)),  # Ensure `factor_levels` is unlisted
-    factor_score = as.numeric(response)  # Convert to numeric for scoring
-  ) %>%
-  ungroup() %>%  
-  filter(!is.na(response))  # Remove rows where response is NA
-  
-  print(df_combined)
   return(df_final)
   
 }
 
 
-####STEP 3: Run Function with the list of tables that are of interest See example ####
+####STEP 3: Run Function with the list of tables that are of interest See example, set factor levels ####
 # List of tables
 tables <- c("response_analysis_per_race", "response_analysis_per_bipoc", 
             "response_analysis_per_disconnected", "response_analysis_per_lgbtqia",
-            "response_analysis_per_suspended", "response_analysis_per_systems_impacted", 
+            # "response_analysis_per_suspended",
+            # "response_analysis_per_arrested",
+            "response_analysis_per_systems_impacted", 
             "response_analysis_per_undocumented", "response_analysis_per_unhoused")
 
 # Running function
@@ -167,13 +139,40 @@ df_ex <- fx_create_df(con, tables, "Vibrant Communities", "ds", "tot_freq_vibran
 
 # View(df_ex) #check example table, does everything look like it is working okay? 
 
+#define factor levels in order we want them
+#NOTE THAT Don't Wish to Answer, Not Sure, and Does Not Apply to Me ARE OMMITTED IN THIS STEP
+true_factors<-c("Never true","Sometimes true","Often true","Always true")
+time_factors<-c("None of the time","A little of the time","Some of the time","Most of the time","All of the time")
+time_factors_reverse<-c("All of the time", "Most of the time", "Some of the time", "A little of the time", "None of the time") #reverse so a greater number means a good outcome and a smaller number means a bad outcome
+yes_factors<-c("No", "Yes")
+yes_factors_reverse <- c("Yes", "No") #reverse so a greater number means a good outcome and a smaller number means a bad outcome
+count_factors<-c("None","One","Two","Three or more")
+freq_factors<-c("Never","Rarely","Sometimes","Most of the time","All of the time")
+freq_factors_reverse<-c("All of the time", "Most of the time","Sometimes", "Rarely","Never") #reverse so a greater number means a good outcome and a smaller number means a bad outcome
+
 ####STEP 4: Create a function to produce small multiple visuals from the df just produced####
 
-fx_vis_smallmultiples <- function(df, title_text) {
-
-  df_visual <- ggplot(df, aes(x = response, y = rate, fill = response)) +
+fx_vis_smallmultiples <- function(df, title_text, likert_factors, graph_orderby
+                                  ) {
+  
+  #order the individual graphs by descending order of desired response 
+  df <- df %>%
+    group_by(youth_label) %>%
+    mutate(max_order = rate[response == graph_orderby]) %>%
+    ungroup() %>%
+    mutate(youth_label = reorder(youth_label, -max_order))  # Negative sign for descending order
+  
+  #now order response category in associated factor level
+  df$response <- factor(df$response, levels = likert_factors)
+  
+  
+  df_visual <- ggplot(df, aes(x = response, y = rate
+                              , fill = response
+                              )) +
   geom_bar(stat = "identity") +  # Use identity to plot actual counts
-  facet_wrap(~ youth_label, scales = "free_y", nrow = 2) +  # Create small multiples
+  # Define custom BV colors 
+  scale_fill_manual(values = c(yellow, pink, dark_pink, orange)) + 
+  facet_wrap(~ youth_label, scales = "free_x", nrow = 2, strip.position = "bottom") +  # Create small multiples
   #bar labels
   geom_text(data = df,
             aes(label = paste0(round(rate, digits = 0), "%")),
@@ -189,10 +188,11 @@ fx_vis_smallmultiples <- function(df, title_text) {
                                       unique(df$sub_question), ".\n",
                                       " Component: ", unique(df$response_domain), ",\n",
                                       " Subcomponent: ", unique(df$variable_name), ".\n",
-                                      " Data Source: Catalyst California calculations of Bold Vision Youth Thriving Survey, 2024."),
+                                      " Data Source: Catalyst California calculations of Bold Vision Youth Thriving Survey, 2024.", ",\n",
+                                      " Note: AIAN- Alaskan Indian and American Native, BIPOC- Black Indigeneous People of Color, 
+                                      LGBTQIA- Lesbian, Gay, Bisexual, Transgender, Queer, Intersex, and Asexual, SWANA- South West Asian and North African,
+                                      NHPI- Native Hawaiian and Pacific Islander"),
                                whitespace_only = TRUE, width = 165), collapse = "\n")) +
-  # Define custom BV colors 
-  scale_fill_manual(values = c(yellow, pink, dark_pink, orange, dark_green)) + 
   theme(legend.position = "bottom",  # Show legend on the right
      # remove axis text
      axis.text.x = element_blank(), 
@@ -201,7 +201,7 @@ fx_vis_smallmultiples <- function(df, title_text) {
      legend.text = element_text(size = 12, colour = "black", family = font_axis_label, face = "bold", margin = margin(t = 5)),
      legend.title = element_text(size = 12, colour = "black", family = font_axis_label, face = "bold", margin = margin(t = 5)),
      # define style for title and caption
-     plot.caption = element_text(hjust = 0.0, size = 8, colour = "black", family = font_caption, face = "plain"),
+     plot.caption = element_text(hjust = 0.0, size = 11, colour = "black", family = font_caption, face = "plain"),
      plot.title = element_text(hjust = 0.0, size = 18, colour = "black", family = font_title, face = "bold"),
      # grid line style
      panel.grid.minor = element_blank(),
@@ -210,7 +210,15 @@ fx_vis_smallmultiples <- function(df, title_text) {
   ggsave(plot = df_visual, 
          file = paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", 
                        unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.svg"),
-         units = "in", width = 8, height = 5.5)
+         units = "in", width = 8, height = 7)
+  ggsave(plot = df_visual, 
+         file = paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", 
+                       unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.pdf"),
+         units = "in", width = 8, height = 7)
+  ggsave(plot = df_visual, 
+         file = paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", 
+                       unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.png"),
+         units = "in", width = 8, height = 7)
   
   return(df_visual)
 
@@ -224,4 +232,36 @@ fx_vis_smallmultiples(df = df_ex,
 
 ###Step 6: Close database connection ####
 dbDisconnect(con)
-       
+
+####Notes Saved to fix function for input of likert type if time ####
+
+
+# #define factor levels in order we want them 
+# #NOTE THAT Don't Wish to Answer, Not Sure, and Does Not Apply to Me ARE OMMITTED IN THIS STEP
+# true_factors<-c("Never true","Sometimes true","Often true","Always true") 
+# time_factors<-c("None of the time","A little of the time","Some of the time","Most of the time","All of the time")
+# time_factors_reverse<-c("All of the time", "Most of the time", "Some of the time", "A little of the time", "None of the time") #reverse so a greater number means a good outcome and a smaller number means a bad outcome
+# yes_factors<-c("No", "Yes")
+# yes_factors_reverse <- c("Yes", "No") #reverse so a greater number means a good outcome and a smaller number means a bad outcome
+# count_factors<-c("None","One","Two","Three or more")
+# freq_factors<-c("Never","Rarely","Sometimes","Most of the time","All of the time")
+# freq_factors_reverse<-c("All of the time", "Most of the time","Sometimes", "Rarely","Never") #reverse so a greater number means a good outcome and a smaller number means a bad outcome
+# 
+# df_final <- df_almost_final %>%
+#   mutate(
+#     factor_levels = if_else(likert_type == 'true_scale', list(true_factors),
+#                             if_else(likert_type == 'count_scale', list(count_factors),
+#                                     if_else(likert_type == 'freq_scale', list(freq_factors),
+#                                             if_else(likert_type == 'freq_scale_rev', list(freq_factors_reverse),
+#                                                     if_else(likert_type == 'yes_scale', list(yes_factors),
+#                                                             if_else(likert_type == 'yes_scale_rev', list(yes_factors_reverse),
+#                                                                     if_else(likert_type == 'time_scale', list(time_factors),
+#                                                                             if_else(likert_type == 'time_scale_rev', list(time_factors_reverse),
+#                                                                                     list(character(0))))))))))) %>%
+#   rowwise() %>%  
+#   mutate(
+#     response = factor(response, levels = unlist(factor_levels)),  # Ensure `factor_levels` is unlisted
+#     factor_score = as.numeric(response)  # Convert to numeric for scoring
+#   ) %>%
+#   ungroup() %>%  
+#   filter(!is.na(response))  # Remove rows where response is NA

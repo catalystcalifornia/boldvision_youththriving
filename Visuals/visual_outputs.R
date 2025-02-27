@@ -10,7 +10,9 @@ df_dl <- fx_create_df(con, tables, "Caring Families And Relationships", "dl", "t
 
 View(df_dl)
 
-fx_vis_smallmultiples(df = df_dl, title_text = 'Most LA County youth often or always feel they can go to someone with a problem')
+fx_vis_smallmultiples(df = df_dl, title_text = 'Most LA County youth often or always feel they can go to someone with a problem'
+                      ,likert_factors = true_factors, graph_orderby = "Always true"
+                      )
 
 
 # ####visualizing key findings for Youth Council presentation 10/19/24 (NOTE: Charts are archived since data has been updated since then)#### 
