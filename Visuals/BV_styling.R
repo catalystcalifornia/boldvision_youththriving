@@ -1,6 +1,6 @@
 #The purpose of this script is to centralized styling for ggplot functions in one place.
 
-#The following aim to follow the Bold Vision Style Guide stored here: 
+#The following aim to follow the Bold Vision Style Guide stored here: "W:/Project/OSI/Bold Vision/BV 2023/BV Style"
 library(ggplot2)
 
 ##Colors
