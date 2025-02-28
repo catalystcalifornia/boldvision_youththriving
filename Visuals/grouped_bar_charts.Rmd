@@ -89,7 +89,7 @@ get_grouped_bar_chart <- function(crosstab_df,title_text,string_question_var1,st
     title_text <- paste(str_wrap(title_text, whitespace_only = TRUE, width = 57), collapse = "\n")
     
     # Set the x-axis title
-    string_question_var2 <- str_wrap(string_question_var2, width = 125)
+    string_question_var2 <- str_wrap(string_question_var2, width = 100)
     # Reorder the x-axis labels 
     crosstab_df <- crosstab_df %>%
         mutate(response_var2 = reorder(response_var2, var2_number))
@@ -116,7 +116,7 @@ get_grouped_bar_chart <- function(crosstab_df,title_text,string_question_var1,st
     # Set the font sizes and styles
     chart_title_theme <- element_text(hjust = 0.0, size = 18, colour = "black", family = font_title, face = "bold")
     heading_theme <- element_text(size = 12, colour = "black", family = font_axis_label, face = "bold")
-    x_title_theme <- element_text(hjust = 0.0, size = 12, colour = "black", family = font_axis_label, face = "bold", margin = margin(t = 10))
+    x_title_theme <- element_text(hjust = 0.5, size = 12, colour = "black", family = font_axis_label, face = "bold", margin = margin(t = 10))
     subheading_theme <- element_text(size = 9, colour = "black", family = font_axis_label, face = "plain")
     caption_theme <- element_text(hjust = 0.0, size = 8, colour = "black", family = font_caption, face = "plain", margin = margin(t = 10))
     
@@ -131,7 +131,7 @@ get_grouped_bar_chart <- function(crosstab_df,title_text,string_question_var1,st
       "Component: ", unique(crosstab_df$component_var2),
       ", Subcomponent: ", unique(crosstab_df$subcomponent_var2), ". ",
       "Data Source: Catalyst California calculations of Bold Vision Youth Thriving Survey, 2024."
-    ), width = 170)  # Apply wrapping only once
+    ), width = 120)  # Apply wrapping only once
 
     # Plot grouped bar chart
     final_visual <- ggplot(crosstab_df, aes(fill=response_var1, y=rate, x=response_var2)) + 
