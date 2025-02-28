@@ -160,7 +160,7 @@ font_axis_label <- "Manifold Regular"
 # Step 3: Filter for selected components and for selected demographics -----
 # list of demographics to focus on
 unique(df_all$youth_label)
-subgroups<-c("AIAN","Another Race","Asian","Black","Latine","Multiracial","NHPI","SWANA","White","BIPOC","Systems Impacted","Undocumented","Unhoused","Cis Man/Boy","Cis Woman/Girl","LGBTQIA+")
+subgroups<-c("AIAN","Asian","Black","Latine","Multiracial","NHPI","SWANA","White","BIPOC","Systems Impacted","Undocumented","Unhoused","Cis Man/Boy","Cis Woman/Girl","LGBTQIA+")
 subgroups
 
 # list of components to focus on
@@ -170,11 +170,11 @@ components
 
 # filter dataframe
 df_all <- df_all %>%
-  filter(youth_label %in% subgroups & 
-         component_label %in% components) 
+  filter(youth_label %in% subgroups & # filter for subgroups
+         component_label %in% components) # filter for components
   
   
-# Step 4: Run circular bar plot just by component -------
+# Step 4: Run circular bar plot just by one component to test - PSYCHOLOGICAL DISTRESS-------
 # filter for the component
 df <- df_all %>% filter(component_label=='Freedom From Psychological Distress')
 
@@ -206,9 +206,7 @@ label_data$angle<-ifelse(angle < -90, angle+180, angle)
 
 p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
   geom_bar(aes(fill=avg_adjusted),stat = "identity", 
-           # position = "dodge2",
            alpha=1, show.legend=TRUE) +  
-  # scale_fill_gradient(low="#FDDFF3",high="#F75EC1") +
   scale_fill_gradientn("Freedom From Psychological Distress",
   colours=c("#FDDFF3","#FA9EDA","#F97ECD","#F75EC1")
   ,
@@ -235,14 +233,22 @@ p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
   xlab("")+
   # Add labels
   labs(
-    title = "Average Predicted <span style ='color: #F75EC1;'>Freedom from Psychological Distress </span>",
+    title = paste("Average Predicted <span style ='color: #F75EC1;'>Freedom from Psychological</span> ", 
+                  " <span style ='color: #F75EC1;'>Distress</span>",
+                  sep="\n"),
     subtitle = paste
-      ("\nLA County youth vary in how they are thriving emotionally. LGBTQIA+, systems",
-      "impacted, cisgender women/girl, and Asian youth experience the most ",
-      "significant differences.",
+      ("\nLA County youth vary in how they are thriving emotionally. LGBTQIA+,",
+      "systems impacted, cisgender women/girl, and Asian youth experience",
+      "the most significant differences compared to their counterparts.",
       sep = "\n"
     ),
-    caption = "\nCatalyst California's calculations of Bold Vision, Youth Thriving Survey, 2024.") +
+    caption = paste("\nCatalyst California's calculations of Bold Vision Youth Thriving Survey, 2024.",
+                    "Note: AIAN=American Indian & Alaska Native; BIPOC=Black, Indigeneous, People of Color;", 
+                    "LGBTQIA+=Lesbian, Gay, Bisexual, Transgender, Queer, Intersex, Asexual, & Gender", 
+                    "nonconforming; NHPI: Native Hawaiian & Pacific Islander; SWANA=Southwest Asian & North",
+                    "African; Systems Impacted=Youth at any point in foster care, juvenile hall/probation camp",
+                    "jail/prison, group home/residential program, or lived with legal guardians",
+                    sep="\n")) +
   theme_minimal() +
   theme(legend.title = element_text(hjust = 0.5,size = 14, family= font_axis_label),
         legend.text = element_text(hjust = 0.5,size = 14, family= font_axis_label),
@@ -257,11 +263,11 @@ p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
         axis.title.x=element_blank(),
         # axis.title.x = element_text(size = 12, colour = "black", family = font_axis_label, face = "bold"),
         # define style for title and caption
-        plot.caption = element_text(hjust = 0.0, size = 11, colour = "black", family = font_caption, face = "plain"),
+        plot.caption = element_text(hjust = 0.0, size = 10, colour = "black", family = font_caption, face = "plain"),
         plot.subtitle = 
           element_text(hjust = 0.0, size = 14, family = font_subtitle), 
         plot.title = 
-          element_markdown(hjust = 0.0, size = 20, family = font_title, lineheight=1)
+          element_markdown(hjust = 0.0, size = 20, family = font_title)
         # ,
         #   element_text(hjust = 0.0, size = 20, colour = "black", family = font_title)
         , 
@@ -278,11 +284,11 @@ p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
 showtext_opts(dpi=300)
 
 ggsave(plot=p, 
-       file="W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/Strong Minds/Component_Summary.png",
+       file="W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/Strong Minds/circular_plot_Psychological_Distress.png",
        units = c("in"),  width = 8, height = 8)
 
 ggsave(plot=p, 
-       file="W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/Strong Minds/Component_Summary.pdf",
+       file="W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/Strong Minds/circular_plot_Psychological_Distress.pdf",
        units = c("in"),  width = 8, height = 8)
 
 
