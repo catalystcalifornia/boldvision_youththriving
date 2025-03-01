@@ -233,9 +233,7 @@ p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
   xlab("")+
   # Add labels
   labs(
-    title = paste("Average Predicted <span style ='color: #F75EC1;'>Freedom from Psychological</span> ", 
-                  " <span style ='color: #F75EC1;'>Distress</span>",
-                  sep="\n"),
+    title = "Average Predicted <span style ='color: #F75EC1;'>Freedom from Psychological <br>Distress</span>", 
     subtitle = paste
       ("\nLA County youth vary in how they are thriving emotionally. LGBTQIA+,",
       "systems impacted, cisgender women/girl, and Asian youth experience",
@@ -245,9 +243,9 @@ p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
     caption = paste("\nCatalyst California's calculations of Bold Vision Youth Thriving Survey, 2024.",
                     "Note: AIAN=American Indian & Alaska Native; BIPOC=Black, Indigeneous, People of Color;", 
                     "LGBTQIA+=Lesbian, Gay, Bisexual, Transgender, Queer, Intersex, Asexual, & Gender", 
-                    "nonconforming; NHPI: Native Hawaiian & Pacific Islander; SWANA=Southwest Asian & North",
+                    "Nonconforming; NHPI: Native Hawaiian & Pacific Islander; SWANA=Southwest Asian & North",
                     "African; Systems Impacted=Youth at any point in foster care, juvenile hall/probation camp",
-                    "jail/prison, group home/residential program, or lived with legal guardians",
+                    "jail/prison, group home/residential program, or lived with legal guardians.",
                     sep="\n")) +
   theme_minimal() +
   theme(legend.title = element_text(hjust = 0.5,size = 14, family= font_axis_label),
@@ -292,7 +290,140 @@ ggsave(plot=p,
        units = c("in"),  width = 8, height = 8)
 
 
-# Step 5: Run circular bar plot for another component -------
+# Step 5: Make a function for circular bar plot -------
+
+circular_plot <- function(component_input,component_folder,component_colors,legend_labels, title_text,subtitle_text) {
+  
+  # ----- This section prepares the data for the visual ---- #
+  
+  df <- df_all %>% filter(component_label==component_input)
+  
+  # factor labels for ordering subgroups
+  df$youth_label_factor <- factor(df$youth_label, levels = subgroups)
+  
+  df <- df %>% 
+    arrange(avg_adjusted) # order by rate
+  
+  # ----- This section prepares a dataframe for angled labels ---- #
+  # add id
+  df$id<- seq(1, nrow(df))
+  
+  # Get the name and the y position of each label
+  label_data <- df
+  
+  # calculate the ANGLE of the labels
+  number_of_bar <- nrow(df)
+  angle <-  90 - 360 * (label_data$id-0.5) /number_of_bar     # I substract 0.5 because the letter must have the angle of the center of the bars. Not extreme right(1) or extreme left (0)
+  
+  # calculate the alignment of labels: right or left
+  # If I am on the left part of the plot, my labels have currently an angle < -90
+  label_data$hjust<-ifelse( angle < -90, 1, 0)
+  
+  # flip angle BY to make them readable
+  label_data$angle<-ifelse(angle < -90, angle+180, angle)
+  
+  # ----- This section creates the plot ---- #
+  
+  p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
+    geom_bar(aes(fill=avg_adjusted),stat = "identity", 
+             alpha=1, show.legend=TRUE) +  
+    scale_fill_gradientn(component_input, # legend title
+                         colours=component_colors, # legend color ramp
+                         labels=legend_labels # upper and lower labels for legend
+    )+
+    # Make the guide for the fill discrete
+    guides(
+      fill = guide_colorsteps(
+        barwidth = 15, barheight = .5, title.position = "top", title.hjust = .5
+      )
+    ) +
+    ylim(-.25,1.3) + # limits of the chart based on range across the whole dataframe
+    ylab("")+
+    xlab("")+
+    # Add labels
+    labs(
+      title = title_text,
+      subtitle = subtitle_text,
+      caption =  paste("\nCatalyst California's calculations of Bold Vision Youth Thriving Survey, 2024.",
+                       "Note: AIAN=American Indian & Alaska Native; BIPOC=Black, Indigeneous, People of Color;", 
+                       "LGBTQIA+=Lesbian, Gay, Bisexual, Transgender, Queer, Intersex, Asexual, & Gender", 
+                       "Nonconforming; NHPI: Native Hawaiian & Pacific Islander; SWANA=Southwest Asian & North",
+                       "African; Systems Impacted=Youth at any point in foster care, juvenile hall/probation camp",
+                       "jail/prison, group home/residential program, or lived with legal guardians.",
+                       sep="\n"))+
+    theme_minimal() +
+    theme(
+      # define legend style
+      legend.title = element_text(hjust = 0.5,size = 14, family= font_axis_label),
+      legend.text = element_text(hjust = 0.5,size = 14, family= font_axis_label),
+      legend.position = "bottom", 
+      legend.margin=margin(0,0,0,0),
+      legend.box.margin=margin(-2,-2,-2,-2),
+      # define style for axis text
+      axis.text.y=element_blank(),
+      axis.text.x=element_blank(),
+      axis.title.x=element_blank(),
+      # define style for title, subtitle, and caption
+      plot.caption = element_text(hjust = 0.0, size = 11, colour = "black", family = font_caption, face = "plain"),
+      plot.subtitle = 
+        element_text(hjust = 0.0, size = 14, family = font_subtitle), 
+      plot.title = 
+        element_markdown(hjust = 0.0, size = 20, family = font_title, lineheight=1), 
+      # grid line style
+      panel.grid = element_blank(),
+    ) + 
+    coord_polar() +
+    # Add the labels, using the label_data dataframe that we have created before
+    geom_text(data=label_data, aes(x=id, y=avg_adjusted+.02, label=youth_label, hjust=hjust), color="black", family=font_axis_label,alpha=0.6, size=4, angle= label_data$angle, inherit.aes = FALSE ) 
+  
+  
+  # ----- This section saves and outputs the plot ---- #
+  
+  showtext_opts(dpi=300)
+  
+  ggsave(plot=p, 
+         file=paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/",component_folder,"/circular_plot_",component_input,".png"),
+         units = c("in"),  width = 8, height = 8)
+  
+  ggsave(plot=p, 
+         file=paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/",component_folder,"/circular_plot_",component_input,".pdf"),
+         units = c("in"),  width = 8, height = 8)
+  
+}
+
+# Step 6: Run the function ------
+
+### Structural Racism -------
+component_input <- "Freedom From Structural Racism" # component being visualized for filtering and legend title
+component_folder <- "Racial Justice, Equity, And Inclusion" # name of folder in deliverables to save to
+component_colors <-c("#A79FD1","#7A6FBA","#4E3FA3","#220f8c") # color ramp for the legend
+legend_labels <- c("<- Lower","","","Higher ->") # if function doesn't work, e.g., error in get_labels might need to add another blank value
+title_text <- "Average Predicted <span style ='color: #220f8c;'>Freedom From Structural Racism</span>" # replace color hex and name between <>
+subtitle_text <- paste("\nLA County youth vary in how freely they can live without experiencing", # text breaks in the subtitle after running initial visual
+                       "structural racism. Undocumented, unhoused, LGBTQIA+, and systems",
+                       "impacted youth and many youth of color groups are most likely to",
+                       "experience structural racism.",
+                       sep = "\n"
+)
+
+circular_plot(component_input,component_folder,component_colors,legend_labels,title_text,subtitle_text)
+# works
+
+### Microaggressions -------
+component_input <- "Freedom From Structural Racism" # component being visualized for filtering and legend title
+component_folder <- "Racial Justice, Equity, And Inclusion" # name of folder in deliverables to save to
+component_colors <-c("#A79FD1","#7A6FBA","#4E3FA3","#220f8c") # color ramp for the legend
+legend_labels <- c("<- Lower","","","Higher ->") # if function doesn't work, e.g., error in get_labels might need to add another blank value
+title_text <- "Average Predicted <span style ='color: #220f8c;'>Freedom From Structural Racism</span>" # replace color hex and name between <>
+subtitle_text <- paste("\nLA County youth vary in how freely they can live without experiencing", # text breaks in the subtitle after running initial visual
+                       "structural racism. Undocumented, unhoused, LGBTQIA+, and systems",
+                       "impacted youth and many youth of color groups are most likely to",
+                       "experience structural racism.",
+                       sep = "\n"
+)
+
+circular_plot(component_input,component_folder,component_colors,legend_labels,title_text,subtitle_text)
+
 # filter for the component
 df <- df_all %>% filter(component_label=='Freedom From Microaggressions')
 
@@ -515,119 +646,8 @@ ggsave(plot=p,
        file="W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/Caring Families And Relationships/circular_plot_caring_families_and_relationships.pdf",
        units = c("in"),  width = 8, height = 8)
 
-# Make a function -------
-
-circular_plot <- function(component_input,component_folder,component_colors,legend_labels, title_text,subtitle_text) {
-
-# ----- This section prepares the data for the visual ---- #
-  
-    df <- df_all %>% filter(component_label==component_input)
-
-  # factor labels for ordering subgroups
-  df$youth_label_factor <- factor(df$youth_label, levels = subgroups)
-
-  df <- df %>% 
-    arrange(avg_adjusted) # order by rate
-
-# ----- This section prepares a dataframe for angled labels ---- #
-# add id
-df$id<- seq(1, nrow(df))
-
-# Get the name and the y position of each label
-label_data <- df
-
-# calculate the ANGLE of the labels
-number_of_bar <- nrow(df)
-angle <-  90 - 360 * (label_data$id-0.5) /number_of_bar     # I substract 0.5 because the letter must have the angle of the center of the bars. Not extreme right(1) or extreme left (0)
-
-# calculate the alignment of labels: right or left
-# If I am on the left part of the plot, my labels have currently an angle < -90
-label_data$hjust<-ifelse( angle < -90, 1, 0)
-
-# flip angle BY to make them readable
-label_data$angle<-ifelse(angle < -90, angle+180, angle)
-
-# ----- This section creates the plot ---- #
-
-p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
-  geom_bar(aes(fill=avg_adjusted),stat = "identity", 
-           alpha=1, show.legend=TRUE) +  
-  scale_fill_gradientn(component_input, # legend title
-                       colours=component_colors, # legend color ramp
-                       labels=legend_labels # upper and lower labels for legend
-  )+
-  # Make the guide for the fill discrete
-  guides(
-    fill = guide_colorsteps(
-      barwidth = 15, barheight = .5, title.position = "top", title.hjust = .5
-    )
-  ) +
-  ylim(-.25,1.3) + # limits of the chart based on range across the whole dataframe
-  ylab("")+
-  xlab("")+
-  # Add labels
-  labs(
-    title = title_text,
-    subtitle = subtitle_text,
-    caption = "\nCatalyst California's calculations of Bold Vision, Youth Thriving Survey, 2024.") +
-  theme_minimal() +
-  theme(
-        # define legend style
-        legend.title = element_text(hjust = 0.5,size = 14, family= font_axis_label),
-        legend.text = element_text(hjust = 0.5,size = 14, family= font_axis_label),
-        legend.position = "bottom", 
-        legend.margin=margin(0,0,0,0),
-        legend.box.margin=margin(-2,-2,-2,-2),
-        # define style for axis text
-        axis.text.y=element_blank(),
-        axis.text.x=element_blank(),
-        axis.title.x=element_blank(),
-        # define style for title, subtitle, and caption
-        plot.caption = element_text(hjust = 0.0, size = 11, colour = "black", family = font_caption, face = "plain"),
-        plot.subtitle = 
-          element_text(hjust = 0.0, size = 14, family = font_subtitle), 
-        plot.title = 
-          element_markdown(hjust = 0.0, size = 20, family = font_title, lineheight=1), 
-        # grid line style
-        panel.grid = element_blank(),
-  ) + 
-  coord_polar() +
-  # Add the labels, using the label_data dataframe that we have created before
-  geom_text(data=label_data, aes(x=id, y=avg_adjusted+.02, label=youth_label, hjust=hjust), color="black", family=font_axis_label,alpha=0.6, size=4, angle= label_data$angle, inherit.aes = FALSE ) 
 
 
-# ----- This section saves and outputs the plot ---- #
-
-showtext_opts(dpi=300)
-
-ggsave(plot=p, 
-       file=paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/",component_folder,"/circular_plot_",component_input,".png"),
-       units = c("in"),  width = 8, height = 8)
-
-ggsave(plot=p, 
-       file=paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/",component_folder,"/circular_plot_",component_input,".pdf"),
-       units = c("in"),  width = 8, height = 8)
-
-}
-
-
-# Run the function ------
-
-### Structural Racism -------
-component_input <- "Freedom From Structural Racism" # component being visualized for filtering and legend title
-component_folder <- "Racial Justice, Equity, And Inclusion" # name of folder in deliverables to save to
-component_colors <-c("#A79FD1","#7A6FBA","#4E3FA3","#220f8c") # color ramp for the legend
-legend_labels <- c("<- Lower","","","Higher ->") # if function doesn't work, e.g., error in get_labels might need to add another blank value
-title_text <- "Average Predicted <span style ='color: #220f8c;'>Freedom From Structural Racism</span>" # replace color hex and name between <>
-subtitle_text <- paste("\nLA County youth vary in how freely they can live without experiencing", # text breaks in the subtitle after running initial visual
-                       "structural racism. Undocumented, unhoused, LGBTQIA+, and systems",
-                       "impacted youth and many youth of color groups are most likely to",
-                       "experience structural racism.",
-                       sep = "\n"
-)
-
-circular_plot(component_input,component_folder,component_colors,legend_labels,title_text,subtitle_text)
-# works
 
 ### Self-Efficacy and Hope -------
 component_input <- "Self-Efficacy And Hope" # component being visualized for filtering and legend title
