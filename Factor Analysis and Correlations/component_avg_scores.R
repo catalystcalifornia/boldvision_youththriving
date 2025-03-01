@@ -251,12 +251,12 @@ demographic <- " for non-hispanic race + aian + nhpi + swana alone or in combina
 table_comment <- paste0(indicator, demographic, source)
 column_names <- colnames(df_final_race) # Get column names
 
-# write table
-dbWriteTable(con, c(schema, table_name), df_final_race,
-             overwrite = FALSE, row.names = FALSE)
-
-# Comment on table and columns
-add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+# # write table
+# dbWriteTable(con, Id(schema, table_name), df_final_race,
+#              overwrite = FALSE, row.names = FALSE)
+# 
+# # Comment on table and columns
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
 
 
 ## SOGI table export ------
@@ -267,12 +267,12 @@ demographic <- " for gender and sexuality data including cisgender male/female a
 table_comment <- paste0(indicator, demographic, source)
 column_names <- colnames(df_final_sogi) # Get column names
 
-# write table
-dbWriteTable(con, c(schema, table_name), df_final_sogi,
-             overwrite = FALSE, row.names = FALSE)
-
-# Comment on table and columns
-add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+# # write table
+# dbWriteTable(con, Id(schema, table_name), df_final_sogi,
+#              overwrite = FALSE, row.names = FALSE)
+# 
+# # Comment on table and columns
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
 
 ## Age table export ------
 table_name <- "factor_analysis_avg_scores_age"
@@ -280,25 +280,25 @@ demographic <- " for age minor or adult "
 table_comment <- paste0(indicator, demographic, source)
 column_names <- colnames(df_age) # Get column names
 
-# write table
-dbWriteTable(con, c(schema, table_name), df_age,
-             overwrite = FALSE, row.names = FALSE)
-
-# Comment on table and columns
-add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+# # write table
+# dbWriteTable(con, Id(schema, table_name), df_age,
+#              overwrite = FALSE, row.names = FALSE)
+# 
+# # Comment on table and columns
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
 
 ## SPA table export ------
 table_name <- "factor_analysis_avg_scores_spa"
 demographic <- " for service planning area "
 table_comment <- paste0(indicator, demographic, source)
 column_names <- colnames(df_spa) # Get column names
-
-# write table
-dbWriteTable(con, c(schema, table_name), df_spa,
-             overwrite = FALSE, row.names = FALSE)
-
-# Comment on table and columns
-add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+# 
+# # write table
+# dbWriteTable(con, Id(schema, table_name), df_spa,
+#              overwrite = FALSE, row.names = FALSE)
+# 
+# # Comment on table and columns
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
 
 ## Other binary vars table export ------
 df_final_sys <- rbind(df_arrested, df_disconnected, df_suspended, df_undocumented, df_unhoused,df_si)
@@ -308,12 +308,12 @@ demographic <- " for systems involved indicators, e.g., ever arrested, disconnec
 table_comment <- paste0(indicator, demographic, source)
 column_names <- colnames(df_final_sys) # Get column names
 
-# write table
-dbWriteTable(con, c(schema, table_name), df_final_sys,
-             overwrite = FALSE, row.names = FALSE)
-
-# Comment on table and columns
-add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+# # write table
+# dbWriteTable(con, Id(schema, table_name), df_final_sys,
+#              overwrite = FALSE, row.names = FALSE)
+# 
+# # Comment on table and columns
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
 
 ## All youth table export ------
 table_name <- "factor_analysis_avg_scores_total"
@@ -321,11 +321,11 @@ demographic <- " for all youth"
 table_comment <- paste0(indicator, demographic, source)
 column_names <- colnames(df_total) # Get column names
 
-# write table
-dbWriteTable(con, c(schema, table_name), df_total,
-             overwrite = FALSE, row.names = FALSE)
-
-# Comment on table and columns
-add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+# # write table
+# dbWriteTable(con, Id(schema, table_name), df_total,
+#              overwrite = FALSE, row.names = FALSE)
+# 
+# # Comment on table and columns
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
 
 dbDisconnect(con)
