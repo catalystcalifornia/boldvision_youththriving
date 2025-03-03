@@ -79,7 +79,7 @@ source("W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\GitHub\\AV\\boldvi
 get_grouped_bar_chart <- function(crosstab_df,title_text,string_question_var1,string_question_var2,svy_dd)
 {
     # Filter out NA responses and recalculate rates. 
-    na_responses <- c("Don't wish to answer","Does not apply to me","Not sure")
+    na_responses <- c("Don't wish to answer","Does not apply to me")
     crosstab_df <- crosstab_df %>%
       filter(!(response_var1 %in% na_responses | response_var2 %in% na_responses)) %>%
       select(-c(count_se,rate_se)) %>%
