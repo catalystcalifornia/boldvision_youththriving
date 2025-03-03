@@ -12,7 +12,7 @@ options(scipen=999) # Turn off scientific notation
 options(width = 120) # Use wider boxes in the html output
 
 library(tidyverse)
-library(RPostgreSQL)
+library(RPostgres)
 library(lavaan)
 library(psych)
 library(fastDummies)
@@ -1389,7 +1389,7 @@ sem_output_2f.5 <- get_sem_results(fit_2f.5) %>%
   select(model_name, everything())
 ```
 
-### Model 2f.6: adding systems_impacted back, removing undocumented
+### Model 2f.6: FINAL, adding systems_impacted back, removing undocumented
 Analysis: BIC decreased compared to model 2f.2.
 
 ```{r Model 2f.6, warning = FALSE, echo = FALSE}
@@ -1419,7 +1419,7 @@ sem_output_2f.6 <- get_sem_results(fit_2f.6) %>%
   select(model_name, everything())
 ```
 
-### Model 2f.8: same as model 2f.6 but only on cisgender respondents
+### Model 2f.8: FINAL, same as model 2f.6 but only on cisgender respondents
 
 Analysis: cisgender_mf is stat sig, but Black and Latinx are no longer stat sig as compared to model 2f.6.
 
@@ -1458,12 +1458,13 @@ all_results <- as.data.frame(rbind(sem_output_2f.6,sem_output_2f.8))
 
 # Write table with metadata
 table_name <- "factor_analysis_sem_results_2f.6_2f.8"
-schema <- "youth_thriving"
+table_schema <- "youth_thriving"
 indicator <- "A table with the results of the structural equation modeling for model 2f.6 and 2f.8. 2f.8 is the same model as 2f.6 except that 2f.8 is only run on cisgender respondents"
 source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Factor Analysis and Correlations/structural_equation_modeling.Rmd "
 qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_structural_equation_modeling.docx"
 table_comment <- paste0(indicator, source)
-# dbWriteTable(con, c(schema, table_name), all_results, overwrite = TRUE, row.names = FALSE)
+dbWriteTable(con, Id(table_schema = schema, table = table_name), all_results, overwrite = TRUE)
+
 
 # Comment on table and columns
 column_names <- colnames(all_results) # Get column names
