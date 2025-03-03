@@ -216,8 +216,8 @@ get_grouped_bar_chart(raw_crosstab,title_text,string_question_var1,string_questi
 # Get crosstab of 2 questions, Self-efficacy and hope - Caring Families And Relationships 
 raw_crosstab <- cross_tab_df(svy_data,"co","dl",svy_dd) 
 title_text <- "Having supportive relationships encourages more hope for the future"
-string_question_var1 <- "I feel hopeful when I think about my future"
-string_question_var2 <- "When I have a problem I have someone who will be there for me"
+string_question_var1 <- "I feel hopeful when I think about my future."
+string_question_var2 <- "When I have a problem I have someone who will be there for me."
 
 get_grouped_bar_chart(raw_crosstab,title_text,string_question_var1,string_question_var2,svy_dd)
 ```
@@ -228,8 +228,8 @@ get_grouped_bar_chart(raw_crosstab,title_text,string_question_var1,string_questi
 # Get crosstab of 2 questions, Self-efficacy and hope - Cultural identity   
 raw_crosstab <- cross_tab_df(svy_data,"co","dz",svy_dd) 
 title_text <- "Having a positive cultural identity promotes more hope for the future"
-string_question_var1 <- "I feel hopeful when I think about my future"
-string_question_var2 <- "My culture helps me feel good about who I am"
+string_question_var1 <- "I feel hopeful when I think about my future."
+string_question_var2 <- "My culture helps me feel good about who I am."
 
 get_grouped_bar_chart(raw_crosstab,title_text,string_question_var1,string_question_var2,svy_dd)
 ```
@@ -240,8 +240,8 @@ get_grouped_bar_chart(raw_crosstab,title_text,string_question_var1,string_questi
 # Get crosstab of 2 questions, Self-efficacy and hope - Opportunities for community involvement/critical action   
 raw_crosstab <- cross_tab_df(svy_data,"co","dm",svy_dd) 
 title_text <- "Increasing opportunities for community involvement encourages more hope for the future"
-string_question_var1 <- "I feel hopeful when I think about my future"
-string_question_var2 <- "There are ways for me to get involved in my community"
+string_question_var1 <- "I feel hopeful when I think about my future."
+string_question_var2 <- "There are ways for me to get involved in my community."
 
 get_grouped_bar_chart(raw_crosstab,title_text,string_question_var1,string_question_var2,svy_dd)
 ```
