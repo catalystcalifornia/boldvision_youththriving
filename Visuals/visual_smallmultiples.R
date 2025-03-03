@@ -1,6 +1,6 @@
 # The purpose of this script is to develop a visual template for producing small multiple visuals for the BVYTS data analysis. 
 # Author: Maria Khan 
-# QA DODCUMENT: W:\Project\OSI\Bold Vision\Youth Thriving Survey\Documentation\QA_smallmultiplesfunction.docx
+# QA DOCUMENT: W:\Project\OSI\Bold Vision\Youth Thriving Survey\Documentation\QA_smallmultiplesfunction.docx
 
 ####STEP 1: Setting Up (Libraries, BV style, database connecction, etc)####
 library(extrafont)
@@ -39,10 +39,13 @@ font_add(family = "Manifold CF", regular = "W:/Project/OSI/Bold Vision/BV 2021/D
 font_add(family = "HelveticaNeueLTStdMdCn", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Helvetica Neue LT Std/HelveticaNeueLTStd-MdCn.otf")
 font_add(family = "HelveticaNeueLTStdHvCn", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Helvetica Neue LT Std/HelveticaNeueLTStd-HvCn.otf")
 font_add(family = "HelveticaNeueLTStdMdCnO", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Helvetica Neue LT Std/HelveticaNeueLTStd-MdCnO.otf")
+font_add(family = "Manifold Regular", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Manifold/Fonts/manifoldcf-regular.otf")
+
 # font_import()
 loadfonts(device = "win")
 windowsFonts()
 showtext_auto()
+
 # define fonts in chart
 font_title <- "HelveticaNeueLTStdHvCn"
 font_subtitle <- "HelveticaNeueLTStdMdCn"
@@ -215,6 +218,9 @@ fx_vis_smallmultiples <- function(df, title_text, likert_factors, graph_orderby
          file = paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", 
                        unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.pdf"),
          units = "in", width = 8, height = 7)
+  
+  showtext_opts(dpi=300)
+  
   ggsave(plot = df_visual, 
          file = paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", 
                        unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.png"),
@@ -227,7 +233,8 @@ fx_vis_smallmultiples <- function(df, title_text, likert_factors, graph_orderby
 
 ####Step 5: Run function to create visual ####
 fx_vis_smallmultiples(df = df_ex,
-                      title_text = 'Unhoused youth are least likely to report access to Libraries')
+                      title_text = 'Unhoused youth are least likely to report access to Libraries',
+                      likert_factors = yes_factors, graph_orderby = "Yes")
 #See example here: W:\Project\OSI\Bold Vision\Youth Thriving Survey\Deliverables\Vibrant Communities 
 
 ###Step 6: Close database connection ####
