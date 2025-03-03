@@ -426,12 +426,12 @@ circular_plot(component_input,component_folder,component_colors,legend_labels,ti
 ### Caring Families and Relationships -------
 component_input <- "Caring Families And Relationships" # component being visualized for filtering and legend title
 component_folder <- "Caring Families And Relationships" # name of folder in deliverables to save to
-component_colors <- c("#FFE599","#FFD966","#FFCC33","#FFBF00") # color ramp for the legend
+component_colors <-c("#99CFB7","#66B692","#339E6E","#00864A") # color ramp for the legend
 legend_labels <- c("<- Lower","","","","Higher ->") # if function doesn't work, e.g., error in get_labels might need to add or remove another blank value
-title_text <- "Average Predicted <span style ='color: #FFBF00;'>Caring Families and <br>Relationships</span>" # replace color hex and name between <>
+title_text <- "Average Predicted <span style ='color: #00864A;'>Caring Families and <br>Relationships</span>" # replace color hex and name between <>
 subtitle_text <- paste("\nLA County youth vary in the support they have from family, adults,",
                         "and other relationships. Unhoused, systems impacted, undocumented,",
-                        "and LGBTQIA+ youth, and many BIPOC youth are least likely to feel they",
+                        "and LGBTQIA+ youth, and many BIPOC youth, are least likely to feel they",
                         "have people to go to in good and bad times.",
                         sep = "\n")
 
@@ -456,12 +456,12 @@ circular_plot(component_input,component_folder,component_colors,legend_labels,ti
 ### Cultural Identity -------
 component_input <- "Cultural Identity" # component being visualized for filtering and legend title
 component_folder <- "Cultural Identity" # name of folder in deliverables to save to
-component_colors <-c("#F9B7C2","#F592A3","#F26E85","#EF4A66") # color ramp for the legend
-legend_labels <- c("<- Lower","","","Higher ->") # if function doesn't work, e.g., error in get_labels might need to add another blank value
-title_text <- "Average Predicted Feeling of <span style ='color: #EF4A66;'>Self-Efficacy And Hope</span>" # replace color hex and name between <>
-subtitle_text <- paste("\nLA County youth vary in how much they believe in themselves", # text breaks in the subtitle after running initial visual
-                       "and have hope for their future. LGBTQIA+, Asian, Multiracial, and systems",
-                       "impacted youth on average feel less confidence and hope for their future",
+component_colors <- c("#FFE599","#FFD966","#FFCC33","#FFBF00") # color ramp for the legend
+legend_labels <- c("<- Lower","","","","","Higher ->") # if function doesn't work, e.g., error in get_labels might need to add another blank value
+title_text <- "Average Predicted Feelings of <span style ='color: #FFBF00;'>Cultural Identity</span>" # replace color hex and name between <>
+subtitle_text <- paste("\nLA County youth vary in how they are connected to their cultural identity.", # text breaks in the subtitle after running initial visual
+                       "Multiracial, undocumented, LGBTQIA+, White, unhoused, and systems",
+                       "impacted youth on average have less strength in their cultural identity",
                        "compared to their counterparts.",
                        sep = "\n"
 )
