@@ -75,6 +75,7 @@ source("W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\GitHub\\AV\\boldvi
 ```
 
 ```{r}
+# To use this function, you must feed in the crosstab dataframe of the 2 relevant variables, the chart title, the 2 relevant suvvey questions as strings, and the data dictionary
 get_grouped_bar_chart <- function(crosstab_df,title_text,string_question_var1,string_question_var2,svy_dd)
 {
     # Filter out NA responses and recalculate rates. 
