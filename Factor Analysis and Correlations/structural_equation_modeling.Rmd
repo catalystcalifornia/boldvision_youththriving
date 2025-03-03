@@ -188,6 +188,10 @@ svy_data <- svy_data %>%
   dummy_cols(
     select_columns = c("spa","personal_safety","opportunities_for_community_involvement",
                        "growth_mindset_cr", "growth_mindset_cs"), ignore_na=TRUE)
+
+# Survey data with only cisgender respondents
+cisgender_svy_data <- svy_data %>% 
+  filter(!is.na(cisgender_mf))
 ```
 
 ```{r QA Check Data Prep, eval=FALSE, include=FALSE}
@@ -879,9 +883,6 @@ sem_output_1j.5 <- get_sem_results(fit_1j.5) %>%
 ### Model 1j.6: FINAL; subsetted by cisgender respondents only
 Analysis: Being cisgender female is associated with more psychological distress, compared to being cisgender male. Latinx becomes not statistically significant, compared to model 1j.5.
 ```{r Model 1j.6, warning=FALSE, echo=FALSE}
-cisgender_svy_data <- svy_data %>% 
-  filter(!is.na(cisgender_mf))
-
 model_1j.6 <- '
   # Measurement model
   component_caring_families_and_relationships =~ dl + dk + dn
@@ -1422,7 +1423,7 @@ sem_output_2f.6 <- get_sem_results(fit_2f.6) %>%
 
 Analysis: cisgender_mf is stat sig, but Black and Latinx are no longer stat sig as compared to model 2f.6.
 
-```{r Model 2f.6, warning = FALSE, echo = FALSE}
+```{r Model 2f.8, warning = FALSE, echo = FALSE}
 model_2f.8 <- '
   # Measurement model
   component_caring_families_and_relationships =~ dl + dk + dn
