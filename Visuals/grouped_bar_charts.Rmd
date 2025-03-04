@@ -161,6 +161,8 @@ get_grouped_bar_chart <- function(crosstab_df,title_text,string_question_var1,st
     ggsave(plot = final_visual, filename = paste0(base_path, ".svg"), 
            device = "svg", width = 8, height = 5.5)
     
+    showtext_opts(dpi=300)
+    
     # Save in PNG
     ggsave(plot = final_visual, filename = paste0(base_path, ".png"), 
            device = "png", width = 8, height = 5.5, dpi = 300)
