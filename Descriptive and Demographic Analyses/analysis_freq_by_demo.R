@@ -22,8 +22,8 @@ svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
 #data dictionary
 svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 where response_type = 'mc' AND response_domain !='Demographics' AND response_domain != 'Info'")
 
-#LGBTQIA data in here
-id_sogi <- dbGetQuery(con, "SELECT response_id, cishet_lgbtqia AS lgbtqia FROM youth_thriving.gender_sexuality_data")
+#LGBTQIA data in here and adding male_female too
+id_sogi <- dbGetQuery(con, "SELECT response_id, cishet_lgbtqia AS lgbtqia, cisgender_mf AS male_female FROM youth_thriving.gender_sexuality_data")
 #BINARY demographics data
 id_binary_dem <- dbGetQuery(con, "SELECT * FROM youth_thriving.demographics_binary_data")
 #Combine so we have one table with demographics by respondent id
@@ -163,6 +163,10 @@ df_merged_per_suspended <- fx_freq_table("suspended")
 df_merged_per_undocumented <- fx_freq_table("undocumented")
 df_merged_per_unhoused <- fx_freq_table("unhoused")
 df_merged_per_lgbtqia <- fx_freq_table("lgbtqia")
+df_merged_per_male_female <- fx_freq_table("male_female") %>%
+  mutate(male_female = ifelse(male_female == "male_female", "female", 
+                              ifelse(male_female == "not male_female", "male", NA)))
+
 
 #FIRST CHECK THE TABLES IN THE ENVIRONMENT AND THEN PUSH TO POSTGRES
 
@@ -174,7 +178,7 @@ write_survey_data_to_db(df_merged_per_suspended, "suspended")
 write_survey_data_to_db(df_merged_per_undocumented, "undocumented")
 write_survey_data_to_db(df_merged_per_unhoused, "unhoused")
 write_survey_data_to_db(df_merged_per_lgbtqia, "lgbtqia")
-
+write_survey_data_to_db(df_merged_per_male_female, "male_female")
   
 ####Step 5: CLOSE database connection! ####
 dbDisconnect(con)
