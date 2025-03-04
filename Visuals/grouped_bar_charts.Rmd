@@ -73,19 +73,17 @@ con <- connect_to_db("bold_vision")
 # source the function to get crosstabs
 source("W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\GitHub\\AV\\boldvision_youththriving\\Descriptive and Demographic Analyses\\crosstab_svyquestions.R")
 ```
-
+## Function get_grouped_bar_chart()
 ```{r}
 # To use this function, you must feed in the crosstab dataframe of the 2 relevant variables, the chart title, the 2 relevant survey questions as strings, and the data dictionary
 get_grouped_bar_chart <- function(crosstab_df,title_text,string_question_var1,string_question_var2,svy_dd)
 {
-    # Filter out NA responses and recalculate rates. 
+    # Filter out NA responses
     na_responses <- c("Don't wish to answer","Does not apply to me")
     crosstab_df <- crosstab_df %>%
       filter(!(response_var1 %in% na_responses | response_var2 %in% na_responses)) %>%
-      select(-c(count_se,rate_se)) %>%
-      group_by(var2_number) %>%
-      mutate(rate=count/sum(count)*100)
-  
+      mutate(rate_se=rate_se*100)
+    
     # Set the chart title
     title_text <- paste(str_wrap(title_text, whitespace_only = TRUE, width = 57), collapse = "\n")
     
@@ -258,14 +256,9 @@ raw_crosstab <- cross_tab_df(svy_data,"cw","q10",svy_dd) # Psychological Distres
 na_responses <- c("Don't wish to answer","Does not apply to me")
 psych_micro_crosstab <- raw_crosstab %>%
   filter(!(response_var1 %in% na_responses | response_var2 %in% na_responses)) %>%
-  select(-c(count_se,rate_se)) %>%
-  group_by(var2_number) %>%
-  mutate(rate=count/sum(count)*100)
-
-# QA check that rates add to 1.0 when grouped by the 2nd variable
-check <- psych_micro_crosstab %>%
-  group_by(var2_number) %>%
-  summarise(rate_sum = sum(rate))
+  # select(-c(count_se,rate_se)) %>%
+  # group_by(var2_number) %>%
+  mutate(rate_se=rate_se*100)
 ```
 
 ```{r}
