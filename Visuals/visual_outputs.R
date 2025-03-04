@@ -8,8 +8,9 @@ source('W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\GitHub\\MK\\boldvi
 #dl
 df_dl <- fx_create_df(con, tables, "Caring Families And Relationships", "dl", "tot_freq_caring_families") 
 View(df_dl)
-fx_vis_smallmultiples(df = df_dl, title_text = 'Most LA County youth often or always feel they can go to someone with a problem'
-                      ,likert_factors = true_factors, graph_orderby = "Always true")
+fx_vis_smallmultiples(df = df_dl, title_text = 'Most LA County youth often or always feel they can go to someone with a problem',
+                      subtitle_text = '',
+                      likert_factors = true_factors, graph_orderby = "Always true")
 
 #q10
 df_q10 <- fx_create_df(con, tables, "Positive Identity And Self-Worth", "q10", "tot_freq_positive_identity") 
