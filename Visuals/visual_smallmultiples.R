@@ -178,51 +178,57 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
   #bar labels
   geom_text(data = df,
             aes(label = paste0(round(rate, digits = 0), "%")),
-            size = 3.2,
+            size = 2.6,
             stat="identity", colour = "black",
-            fontface = "bold", family=font_bar_label,
-            vjust = -1.0) +  #move bar labels above
+            # fontface = "bold", 
+            family=font_bar_label,
+            vjust = -0.75) +  #move bar labels above
   theme_minimal() +
-  labs(title = paste(str_wrap(title_text, whitespace_only = TRUE, width = 65), collapse = "\n"),
-       subtitle = paste(str_wrap(subtitle_text, whitespace_only = TRUE, width = 65), collapse = "\n"),
+  labs(title = paste(str_wrap(title_text, whitespace_only = TRUE, width = 80), collapse = "\n"),
+       subtitle = paste(str_wrap(paste0("Survey Question: ", subtitle_text), whitespace_only = TRUE, width = 95), collapse = "\n"),
        x = "",  #"paste(str_wrap("Youth Thriving Survey Responses", whitespace_only = TRUE, width = 95), collapse = "\n")",
        y = "",
        fill = "",  # Legend title
        caption= paste(str_wrap(paste0(
          # "Question: ", unique(df$question), " ",
          #                              unique(df$sub_question), ".\n",
-                                      " Component: ", unique(df$response_domain), ",\n",
-                                      " Subcomponent: ", unique(df$variable_name), ".\n",
-                                      " Data Source: Catalyst California calculations of Bold Vision Youth Thriving Survey, 2024.", ",\n",
-                                      " Note: AIAN=American Indian & Alaska Native; BIPOC=Black, Indigenous, People of Color; LGBTQIA+=Lesbian, Gay, Bisexual, Transgender, Queer, Intersex, Asexual, & Gender Nonconforming; NHPI: Native Hawaiian & Pacific Islander; SWANA=Southwest Asian & North African; Systems Impacted=Youth at any point in foster care, juvenile hall/probation camp jail/prison, group home/residential program, or lived with legal guardians."),
-                               whitespace_only = TRUE, width = 120), collapse = "\n")) +
-  theme(legend.position = "top",  # Show legend on the top
+         " Data Source: Catalyst California calculations of Bold Vision Youth Thriving Survey, 2024.", ",\n",
+         # " Component: ", unique(df$response_domain), ",\n",
+         # " Subcomponent: ", unique(df$variable_name), ".\n",
+         " Note: AIAN=American Indian & Alaska Native; BIPOC=Black, Indigenous, People of Color; LGBTQIA+=Lesbian, Gay, Bisexual, Transgender, Queer, Intersex, Asexual, & Gender Nonconforming; NHPI: Native Hawaiian & Pacific Islander; SWANA=Southwest Asian & North African; Systems Impacted=Youth at any point in foster care, juvenile hall/probation camp jail/prison, group home/residential program, or lived with legal guardians."),
+                               whitespace_only = TRUE, width = 125), collapse = "\n")) +
+  theme(legend.position = "bottom",  # Show legend on the top/bottom
      # remove axis text
      axis.text.x = element_blank(), 
      axis.text.y = element_blank(),
      # define style for legend
-     legend.text = element_text(size = 12, colour = "black", family = font_axis_label, face = "bold", margin = margin(t = 5)),
+     legend.text = element_text(size = 12, colour = "black", family = font_axis_label, 
+                                # face = "bold", 
+                                margin = margin(t = 5)),
      legend.title = element_text(size = 12, colour = "black", family = font_axis_label, face = "bold", margin = margin(t = 5)),
      # define style for title and caption
      plot.caption = element_text(hjust = 0.0, size = 11, colour = "black", family = font_caption, face = "plain"),
      plot.title = element_text(hjust = 0.0, size = 18, colour = "black", family = font_title, face = "bold"),
-     plot.subtitle = element_text(hjust = 0.0, size = 15, colour = "black", family = font_subtitle),
+     plot.subtitle = element_text(hjust = 0.0, size = 15, colour = "black", family = font_subtitle, 
+                                  margin = margin(b = 23)), #increase space between subtitle and plots because the high ones are getting cut off
      # grid line style
      panel.grid.minor = element_blank(),
-     panel.grid.major = element_blank()) 
+     panel.grid.major = element_blank(),
+     #space between facts/small multiple rows
+     panel.spacing.y = unit(4, "lines"))  # Increase spacing between facet rows 
   
   ggsave(plot = df_visual, 
          file = paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", 
                        unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.svg"),
-         units = "in", width = 8, height = 7)
+         units = "in", width = 10, height = 10)
   ggsave(plot = df_visual, 
          file = paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", 
                        unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.pdf"),
-         units = "in", width = 8, height = 7)
+         units = "in", width = 10, height = 10)
   ggsave(plot = df_visual, 
          file = paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", 
                        unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.png"),
-         units = "in", width = 8, height = 7)
+         units = "in", width = 10, height = 10)
   
   return(df_visual)
 
