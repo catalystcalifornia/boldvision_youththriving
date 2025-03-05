@@ -118,7 +118,7 @@ fx_create_df <- function(con, tables, response_domain, variable, response_domain
   #filter for rows that are not needed like not bipoc, not lgbtqia, etc.and those that have responses we don't want like Don't knows, etc. 
   df_final <- df_combined %>%
     filter(!grepl("^not ", .[[1]], ignore.case = TRUE)) %>%  # Filters out rows where first column starts with "not "
-    filter(!response %in% c("Don't wish to answer", "Don't know", "Not sure", "Not Sure", "Does not apply to me")) %>% #Fiters out rows with responses we don't want to visualize
+    filter(!response %in% c("Don't wish to answer", "Don't know", "Does not apply to me")) %>% #Fiters out rows with responses we don't want to visualize
     # mutate(response = str_wrap(response, width = 8)) %>% #wrapping for better labeling in the visuals
     mutate(youth_label = str_wrap(youth_label, width = 11)) %>%
     arrange(desc(rate)) 
@@ -131,11 +131,13 @@ fx_create_df <- function(con, tables, response_domain, variable, response_domain
 ####STEP 3: Run Function with the list of tables that are of interest See example, set factor levels ####
 # List of tables
 tables <- c("response_analysis_per_race", "response_analysis_per_bipoc", 
-            "response_analysis_per_disconnected", "response_analysis_per_lgbtqia",
+            # "response_analysis_per_disconnected", 
+            "response_analysis_per_lgbtqia",
             # "response_analysis_per_suspended",
             # "response_analysis_per_arrested",
             "response_analysis_per_systems_impacted", 
-            "response_analysis_per_undocumented", "response_analysis_per_unhoused")
+            "response_analysis_per_undocumented", "response_analysis_per_unhoused",
+            "response_analysis_per_cisgender")
 
 # Running function
 df_ex <- fx_create_df(con, tables, "Vibrant Communities", "ds", "tot_freq_vibrant_community") 
@@ -148,14 +150,14 @@ true_factors<-c("Never true","Sometimes true","Often true","Always true")
 time_factors<-c("None of the time","A little of the time","Some of the time","Most of the time","All of the time")
 time_factors_reverse<-c("All of the time", "Most of the time", "Some of the time", "A little of the time", "None of the time") #reverse so a greater number means a good outcome and a smaller number means a bad outcome
 yes_factors<-c("No", "Yes")
-yes_factors_reverse <- c("Yes", "No") #reverse so a greater number means a good outcome and a smaller number means a bad outcome
+yes_factors_reverse <- c("Yes", "No", "Not sure") #reverse so a greater number means a good outcome and a smaller number means a bad outcome
 count_factors<-c("None","One","Two","Three or more")
 freq_factors<-c("Never","Rarely","Sometimes","Most of the time","All of the time")
 freq_factors_reverse<-c("All of the time", "Most of the time","Sometimes", "Rarely","Never") #reverse so a greater number means a good outcome and a smaller number means a bad outcome
 
 ####STEP 4: Create a function to produce small multiple visuals from the df just produced####
 
-fx_vis_smallmultiples <- function(df, title_text, likert_factors, graph_orderby
+fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors, graph_orderby
                                   ) {
   
   #order the individual graphs by descending order of desired response 
@@ -179,52 +181,60 @@ fx_vis_smallmultiples <- function(df, title_text, likert_factors, graph_orderby
   #bar labels
   geom_text(data = df,
             aes(label = paste0(round(rate, digits = 0), "%")),
-            size = 3.2,
+            size = 2.6,
             stat="identity", colour = "black",
-            fontface = "bold", family=font_bar_label) +  
+            # fontface = "bold", 
+            family=font_bar_label,
+            vjust = -0.75) +  #move bar labels above
   theme_minimal() +
-  labs(title = paste(str_wrap(title_text, whitespace_only = TRUE, width = 65), collapse = "\n"),
+  labs(title = paste(str_wrap(title_text, whitespace_only = TRUE, width = 80), collapse = "\n"),
+       subtitle = paste(str_wrap(paste0("Survey Question: ", subtitle_text), whitespace_only = TRUE, width = 95), collapse = "\n"),
        x = "",  #"paste(str_wrap("Youth Thriving Survey Responses", whitespace_only = TRUE, width = 95), collapse = "\n")",
        y = "",
-       fill = "Youth Thriving Survey Responses:",  # Legend title
-       caption= paste(str_wrap(paste0("Question: ", unique(df$question), " ",
-                                      unique(df$sub_question), ".\n",
-                                      " Component: ", unique(df$response_domain), ",\n",
-                                      " Subcomponent: ", unique(df$variable_name), ".\n",
-                                      " Data Source: Catalyst California calculations of Bold Vision Youth Thriving Survey, 2024.", ",\n",
-                                      " Note: AIAN- Alaskan Indian and American Native, BIPOC- Black Indigeneous People of Color, 
-                                      LGBTQIA- Lesbian, Gay, Bisexual, Transgender, Queer, Intersex, and Asexual, SWANA- South West Asian and North African,
-                                      NHPI- Native Hawaiian and Pacific Islander"),
-                               whitespace_only = TRUE, width = 120), collapse = "\n")) +
-  theme(legend.position = "bottom",  # Show legend on the right
+       fill = "",  # Legend title
+       caption= paste(str_wrap(paste0(
+         # "Question: ", unique(df$question), " ",
+         #                              unique(df$sub_question), ".\n",
+         " Data Source: Catalyst California calculations of Bold Vision Youth Thriving Survey, 2024.", ",\n",
+         # " Component: ", unique(df$response_domain), ",\n",
+         # " Subcomponent: ", unique(df$variable_name), ".\n",
+         " Note: AIAN=American Indian & Alaska Native; BIPOC=Black, Indigenous, People of Color; LGBTQIA+=Lesbian, Gay, Bisexual, Transgender, Queer, Intersex, Asexual, & Gender Nonconforming; NHPI: Native Hawaiian & Pacific Islander; SWANA=Southwest Asian & North African; Systems Impacted=Youth at any point in foster care, juvenile hall/probation camp jail/prison, group home/residential program, or lived with legal guardians."),
+                               whitespace_only = TRUE, width = 125), collapse = "\n")) +
+  theme(legend.position = "bottom",  # Show legend on the top/bottom
      # remove axis text
      axis.text.x = element_blank(), 
      axis.text.y = element_blank(),
      # define style for legend
-     legend.text = element_text(size = 12, colour = "black", family = font_axis_label, face = "bold", margin = margin(t = 5)),
+     legend.text = element_text(size = 12, colour = "black", family = font_axis_label, 
+                                # face = "bold", 
+                                margin = margin(t = 5)),
      legend.title = element_text(size = 12, colour = "black", family = font_axis_label, face = "bold", margin = margin(t = 5)),
      # define style for title and caption
      plot.caption = element_text(hjust = 0.0, size = 11, colour = "black", family = font_caption, face = "plain"),
      plot.title = element_text(hjust = 0.0, size = 18, colour = "black", family = font_title, face = "bold"),
+     plot.subtitle = element_text(hjust = 0.0, size = 15, colour = "black", family = font_subtitle, 
+                                  margin = margin(b = 23)), #increase space between subtitle and plots because the high ones are getting cut off
      # grid line style
      panel.grid.minor = element_blank(),
-     panel.grid.major = element_blank()) 
+     panel.grid.major = element_blank(),
+     #space between facts/small multiple rows
+     panel.spacing.y = unit(4, "lines"))  # Increase spacing between facet rows 
   
   ggsave(plot = df_visual, 
          file = paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", 
                        unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.svg"),
-         units = "in", width = 8, height = 7)
+         units = "in", width = 10, height = 10)
   ggsave(plot = df_visual, 
          file = paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", 
                        unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.pdf"),
-         units = "in", width = 8, height = 7)
-  
+         units = "in", width = 10, height = 10)
+
   showtext_opts(dpi=300)
   
   ggsave(plot = df_visual, 
          file = paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", 
                        unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.png"),
-         units = "in", width = 8, height = 7)
+         units = "in", width = 10, height = 10)
   
   return(df_visual)
 
