@@ -164,8 +164,8 @@ df_merged_per_undocumented <- fx_freq_table("undocumented")
 df_merged_per_unhoused <- fx_freq_table("unhoused")
 df_merged_per_lgbtqia <- fx_freq_table("lgbtqia")
 df_merged_per_cisgender <- fx_freq_table("cisgender") %>%
-  mutate(cisgender = ifelse(cisgender == "cisgender", "female", 
-                              ifelse(cisgender == "not cisgender", "male", NA)))
+  mutate(cisgender = ifelse(cisgender == "cisgender", "cis woman/girl", 
+                              ifelse(cisgender == "not cisgender", "cis man/boy", NA)))
 
 
 #FIRST CHECK THE TABLES IN THE ENVIRONMENT AND THEN PUSH TO POSTGRES

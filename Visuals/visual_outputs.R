@@ -3,6 +3,7 @@
 # source script
 source('Visuals\\visual_functions.R')
 source('Visuals\\visual_smallmultiples.R')
+# source('W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/EMG/boldvision_youththriving/Visuals/visual_smallmultiples.R') # only use this line with local folder when testing changes
 
 #### Visualizing for Youth Council Presentation 03/08/25 ####
 #dl
