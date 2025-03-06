@@ -1,5 +1,5 @@
 ---
-title: "Grouped bar charts for March 8"
+title: "Grouped bar charts"
 author: "Alicia Vo"
 date: "2025-02-25"
 output: html_document
@@ -86,28 +86,28 @@ get_grouped_bar_chart <- function(crosstab_df,title_text,string_question_var1,st
     title_text <- paste(str_wrap(title_text, whitespace_only = TRUE, width = 65), collapse = "\n")
 
     # Set the x-axis title
-    string_question_var2 <- str_wrap(string_question_var2, width = 105)
+    string_question_var1 <- str_wrap(string_question_var1, width = 105)
     # Reorder the x-axis labels 
     crosstab_df <- crosstab_df %>%
-        mutate(response_var2 = reorder(response_var2, var2_number))
+        mutate(response_var1 = reorder(response_var1, var1_number))
     # Wrap the x-axis labels at a reasonable width 
-    x_labels <- str_wrap(crosstab_df$response_var2, width = 20)
+    x_labels <- str_wrap(crosstab_df$response_var1, width = 20)
     
     # Set the legend title
-    string_question_var1 <- str_wrap(string_question_var1, width = 15)
+    string_question_var2 <- str_wrap(string_question_var2, width = 15)
     # Reorder the legend labels 
     crosstab_df <- crosstab_df %>%
-        mutate(response_var1 = reorder(response_var1, -var1_number))    
+        mutate(response_var2 = reorder(response_var2, -var2_number))    
     # Set the bar colors
     bar_colors <- c(dark_green,light_green,yellow,orange,dark_pink)
     # Reverse the bar colors for the legend if needed
     var1 <- names(crosstab_df)[1]
     var2 <- names(crosstab_df)[2]
-    var1_dd <- svy_dd %>%
-      filter(variable==var1)
-    if(length(grep("_rev$", var1_dd$likert_type))>0) {
+    var2_dd <- svy_dd %>%
+      filter(variable==var2)
+    if(length(grep("_rev$", var2_dd$likert_type))>0) {
       crosstab_df <- crosstab_df %>%
-          mutate(response_var1 = reorder(response_var1, var1_number))
+          mutate(response_var2 = reorder(response_var2, var2_number))
     }       
     
     # Set the font sizes and styles
@@ -137,21 +137,19 @@ caption_theme <- element_text(hjust = 0, size = 8, colour = "black", family = fo
     ), width = 155)  # Apply wrapping only once
 
     # Plot grouped bar chart
-    final_visual <- ggplot(crosstab_df, aes(fill=response_var1, y=rate, x=response_var2)) + 
+    final_visual <- ggplot(crosstab_df, aes(fill=response_var2, y=rate, x=response_var1)) + 
       geom_bar(position="dodge", stat="identity") +          # Create bar chart 
       scale_fill_manual(values = bar_colors) +               # Set the bar colors 
-      guides(fill=guide_legend(title=string_question_var1,   # Style legend title
+      guides(fill=guide_legend(title=string_question_var2,   # Style legend title
                              title.theme = heading_theme, 
                              label.theme = subheading_theme)) + 
-      xlab(string_question_var2) +                                # Set the x-axis title
+      xlab(string_question_var1) +                                # Set the x-axis title
       ylab("Percent") +                                           # Set the y-axis title
       labs(title = title_text, caption = caption_text) +          # Set the chart title and caption
       theme_minimal() +
-      theme(#plot.margin = margin(10, 30, 10, 10),  # Reduce right margin to fit everything
+      theme(
         legend.position = "top",
         legend.margin = margin(l = 0),    # Ensures no extra left margin
-            #legend.justification = c(0, 1),
-            #legend.box.margin = margin(5, 5, 5, 5),
         axis.title.x = x_title_theme,       # Set style for x-axis title 
         axis.text.x = subheading_theme,         # Set style for x-axis labels 
         axis.title.y = heading_theme,           # Set style for y-axis title 
@@ -163,8 +161,8 @@ caption_theme <- element_text(hjust = 0, size = 8, colour = "black", family = fo
     
     # Define base file path
     base_path <- paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", 
-                        unique(crosstab_df$component_var1), "/", 
-                        var1, "_", var2, "_grouped_barchart")
+                        unique(crosstab_df$component_var2), "/", 
+                        var2, "_", var1, "_grouped_barchart")
     
     # Save in SVG
     ggsave(plot = final_visual, filename = paste0(base_path, ".svg"), 
@@ -188,16 +186,16 @@ caption_theme <- element_text(hjust = 0, size = 8, colour = "black", family = fo
 
 ```{r}
 # Get crosstab of 2 questions, Psychological Distress - Sparks 
-raw_crosstab <- cross_tab_df(svy_data,"cy","q10",svy_dd)
+raw_crosstab <- cross_tab_df(svy_data,"q10","cy",svy_dd)
 
 # check
 check <- raw_crosstab %>%
-  group_by(cy) %>%
+  group_by(q10) %>%
   summarise(sum(rate))
 
 title_text <- 'Having a "spark" in life improves mental health'
-string_question_var1 <- "How often during the past 30 days did you feel worthless?"
-string_question_var2 <- "Do you have a spark in your life? When people are really happy, energized, and passionate about their talents, interests, or hobbies, we say they have a “spark” in their life. It is a really important part of their life that gives them real purpose, direction, or focus."
+string_question_var2 <- "How often during the past 30 days did you feel worthless?"
+string_question_var1 <- "Do you have a spark in your life?"
 
 get_grouped_bar_chart(raw_crosstab,title_text,string_question_var1,string_question_var2,svy_dd)
 ```
@@ -206,10 +204,17 @@ get_grouped_bar_chart(raw_crosstab,title_text,string_question_var1,string_questi
 
 ```{r}
 # Get crosstab of 2 questions, Psychological Distress - Microaggressions 
-raw_crosstab <- cross_tab_df(svy_data,"cy","eo",svy_dd) 
-title_text <- "Experiencing repeated microaggressions worsens mental health"
-string_question_var1 <- "How often during the past 30 days did you feel worthless?"
-string_question_var2 <- "During the past 12 months, how often have you dealt with being told hurtful or offensive jokes/comments about your race?"
+raw_crosstab <- cross_tab_df(svy_data,"eo","cy",svy_dd)
+
+# check
+check <- raw_crosstab %>%
+  group_by(eo) %>%
+  summarise(sum(rate))
+
+title_text <- "Experiencing repeated microaggressions harms mental health"
+
+string_question_var2 <- "How often during the past 30 days did you feel worthless?"
+string_question_var1 <- "During the past 12 months, how often have you dealt with being told hurtful or offensive jokes/comments about your race?"
 
 get_grouped_bar_chart(raw_crosstab,title_text,string_question_var1,string_question_var2,svy_dd)
 ```
@@ -218,46 +223,49 @@ get_grouped_bar_chart(raw_crosstab,title_text,string_question_var1,string_questi
 
 ```{r}
 # Get crosstab of 2 questions, Psychological Distress - Structural Racism  
-raw_crosstab <- cross_tab_df(svy_data,"cy","et",svy_dd) 
+raw_crosstab <- cross_tab_df(svy_data,"et","cy",svy_dd) 
+
+# check
+check <- raw_crosstab %>%
+  group_by(et) %>%
+  summarise(sum(rate))
+
 title_text <- "Lack of access to quality health services harms mental health"
-string_question_var1 <- "How often during the past 30 days did you feel worthless?"
-string_question_var2 <- "How often does poor quality health services get in the way of you living your best life?"
+string_question_var2 <- "How often during the past 30 days did you feel worthless?"
+string_question_var1 <- "How often does poor quality health services get in the way of you living your best life?"
 
 get_grouped_bar_chart(raw_crosstab,title_text,string_question_var1,string_question_var2,svy_dd)
 ```
 
 ### Self-efficacy and hope - Caring Families And Relationships
-
 ```{r}
 # Get crosstab of 2 questions, Self-efficacy and hope - Caring Families And Relationships 
-raw_crosstab <- cross_tab_df(svy_data,"co","dl",svy_dd) 
+raw_crosstab <- cross_tab_df(svy_data,"dl","co",svy_dd) 
 title_text <- "Having supportive relationships encourages more hope for the future"
-string_question_var1 <- "I feel hopeful when I think about my future."
-string_question_var2 <- "When I have a problem I have someone who will be there for me."
+string_question_var2 <- "I feel hopeful when I think about my future."
+string_question_var1 <- "When I have a problem I have someone who will be there for me."
 
 get_grouped_bar_chart(raw_crosstab,title_text,string_question_var1,string_question_var2,svy_dd)
 ```
 
 ### Self-efficacy and hope - Cultural identity
-
 ```{r}
 # Get crosstab of 2 questions, Self-efficacy and hope - Cultural identity   
-raw_crosstab <- cross_tab_df(svy_data,"co","dz",svy_dd) 
-title_text <- "Having a positive cultural identity promotes more hope for the future"
-string_question_var1 <- "I feel hopeful when I think about my future."
-string_question_var2 <- "My culture helps me feel good about who I am."
+raw_crosstab <- cross_tab_df(svy_data,"dz","co",svy_dd) 
+title_text <- "Having a positive cultural identity encourages more hope for the future"
+string_question_var2 <- "I feel hopeful when I think about my future."
+string_question_var1 <- "My culture helps me feel good about who I am."
 
 get_grouped_bar_chart(raw_crosstab,title_text,string_question_var1,string_question_var2,svy_dd)
 ```
 
 ### Self-efficacy and hope - Opportunities for community involvement/critical action
-
 ```{r}
 # Get crosstab of 2 questions, Self-efficacy and hope - Opportunities for community involvement/critical action   
-raw_crosstab <- cross_tab_df(svy_data,"co","dm",svy_dd) 
+raw_crosstab <- cross_tab_df(svy_data,"dm","co",svy_dd) 
 title_text <- "Increasing opportunities for community involvement encourages more hope for the future"
-string_question_var1 <- "I feel hopeful when I think about my future."
-string_question_var2 <- "There are ways for me to get involved in my community."
+string_question_var2 <- "I feel hopeful when I think about my future."
+string_question_var1 <- "There are ways for me to get involved in my community."
 
 get_grouped_bar_chart(raw_crosstab,title_text,string_question_var1,string_question_var2,svy_dd)
 ```
