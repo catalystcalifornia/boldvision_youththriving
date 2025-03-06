@@ -1,5 +1,5 @@
 ---
-title: "Grouped bar charts for March 8"
+title: "Grouped bar charts"
 author: "Alicia Vo"
 date: "2025-02-25"
 output: html_document
