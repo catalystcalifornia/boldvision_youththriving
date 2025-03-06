@@ -9,9 +9,8 @@ library(extrafont)
 library(showtext)
 library(ggtext)
 library(ggchicklet)
+library(RPostgres)
 library(RPostgreSQL)
-# library(geofacet)
-# # install.packages("geofacet")
 
 # connect to postgres and source functions
 source("W:\\RDA Team\\R\\credentials_source.R")
@@ -141,12 +140,6 @@ loadfonts(device = "win")
 windowsFonts()
 showtext_auto()
 
-# # define fonts in chart - old ones
-# font_title <- "Manifold CF"
-# font_subtitle <- "Manifold CF"
-# font_caption <- "HelveticaNeueLTStdMdCn"
-# font_bar_label <- "HelveticaNeueLTStdHvCn"
-# font_axis_label <- "HelveticaNeueLTStdMdCn"
 
 # define fonts in chart
 font_title <- "HelveticaNeueLTStdHvCn"
@@ -160,7 +153,7 @@ font_axis_label <- "Manifold Regular"
 # Step 3: Filter for selected components and for selected demographics -----
 # list of demographics to focus on
 unique(df_all$youth_label)
-subgroups<-c("AIAN","Asian","Black","Latine","Multiracial","NHPI","SWANA","White","BIPOC","Systems Impacted","Undocumented","Unhoused","Cis Man/Boy","Cis Woman/Girl","LGBTQIA+")
+subgroups<-c("AIAN","All Youth","Asian","Black","Latine","Multiracial","NHPI","SWANA","White","BIPOC","Systems Impacted","Undocumented","Unhoused","Cis Man/Boy","Cis Woman/Girl","LGBTQIA+")
 subgroups
 
 # list of components to focus on
@@ -236,8 +229,8 @@ p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
     title = "Average Predicted <span style ='color: #F75EC1;'>Freedom from Psychological <br>Distress</span>", 
     subtitle = paste
       ("\nLA County youth vary in how they are thriving emotionally. LGBTQIA+,",
-      "systems impacted, cisgender women/girl, and Asian youth experience",
-      "the most significant differences compared to their counterparts.",
+      "unhoused, undocumented, and systems impacted youth experience",
+      "the most differences compared to their counterparts.",
       sep = "\n"
     ),
     caption = paste("\nCatalyst California's calculations of Bold Vision Youth Thriving Survey, 2024.",
@@ -248,20 +241,23 @@ p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
                     "jail/prison, group home/residential program, or lived with legal guardians.",
                     sep="\n")) +
   theme_minimal() +
-  theme(legend.title = element_text(hjust = 0.5,size = 14, family= font_axis_label),
-        legend.text = element_text(hjust = 0.5,size = 14, family= font_axis_label),
+  theme(legend.title = element_text(hjust = 0.5,size = 12, family= font_axis_label),
+        legend.text = element_text(hjust = 0.5,size = 12, family= font_axis_label),
         legend.position = "bottom", # no legend title
-        legend.margin=margin(0,0,0,0),
-        legend.box.margin=margin(-2,-2,-2,-2),
+        legend.margin=margin(l = 0),
+        # legend.margin=margin(-2,-2,-2,-2),
+        # legend.box.margin=margin(-2,-2,-2,-2),
         # define style for axis text
         axis.text.y=element_blank(),
         # axis.text.y = element_text(size = 9, colour = "black", family= font_axis_label, face = "bold"),
         axis.text.x=element_blank(),
+        axis.ticks=element_blank(),
+        axis.ticks.length = unit(0, "pt"),
         # axis.text.x=element_text(size = 11, colour = "black", family = font_axis_label),
         axis.title.x=element_blank(),
         # axis.title.x = element_text(size = 12, colour = "black", family = font_axis_label, face = "bold"),
         # define style for title and caption
-        plot.caption = element_text(hjust = 0.0, size = 10, colour = "black", family = font_caption, face = "plain"),
+        plot.caption = element_text(hjust = 0.0, size = 10, colour = "black", family = font_caption),
         plot.subtitle = 
           element_text(hjust = 0.0, size = 14, family = font_subtitle), 
         plot.title = 
@@ -270,6 +266,7 @@ p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
         #   element_text(hjust = 0.0, size = 20, colour = "black", family = font_title)
         , 
         # grid line style
+        panel.border=element_blank(),
         panel.grid = element_blank(),
         # plot.margin = unit(rep(-1,4), "cm")  
         # plot.margin=margin(0,0,0,0)
@@ -354,22 +351,25 @@ circular_plot <- function(component_input,component_folder,component_colors,lege
     theme_minimal() +
     theme(
       # define legend style
-      legend.title = element_text(hjust = 0.5,size = 14, family= font_axis_label),
-      legend.text = element_text(hjust = 0.5,size = 14, family= font_axis_label),
+      legend.title = element_text(hjust = 0.5,size = 12, family= font_axis_label),
+      legend.text = element_text(hjust = 0.5,size = 12, family= font_axis_label),
       legend.position = "bottom", 
-      legend.margin=margin(0,0,0,0),
-      legend.box.margin=margin(-2,-2,-2,-2),
+      legend.margin=margin(l = 0),
+      # legend.margin=margin(0,0,0,0),
+      # legend.box.margin=margin(-2,-2,-2,-2),
       # define style for axis text
       axis.text.y=element_blank(),
       axis.text.x=element_blank(),
       axis.title.x=element_blank(),
+      axis.ticks.length = unit(0, "pt"),
       # define style for title, subtitle, and caption
-      plot.caption = element_text(hjust = 0.0, size = 11, colour = "black", family = font_caption, face = "plain"),
+      plot.caption = element_text(hjust = 0.0, size = 10, colour = "black", family = font_caption, face = "plain"),
       plot.subtitle = 
         element_text(hjust = 0.0, size = 14, family = font_subtitle), 
       plot.title = 
         element_markdown(hjust = 0.0, size = 20, family = font_title, lineheight=1), 
       # grid line style
+      panel.border=element_blank(),
       panel.grid = element_blank(),
     ) + 
     coord_polar() +
@@ -401,7 +401,7 @@ legend_labels <- c("<- Lower","","","Higher ->") # if function doesn't work, e.g
 title_text <- "Average Predicted <span style ='color: #220f8c;'>Freedom From Structural Racism</span>" # replace color hex and name between <>
 subtitle_text <- paste("\nLA County youth vary in how freely they can live without experiencing", # text breaks in the subtitle after running initial visual
                        "structural racism. Undocumented, unhoused, LGBTQIA+, and systems",
-                       "impacted youth and many youth of color groups are most likely to",
+                       "impacted youth and many youth of color are most likely to",
                        "experience structural racism.",
                        sep = "\n"
 )
@@ -431,7 +431,7 @@ legend_labels <- c("<- Lower","","","","Higher ->") # if function doesn't work, 
 title_text <- "Average Predicted <span style ='color: #00864A;'>Caring Families and <br>Relationships</span>" # replace color hex and name between <>
 subtitle_text <- paste("\nLA County youth vary in the support they have from family, adults,",
                         "and other relationships. Unhoused, systems impacted, undocumented,",
-                        "and LGBTQIA+ youth, and many BIPOC youth, are least likely to feel they",
+                        "LGBTQIA+, and many BIPOC youth are least likely to feel they",
                         "have people to go to in good and bad times.",
                         sep = "\n")
 
@@ -459,10 +459,10 @@ component_folder <- "Cultural Identity" # name of folder in deliverables to save
 component_colors <- c("#FFE599","#FFD966","#FFCC33","#FFBF00") # color ramp for the legend
 legend_labels <- c("<- Lower","","","","","Higher ->") # if function doesn't work, e.g., error in get_labels might need to add another blank value
 title_text <- "Average Predicted Feelings of <span style ='color: #FFBF00;'>Cultural Identity</span>" # replace color hex and name between <>
-subtitle_text <- paste("\nLA County youth vary in how they are connected to their cultural identity.", # text breaks in the subtitle after running initial visual
-                       "Multiracial, undocumented, LGBTQIA+, White, unhoused, and systems",
-                       "impacted youth on average have less strength in their cultural identity",
-                       "compared to their counterparts.",
+subtitle_text <- paste("\nLA County youth vary in how much strength and pride they feel in", # text breaks in the subtitle after running initial visual
+                       "their cultural identity. Multiracial, undocumented, LGBTQIA+, White,",
+                       "unhoused, and systems impacted youth on average have less strength",
+                       "and pride in their cultural identity compared to their counterparts.",
                        sep = "\n"
 )
 
