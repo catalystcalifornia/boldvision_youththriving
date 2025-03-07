@@ -205,13 +205,14 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
      axis.text.x = element_blank(), 
      axis.text.y = element_blank(),
      # define style for legend
-     legend.text = element_text(size = 12, colour = "black", family = font_axis_label, 
-                                # face = "bold", 
+     legend.text = element_text(size = 14, colour = "black", family = font_subtitle, 
+                                # face = "bold",
                                 margin = margin(t = 5)),
      legend.title = element_text(size = 12, colour = "black", family = font_axis_label, face = "bold", margin = margin(t = 5)),
+     strip.text=element_text(size=12, family=font_axis_label),
      # define style for title and caption
      plot.caption = element_text(hjust = 0.0, size = 11, colour = "black", family = font_caption, face = "plain"),
-     plot.title = element_text(hjust = 0.0, size = 18, colour = "black", family = font_title, face = "bold"),
+     plot.title = element_text(hjust = 0.0, size = 18, colour = "black", family = font_title),
      plot.subtitle = element_text(hjust = 0.0, size = 15, colour = "black", family = font_subtitle, 
                                   margin = margin(b = 23)), #increase space between subtitle and plots because the high ones are getting cut off
      # grid line style
