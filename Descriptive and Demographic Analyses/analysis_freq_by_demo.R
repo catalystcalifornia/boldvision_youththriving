@@ -29,9 +29,21 @@ id_binary_dem <- dbGetQuery(con, "SELECT * FROM youth_thriving.demographics_bina
 #Combine so we have one table with demographics by respondent id
 id_dem <- id_binary_dem %>% left_join( id_sogi, 
                                 by='response_id')
+
+#ADDING Alone and In Combination data for races like SWANA, NHPI, AIAN
+race_aoic <- dbGetQuery(con, "SELECT response_id, race_aian as aian, race_nhpi as nhpi, race_swana as swana FROM youth_thriving.race_ethnicity_data")
+# aian, nhpi, swana alone or in combo
+# list of alone or in combo vars
+aoic_vars <- race_aoic %>% 
+  select(aian, nhpi, swana) %>%
+  names()
+
+id_aoic <- id_dem  %>% left_join( race_aoic, 
+                                  by='response_id')
+
 #combine with actual data
-svy_data <- svy_data %>% left_join( id_dem, 
-                                       by='response_id')
+svy_data <- svy_data %>% left_join( id_aoic, 
+                                    by='response_id')
 
 
 ####Step 2: Creating a function to get frequency tables by demographic variable ####
@@ -105,7 +117,7 @@ write_survey_data_to_db <- function(df, demographic_variable) {
   
   # Create table comment
   table_comment <- paste0(
-    "The following is a table of response frequencies and rates for non-demographic questions grouped by",  
+    "The following is a table of response frequencies and rates for non-demographic questions grouped by ",  
     demographic_variable, " status. The denominator for each stat is the total number of youth who 
     answered the question grouped by",  demographic_variable," status. For example, looking at 
     arrested youth, count represents how many arrested youth selected response X to a given question. 
@@ -116,7 +128,7 @@ write_survey_data_to_db <- function(df, demographic_variable) {
   )
   
   dbSendQuery(con, paste0(
-    "COMMENT ON TABLE youth_thriving.", table_name, " IS '", table_comment, "';"
+    "COMMENT ON TABLE youth_thriving.", table_name, " IS ","'", table_comment, "';"
   ))
   
   # Define the table schema and name
@@ -132,7 +144,7 @@ write_survey_data_to_db <- function(df, demographic_variable) {
     "sub_question" = "The subquestion that this variable refers to",
     "variable_name" = "The survey SUBcomponent this variable falls under",
     "response_domain" = "The survey component this variable falls under",
-    demographic_col = paste0(demographic_col, " youth"),  # This fixes the issue
+    setNames(paste0(demographic_variable, " youth"), demographic_variable), 
     "response" = "The response that the data is about",
     "count" = paste0("The count of ", demographic_col, " youth that selected this response"),
     "rate" = paste0("The weighted % of ", demographic_col, 
@@ -166,6 +178,10 @@ df_merged_per_lgbtqia <- fx_freq_table("lgbtqia")
 df_merged_per_cisgender <- fx_freq_table("cisgender") %>%
   mutate(cisgender = ifelse(cisgender == "cisgender", "cis woman/girl", 
                               ifelse(cisgender == "not cisgender", "cis man/boy", NA)))
+df_merged_per_swana <- fx_freq_table("swana")
+df_merged_per_aian <- fx_freq_table("aian")
+df_merged_per_nhpi <- fx_freq_table("nhpi")
+
 
 
 #FIRST CHECK THE TABLES IN THE ENVIRONMENT AND THEN PUSH TO POSTGRES
@@ -179,6 +195,10 @@ write_survey_data_to_db(df_merged_per_undocumented, "undocumented")
 write_survey_data_to_db(df_merged_per_unhoused, "unhoused")
 write_survey_data_to_db(df_merged_per_lgbtqia, "lgbtqia")
 write_survey_data_to_db(df_merged_per_cisgender, "cisgender")
+write_survey_data_to_db(df_merged_per_swana, "swana")
+write_survey_data_to_db(df_merged_per_aian, "aian")
+write_survey_data_to_db(df_merged_per_nhpi, "nhpi")
+
   
 ####Step 5: CLOSE database connection! ####
 dbDisconnect(con)
