@@ -181,6 +181,45 @@ caption_theme <- element_text(hjust = 0, size = 8, colour = "black", family = fo
 }
 ```
 
+## Function push_crosstab_table()
+```{r}
+push_crosstab_table <- function(raw_crosstab, table_name){
+  # Write table with metadata
+  # table_name <- "crosstab_psych_distress_sparks"
+  schema <- "youth_thriving"
+  indicator <- paste("A crosstab table of", paste(names(raw_crosstab)[1:2], collapse = " and "))
+  source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Visuals/grouped_bar_charts.Rmd "
+  qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_grouped_bar_charts.docx"
+  table_comment <- paste(indicator, source)
+  dbWriteTable(con, 
+             Id(schema = schema, table = table_name), 
+             raw_crosstab)
+  
+  # Comment on table and columns
+  column_names <- colnames(raw_crosstab) # Get column names
+  column_comments <- c(
+    "First survey question",
+    "Second survey question",
+    "Count of respondents whose responses match the first two columns in this table",
+    "Standard error of the count",
+    "Rate of respondents whose responses match the first two columns in this table",
+    "Standard error of the rate",
+    "Numeric code for the first variable",
+    "Response for the first variable",
+    "Main question text for the first variable",
+    "Sub-question text for the first variable",
+    "Component category for the first variable",
+    "Subcomponent category for the first variable",
+    "Numeric code for the second variable",
+    "Response for the second variable",
+    "Main question text for the second variable",
+    "Sub-question text for the second variable",
+    "Component category for the second variable",
+    "Subcomponent category for the second variable")
+  add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+}
+```
+
 
 ### Psychological Distress - Sparks
 
@@ -198,7 +237,9 @@ string_question_var2 <- "How often during the past 30 days did you feel worthles
 string_question_var1 <- "Do you have a spark in your life?"
 
 get_grouped_bar_chart(raw_crosstab,title_text,string_question_var1,string_question_var2,svy_dd)
+push_crosstab_table(raw_crosstab,"crosstab_psych_distress_sparks")
 ```
+
 
 ### Psychological Distress - Microaggressions
 
@@ -217,6 +258,7 @@ string_question_var2 <- "How often during the past 30 days did you feel worthles
 string_question_var1 <- "During the past 12 months, how often have you dealt with being told hurtful or offensive jokes/comments about your race?"
 
 get_grouped_bar_chart(raw_crosstab,title_text,string_question_var1,string_question_var2,svy_dd)
+push_crosstab_table(raw_crosstab,"crosstab_psych_distress_microaggressions")
 ```
 
 ### Psychological Distress - Structural Racism
@@ -235,6 +277,7 @@ string_question_var2 <- "How often during the past 30 days did you feel worthles
 string_question_var1 <- "How often does poor quality health services get in the way of you living your best life?"
 
 get_grouped_bar_chart(raw_crosstab,title_text,string_question_var1,string_question_var2,svy_dd)
+push_crosstab_table(raw_crosstab,"crosstab_psych_distress_structural_racism")
 ```
 
 ### Self-efficacy and hope - Caring Families And Relationships
@@ -246,6 +289,7 @@ string_question_var2 <- "I feel hopeful when I think about my future."
 string_question_var1 <- "When I have a problem I have someone who will be there for me."
 
 get_grouped_bar_chart(raw_crosstab,title_text,string_question_var1,string_question_var2,svy_dd)
+push_crosstab_table(raw_crosstab,"crosstab_self_efficacy_caring_relationships")
 ```
 
 ### Self-efficacy and hope - Cultural identity
@@ -257,6 +301,7 @@ string_question_var2 <- "I feel hopeful when I think about my future."
 string_question_var1 <- "My culture helps me feel good about who I am."
 
 get_grouped_bar_chart(raw_crosstab,title_text,string_question_var1,string_question_var2,svy_dd)
+push_crosstab_table(raw_crosstab,"crosstab_self_efficacy_cultural_identity")
 ```
 
 ### Self-efficacy and hope - Opportunities for community involvement/critical action
@@ -268,6 +313,7 @@ string_question_var2 <- "I feel hopeful when I think about my future."
 string_question_var1 <- "There are ways for me to get involved in my community."
 
 get_grouped_bar_chart(raw_crosstab,title_text,string_question_var1,string_question_var2,svy_dd)
+push_crosstab_table(raw_crosstab,"crosstab_self_efficacy_community_involvement")
 ```
 
 ### This section is only for testing, since the code is not in a function
