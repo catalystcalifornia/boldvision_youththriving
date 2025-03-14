@@ -137,7 +137,10 @@ tables <- c("response_analysis_per_race", "response_analysis_per_bipoc",
             # "response_analysis_per_arrested",
             "response_analysis_per_systems_impacted", 
             "response_analysis_per_undocumented", "response_analysis_per_unhoused",
-            "response_analysis_per_cisgender")
+            "response_analysis_per_cisgender",
+            "response_analysis_per_swana",
+            "response_analysis_per_nhpi",
+            "response_analysis_per_aian")
 
 # Running function
 df_ex <- fx_create_df(con, tables, "Vibrant Communities", "ds", "tot_freq_vibrant_community") 
