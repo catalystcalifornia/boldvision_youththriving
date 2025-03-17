@@ -83,6 +83,7 @@ fx_create_df <- function(con, tables, response_domain, variable, response_domain
     
     # Add 'source_table' and 'youth_label' columns
     df <- df %>%
+      filter(!youth %in% c("nh_aian", "nh_nhpi", "nh_swana")) %>%  # remove nh because we will be using aoic results 
       mutate(source_table = table,
              youth_label = youth %>%
                str_replace_all("^nh_", "") %>%  # Remove "nh_" at the start of the string
@@ -119,8 +120,9 @@ fx_create_df <- function(con, tables, response_domain, variable, response_domain
   df_final <- df_combined %>%
     filter(!grepl("^not ", .[[1]], ignore.case = TRUE)) %>%  # Filters out rows where first column starts with "not "
     filter(!response %in% c("Don't wish to answer", "Don't know", "Does not apply to me")) %>% #Fiters out rows with responses we don't want to visualize
-    # mutate(response = str_wrap(response, width = 8)) %>% #wrapping for better labeling in the visuals
-    mutate(youth_label = str_wrap(youth_label, width = 11)) %>%
+    mutate(youth_label = case_when(
+      str_count(youth_label, " ") == 0 & nchar(youth_label) > 8 ~ str_replace(youth_label, "(.{4,5})", "\\1-\n"),  # Insert break for long single words
+      TRUE ~ str_wrap(youth_label, width = 8.5)))  %>%
     arrange(desc(rate)) 
   
   return(df_final)
@@ -130,13 +132,15 @@ fx_create_df <- function(con, tables, response_domain, variable, response_domain
 
 ####STEP 3: Run Function with the list of tables that are of interest See example, set factor levels ####
 # List of tables
-tables <- c("response_analysis_per_race", "response_analysis_per_bipoc", 
+tables <- c("response_analysis_per_race", 
+            "response_analysis_per_bipoc", 
             # "response_analysis_per_disconnected", 
             "response_analysis_per_lgbtqia",
             # "response_analysis_per_suspended",
             # "response_analysis_per_arrested",
             "response_analysis_per_systems_impacted", 
-            "response_analysis_per_undocumented", "response_analysis_per_unhoused",
+            "response_analysis_per_undocumented", 
+            "response_analysis_per_unhoused",
             "response_analysis_per_cisgender",
             "response_analysis_per_swana",
             "response_analysis_per_nhpi",
@@ -190,19 +194,15 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
             family=font_bar_label,
             vjust = -0.75) +  #move bar labels above
   theme_minimal() +
-  labs(title = paste(str_wrap(title_text, whitespace_only = TRUE, width = 80), collapse = "\n"),
-       subtitle = paste(str_wrap(paste0("Survey Question: ", subtitle_text), whitespace_only = TRUE, width = 95), collapse = "\n"),
+  labs(title = paste(str_wrap(title_text, whitespace_only = TRUE, width = 70), collapse = "\n"),
+       subtitle = paste(str_wrap(paste0("Survey Question: ", subtitle_text), whitespace_only = TRUE, width = 85), collapse = "\n"),
        x = "",  #"paste(str_wrap("Youth Thriving Survey Responses", whitespace_only = TRUE, width = 95), collapse = "\n")",
        y = "",
        fill = "",  # Legend title
        caption= paste(str_wrap(paste0(
-         # "Question: ", unique(df$question), " ",
-         #                              unique(df$sub_question), ".\n",
-         " Data Source: Catalyst California calculations of Bold Vision Youth Thriving Survey, 2024.", ",\n",
-         # " Component: ", unique(df$response_domain), ",\n",
-         # " Subcomponent: ", unique(df$variable_name), ".\n",
+         " Data Source: Catalyst California calculations of Bold Vision Youth Thriving Survey, 2024.",
          " Note: AIAN=American Indian & Alaska Native; BIPOC=Black, Indigenous, People of Color; LGBTQIA+=Lesbian, Gay, Bisexual, Transgender, Queer, Intersex, Asexual, & Gender Nonconforming; NHPI: Native Hawaiian & Pacific Islander; SWANA=Southwest Asian & North African; Systems Impacted=Youth at any point in foster care, juvenile hall/probation camp jail/prison, group home/residential program, or lived with legal guardians."),
-                               whitespace_only = TRUE, width = 125), collapse = "\n")) +
+                               whitespace_only = TRUE, width = 115), collapse = "\n")) +
   theme(legend.position = "bottom",  # Show legend on the top/bottom
      # remove axis text
      axis.text.x = element_blank(), 
@@ -211,7 +211,7 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
      legend.text = element_text(size = 14, colour = "black", family = font_subtitle, 
                                 # face = "bold",
                                 margin = margin(t = 5)),
-     legend.title = element_text(size = 12, colour = "black", family = font_axis_label, face = "bold", margin = margin(t = 5)),
+     legend.title = element_text(size = 12, colour = "black", family = font_axis_label, face = "plain", margin = margin(t = 5)),
      strip.text=element_text(size=12, family=font_axis_label),
      # define style for title and caption
      plot.caption = element_text(hjust = 0.0, size = 11, colour = "black", family = font_caption, face = "plain"),
@@ -227,18 +227,18 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
   ggsave(plot = df_visual, 
          file = paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", 
                        unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.svg"),
-         units = "in", width = 10, height = 10)
+         units = "in", width = 8, height = 10)
   ggsave(plot = df_visual, 
          file = paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", 
                        unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.pdf"),
-         units = "in", width = 10, height = 10)
+         units = "in", width = 8, height = 10)
 
   showtext_opts(dpi=300)
   
   ggsave(plot = df_visual, 
          file = paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", 
                        unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.png"),
-         units = "in", width = 10, height = 10)
+         units = "in", width = 8, height = 10)
   
   return(df_visual)
 
@@ -248,6 +248,7 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
 ####Step 5: Run function to create visual ####
 fx_vis_smallmultiples(df = df_ex,
                       title_text = 'Unhoused youth are least likely to report access to Libraries',
+                      subtitle_text = '',
                       likert_factors = yes_factors, graph_orderby = "Yes")
 #See example here: W:\Project\OSI\Bold Vision\Youth Thriving Survey\Deliverables\Vibrant Communities 
 
