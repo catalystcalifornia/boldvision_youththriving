@@ -174,11 +174,11 @@ svy_data <- svy_data %>%
       sparks = ifelse(q10 == 1 | q10 == 3, 0, 
                      ifelse(q10 == 2, 1, NA)),
       # Create binary column personal_safety. Note that q19 has a reverse frequency scale.
-      # personal_safety = ifelse(q19 == 5, 1, 
-      #                  ifelse(q19 %in% c(1,2,3,4), 0, NA)),       
+      personal_safety_re = ifelse(q19 == 5, 1,
+                       ifelse(q19 %in% c(1,2,3,4), 0, NA)),
       # Create binary column opportunities_for_community_involvement
-      # opportunities_for_community_involvement = ifelse(dm == 1, 0, 
-      #                    ifelse(dm %in% c(2,3,4), 1, NA)),
+      opportunities_for_community_involvement_re = ifelse(dm == 1, 0,
+                         ifelse(dm %in% c(2,3,4), 1, NA)),
       # Create new column growth_mindset (change variables cr and cs to be binary and take the mean) 
       # cr_binary = ifelse(cr == 1, 0, 
       #                    ifelse(cr %in% c(2,3,4), 1, NA)),
@@ -198,6 +198,7 @@ svy_data <- svy_data %>%
 # Survey data with only cisgender respondents
 cisgender_svy_data <- svy_data %>% 
   filter(!is.na(cisgender_mf))
+
 ```
 
 ```{r QA Check Data Prep, eval=FALSE, include=FALSE}
@@ -841,7 +842,7 @@ model_1j.5 <- '
     subcomponent_microaggressions + 
     subcomponent_structural_racism + 
     component_vibrant_communities + 
-    personal_safety +
+    personal_safety_re +
     race_latinx + race_nh_asian + race_nh_black + race_nh_twoormor + race_nh_aian + race_nh_other + race_nh_nhpi + race_nh_swana +
     cishet_lgbtqia +
     systems_impacted +
@@ -1377,8 +1378,8 @@ model_2f.6 <- '
   # Regression
   subcomponent_self_efficacy_hope ~ component_caring_families_and_relationships + 
     component_cultural_identity + 
-    personal_safety +
-    opportunities_for_community_involvement + 
+    personal_safety_re +
+    opportunities_for_community_involvement_re + 
     race_latinx + race_nh_asian + race_nh_black + race_nh_twoormor + race_nh_aian + race_nh_other + race_nh_nhpi + race_nh_swana +
     cishet_lgbtqia +
     unhoused +
@@ -1392,6 +1393,7 @@ fit_2f.6 <- sem(model_2f.6, data = svy_data, std.lv = TRUE, missing = "fiml.x")
 sem_output_2f.6 <- get_sem_results(fit_2f.6) %>% 
   mutate(model_name="2f.6") %>%
   select(model_name, everything())
+
 ```
 
 ### Model 2f.8: FINAL, same as model 2f.6 but only on cisgender respondents
