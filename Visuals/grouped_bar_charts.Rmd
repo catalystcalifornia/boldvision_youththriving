@@ -1,0 +1,383 @@
+---
+title: "Grouped bar charts"
+author: "Alicia Vo"
+date: "2025-02-25"
+output: html_document
+---
+
+#### Step 1: Loading Libraries
+
+```{r}
+library(extrafont)
+library(tidyverse)
+library(here)
+library(dplyr)
+library(data.table)
+library(sf)
+library(ggplot2)
+library(RPostgres)
+library(formattable)
+library(svglite)
+library(stringr)
+library(tidyr)
+library(showtext)
+library(scales)
+library(kableExtra)
+library(flextable)
+# library(ggchicklet)
+```
+
+#### Step 2: Setting Bold Vision Style Guide
+
+```{r}
+##Colors
+gray <- "#D6D7D6"
+pink <- "#F75EC1"
+dark_pink <- "#EF4A66"
+orange <- "#F57E20"
+yellow <- "#FFBF00"
+light_green <- "#00A75A"
+dark_green <- "#00864A"
+blue  <- "#2A12B2"
+light_blue <- "#465adc"
+
+## FONTS ## 
+font_add(family = "Manifold Regular", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Manifold/Fonts/manifoldcf-regular.otf")
+font_add(family = "Manifold CF", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Manifold/Fonts/manifoldcf-heavy.otf")
+font_add(family = "HelveticaNeueLTStdMdCn", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Helvetica Neue LT Std/HelveticaNeueLTStd-MdCn.otf")
+font_add(family = "HelveticaNeueLTStdHvCn", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Helvetica Neue LT Std/HelveticaNeueLTStd-HvCn.otf")
+font_add(family = "HelveticaNeueLTStdMdCnO", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Helvetica Neue LT Std/HelveticaNeueLTStd-MdCnO.otf")
+font_add(family = "HelveticaNeueLTStdMd", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Helvetica Neue LT Std/HelveticaNeueLTStd-Md.otf")
+# font_import()
+loadfonts(device = "win")
+windowsFonts()
+showtext_auto()
+# define fonts in chart
+font_title <- "HelveticaNeueLTStdHvCn"
+font_subtitle <- "HelveticaNeueLTStdMdCn"
+font_caption <- "Manifold Regular"
+font_bar_label <- "Manifold Regular"
+font_axis_label <- "Manifold Regular"
+```
+
+#### Step 3: Connect to Database and Pull Data Table of Interest
+
+```{r}
+# connect to postgres and pull credentials
+source("W:\\RDA Team\\R\\credentials_source.R")
+con <- connect_to_db("bold_vision")
+
+# source the function to get crosstabs
+source("W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\GitHub\\AV\\boldvision_youththriving\\Descriptive and Demographic Analyses\\crosstab_svyquestions.R")
+```
+
+## Function get_grouped_bar_chart()
+```{r}
+# To use this function, you must feed in the crosstab dataframe of the 2 relevant variables, the chart title, the 2 relevant survey questions as strings, and the data dictionary
+get_grouped_bar_chart <- function(crosstab_df,title_text,string_question_var1,string_question_var2,svy_dd)
+{
+    # Filter out NA responses
+    na_responses <- c("Don't wish to answer","Does not apply to me")
+    crosstab_df <- crosstab_df %>%
+      filter(!(response_var1 %in% na_responses | response_var2 %in% na_responses)) %>%
+      mutate(rate_se=rate_se*100)
+    
+    # Set the chart title
+    title_text <- paste(str_wrap(title_text, whitespace_only = TRUE, width = 65), collapse = "\n")
+
+    # Set the x-axis title
+    string_question_var1 <- str_wrap(string_question_var1, width = 105)
+    # Reorder the x-axis labels 
+    crosstab_df <- crosstab_df %>%
+        mutate(response_var1 = reorder(response_var1, var1_number))
+    # Wrap the x-axis labels at a reasonable width 
+    x_labels <- str_wrap(crosstab_df$response_var1, width = 20)
+    
+    # Set the legend title
+    string_question_var2 <- str_wrap(string_question_var2, width = 15)
+    # Reorder the legend labels 
+    crosstab_df <- crosstab_df %>%
+        mutate(response_var2 = reorder(response_var2, -var2_number))    
+    # Set the bar colors
+    bar_colors <- c(dark_green,light_green,yellow,orange,dark_pink)
+    # Reverse the bar colors for the legend if needed
+    var1 <- names(crosstab_df)[1]
+    var2 <- names(crosstab_df)[2]
+    var2_dd <- svy_dd %>%
+      filter(variable==var2)
+    if(length(grep("_rev$", var2_dd$likert_type))>0) {
+      crosstab_df <- crosstab_df %>%
+          mutate(response_var2 = reorder(response_var2, var2_number))
+    }       
+    
+    # Set the font sizes and styles
+    # chart_title_theme <- element_text(hjust = 0.0, size = 18, colour = "black", family = font_title, face = "bold")
+    heading_theme <- element_text(size = 12, colour = "black", family = font_axis_label, face = "bold")
+    # x_title_theme <- element_text(hjust = 0.0, size = 12, colour = "black", family = font_axis_label, face = "bold", margin = margin(t = 10))
+    subheading_theme <- element_text(size = 9, colour = "black", family = font_axis_label, face = "plain")
+    # caption_theme <- element_text(hjust = 0.0, size = 8, colour = "black", family = font_caption, face = "plain", margin = margin(t = 10))
+    
+    chart_title_theme <- element_text(hjust = 0, size = 18, colour = "black", family = font_title, face = "bold", margin = margin(l = 0, b = 10))
+x_title_theme <- element_text(hjust = 0, size = 12, colour = "black", family = font_axis_label, face = "bold", margin = margin(t = 10, l = 0))
+caption_theme <- element_text(hjust = 0, size = 8, colour = "black", family = font_caption, face = "plain", margin = margin(t = 10, l = 0))
+# subheading_theme <- element_text(hjust = 0, size = 9, colour = "black", family = font_axis_label, face = "bold", margin = margin(t = 10, l = 0))
+
+    
+    # Set the caption text
+    var1_q_num <- sub("^([Qq][0-9]+\\. ).*", "\\1", unique(crosstab_df$question_var1))
+    var2_q_num <- sub("^([Qq][0-9]+\\. ).*", "\\1", unique(crosstab_df$question_var2))
+    caption_text <- str_wrap(paste0(
+      "Question: ", var1_q_num,string_question_var1, " ",
+      "Component: ", unique(crosstab_df$component_var1),
+      ", Subcomponent: ", unique(crosstab_df$subcomponent_var1), ". ",
+      "Question: ",var2_q_num, string_question_var2, " ",
+      "Component: ", unique(crosstab_df$component_var2),
+      ", Subcomponent: ", unique(crosstab_df$subcomponent_var2), ". ",
+      "Data Source: Catalyst California calculations of Bold Vision Youth Thriving Survey, 2024."
+    ), width = 155)  # Apply wrapping only once
+
+    # Plot grouped bar chart
+    final_visual <- ggplot(crosstab_df, aes(fill=response_var2, y=rate, x=response_var1)) + 
+      geom_bar(position="dodge", stat="identity") +          # Create bar chart 
+      scale_fill_manual(values = bar_colors) +               # Set the bar colors 
+      guides(fill=guide_legend(title=string_question_var2,   # Style legend title
+                             title.theme = heading_theme, 
+                             label.theme = subheading_theme)) + 
+      xlab(string_question_var1) +                                # Set the x-axis title
+      ylab("Percent") +                                           # Set the y-axis title
+      labs(title = title_text, caption = caption_text) +          # Set the chart title and caption
+      theme_minimal() +
+      theme(
+        legend.position = "top",
+        legend.margin = margin(l = 0),    # Ensures no extra left margin
+        axis.title.x = x_title_theme,       # Set style for x-axis title 
+        axis.text.x = subheading_theme,         # Set style for x-axis labels 
+        axis.title.y = heading_theme,           # Set style for y-axis title 
+        plot.caption = caption_theme,           # Set style for caption
+        plot.title = chart_title_theme,         # Set style for chart title
+        panel.grid.minor = element_blank(),     # Set style for grid lines
+        panel.grid.major = element_blank()) +   
+      scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 20))  # Set y-axis range and breaks  
+    
+    # Define base file path
+    base_path <- paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", 
+                        unique(crosstab_df$component_var2), "/", 
+                        var2, "_", var1, "_grouped_barchart")
+    
+    # Save in SVG
+    ggsave(plot = final_visual, filename = paste0(base_path, ".svg"), 
+           device = "svg", width = 8, height = 5.5)
+    
+    # Save in PNG
+    showtext_opts(dpi=300)
+    ggsave(plot = final_visual, filename = paste0(base_path, ".png"), 
+           device = "png", width = 8, height = 5.5, dpi = 300)
+    
+    # Save in PDF
+    ggsave(plot = final_visual, filename = paste0(base_path, ".pdf"),
+           device = "pdf", width = 8, height = 5.5)
+    
+    return(final_visual)
+}
+```
+
+
+### Psychological Distress - Sparks
+
+```{r}
+# Get crosstab of 2 questions, Psychological Distress - Sparks 
+raw_crosstab <- cross_tab_df(svy_data,"q10","cy",svy_dd)
+
+# check
+check <- raw_crosstab %>%
+  group_by(q10) %>%
+  summarise(sum(rate))
+
+title_text <- 'Having a "spark" in life improves mental health'
+string_question_var2 <- "How often during the past 30 days did you feel worthless?"
+string_question_var1 <- "Do you have a spark in your life?"
+
+get_grouped_bar_chart(raw_crosstab,title_text,string_question_var1,string_question_var2,svy_dd)
+```
+
+### Psychological Distress - Microaggressions
+
+```{r}
+# Get crosstab of 2 questions, Psychological Distress - Microaggressions 
+raw_crosstab <- cross_tab_df(svy_data,"eo","cy",svy_dd)
+
+# check
+check <- raw_crosstab %>%
+  group_by(eo) %>%
+  summarise(sum(rate))
+
+title_text <- "Experiencing repeated microaggressions harms mental health"
+
+string_question_var2 <- "How often during the past 30 days did you feel worthless?"
+string_question_var1 <- "During the past 12 months, how often have you dealt with being told hurtful or offensive jokes/comments about your race?"
+
+get_grouped_bar_chart(raw_crosstab,title_text,string_question_var1,string_question_var2,svy_dd)
+```
+
+### Psychological Distress - Structural Racism
+
+```{r}
+# Get crosstab of 2 questions, Psychological Distress - Structural Racism  
+raw_crosstab <- cross_tab_df(svy_data,"et","cy",svy_dd) 
+
+# check
+check <- raw_crosstab %>%
+  group_by(et) %>%
+  summarise(sum(rate))
+
+title_text <- "Lack of access to quality health services harms mental health"
+string_question_var2 <- "How often during the past 30 days did you feel worthless?"
+string_question_var1 <- "How often does poor quality health services get in the way of you living your best life?"
+
+get_grouped_bar_chart(raw_crosstab,title_text,string_question_var1,string_question_var2,svy_dd)
+```
+
+### Self-efficacy and hope - Caring Families And Relationships
+```{r}
+# Get crosstab of 2 questions, Self-efficacy and hope - Caring Families And Relationships 
+raw_crosstab <- cross_tab_df(svy_data,"dl","co",svy_dd) 
+title_text <- "Having supportive relationships encourages more hope for the future"
+string_question_var2 <- "I feel hopeful when I think about my future."
+string_question_var1 <- "When I have a problem I have someone who will be there for me."
+
+get_grouped_bar_chart(raw_crosstab,title_text,string_question_var1,string_question_var2,svy_dd)
+```
+
+### Self-efficacy and hope - Cultural identity
+```{r}
+# Get crosstab of 2 questions, Self-efficacy and hope - Cultural identity   
+raw_crosstab <- cross_tab_df(svy_data,"dz","co",svy_dd) 
+title_text <- "Having a positive cultural identity encourages more hope for the future"
+string_question_var2 <- "I feel hopeful when I think about my future."
+string_question_var1 <- "My culture helps me feel good about who I am."
+
+get_grouped_bar_chart(raw_crosstab,title_text,string_question_var1,string_question_var2,svy_dd)
+```
+
+### Self-efficacy and hope - Opportunities for community involvement/critical action
+```{r}
+# Get crosstab of 2 questions, Self-efficacy and hope - Opportunities for community involvement/critical action   
+raw_crosstab <- cross_tab_df(svy_data,"dm","co",svy_dd) 
+title_text <- "Increasing opportunities for community involvement encourages more hope for the future"
+string_question_var2 <- "I feel hopeful when I think about my future."
+string_question_var1 <- "There are ways for me to get involved in my community."
+
+get_grouped_bar_chart(raw_crosstab,title_text,string_question_var1,string_question_var2,svy_dd)
+```
+
+### This section is only for testing, since the code is not in a function
+
+```{r}
+# Get crosstab of 2 questions
+# raw_crosstab <- cross_tab_df(svy_data,"cy","eo",svy_dd) # Psychological Distress - Microaggressions 
+raw_crosstab <- cross_tab_df(svy_data,"cw","q10",svy_dd) # Psychological Distress - Sparks 
+
+# Filter out NA responses and recalculate rates. 
+na_responses <- c("Don't wish to answer","Does not apply to me")
+crosstab_df <- raw_crosstab %>%
+  filter(!(response_var1 %in% na_responses | response_var2 %in% na_responses)) %>%
+  mutate(rate_se=rate_se*100)
+```
+
+```{r}
+    # Filter out NA responses
+    na_responses <- c("Don't wish to answer","Does not apply to me")
+    crosstab_df <- crosstab_df %>%
+      filter(!(response_var1 %in% na_responses | response_var2 %in% na_responses)) %>%
+      mutate(rate_se=rate_se*100)
+    
+    # Set the chart title
+    title_text <- paste(str_wrap(title_text, whitespace_only = TRUE, width = 57), collapse = "\n")
+    
+    # Set the x-axis title
+    string_question_var2 <- str_wrap(string_question_var2, width = 90)
+    # Reorder the x-axis labels 
+    crosstab_df <- crosstab_df %>%
+        mutate(response_var2 = reorder(response_var2, var2_number))
+    # Wrap the x-axis labels at a reasonable width 
+    x_labels <- str_wrap(crosstab_df$response_var2, width = 20)
+    
+    # Set the legend title
+    string_question_var1 <- str_wrap(string_question_var1, width = 10)
+    # Reorder the legend labels 
+    crosstab_df <- crosstab_df %>%
+        mutate(response_var1 = reorder(response_var1, -var1_number))    
+    # Set the bar colors
+    bar_colors <- c(dark_green,light_green,yellow,orange,dark_pink)
+    # Reverse the bar colors for the legend if needed
+    var1 <- names(crosstab_df)[1]
+    var2 <- names(crosstab_df)[2]
+    var1_dd <- svy_dd %>%
+      filter(variable==var1)
+    if(length(grep("_rev$", var1_dd$likert_type))>0) {
+      crosstab_df <- crosstab_df %>%
+          mutate(response_var1 = reorder(response_var1, var1_number))
+    }       
+    
+    # Set the font sizes and styles
+    chart_title_theme <- element_text(hjust = 0.0, size = 18, colour = "black", family = font_title, face = "bold")
+    heading_theme <- element_text(size = 12, colour = "black", family = font_axis_label, face = "bold")
+    x_title_theme <- element_text(hjust = 0.0, size = 12, colour = "black", family = font_axis_label, face = "bold", margin = margin(t = 10))
+    subheading_theme <- element_text(size = 9, colour = "black", family = font_axis_label, face = "plain")
+    caption_theme <- element_text(hjust = 0.0, size = 8, colour = "black", family = font_caption, face = "plain", margin = margin(t = 10))
+    
+    # Set the caption text
+    var1_q_num <- sub("^([Qq][0-9]+\\. ).*", "\\1", unique(crosstab_df$question_var1))
+    var2_q_num <- sub("^([Qq][0-9]+\\. ).*", "\\1", unique(crosstab_df$question_var2))
+    caption_text <- str_wrap(paste0(
+      "Question: ", var1_q_num,string_question_var1, " ",
+      "Component: ", unique(crosstab_df$component_var1),
+      ", Subcomponent: ", unique(crosstab_df$subcomponent_var1), ". ",
+      "Question: ",var2_q_num, string_question_var2, " ",
+      "Component: ", unique(crosstab_df$component_var2),
+      ", Subcomponent: ", unique(crosstab_df$subcomponent_var2), ". ",
+      "Data Source: Catalyst California calculations of Bold Vision Youth Thriving Survey, 2024."
+    ), width = 140)  # Apply wrapping only once
+
+    # Plot grouped bar chart
+    final_visual <- ggplot(crosstab_df, aes(fill=response_var1, y=rate, x=response_var2)) + 
+      geom_bar(position="dodge", stat="identity") +          # Create bar chart 
+      scale_fill_manual(values = bar_colors) +               # Set the bar colors 
+      guides(fill=guide_legend(title=string_question_var1,   # Style legend title
+                             title.theme = heading_theme, 
+                             label.theme = subheading_theme)) + 
+      xlab(string_question_var2) +                                # Set the x-axis title
+      ylab("Percent") +                                           # Set the y-axis title
+      labs(title = title_text, caption = caption_text) +          # Set the chart title and caption
+      theme_minimal() +
+      theme(plot.margin = margin(10, 30, 10, 10),  # Reduce right margin to fit everything
+        legend.position = "top",
+            legend.justification = c(0, 1),
+            legend.box.margin = margin(5, 5, 5, 5),
+        axis.title.x = x_title_theme,       # Set style for x-axis title 
+        axis.text.x = subheading_theme,         # Set style for x-axis labels 
+        axis.title.y = heading_theme,           # Set style for y-axis title 
+        plot.caption = caption_theme,           # Set style for caption
+        plot.title = chart_title_theme,         # Set style for chart title
+        panel.grid.minor = element_blank(),     # Set style for grid lines
+        panel.grid.major = element_blank()) +   
+      scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 20))  # Set y-axis range and breaks  
+    
+    # Define base file path
+    base_path <- paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", 
+                        unique(crosstab_df$component_var1), "/", 
+                        var1, "_", var2, "_grouped_barchart")
+    
+    # Save in SVG
+    ggsave(plot = final_visual, filename = paste0(base_path, ".svg"), 
+           device = "svg", width = 8, height = 5.5)
+    
+    # Save in PNG
+    showtext_opts(dpi=300)
+    ggsave(plot = final_visual, filename = paste0(base_path, ".png"), 
+           device = "png", width = 8, height = 5.5, dpi = 300)
+    
+    # Save in PDF
+    ggsave(plot = final_visual, filename = paste0(base_path, ".pdf"),
+           device = "pdf", width = 8, height = 5.5)
+```
