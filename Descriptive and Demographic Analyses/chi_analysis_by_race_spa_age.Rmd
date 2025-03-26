@@ -214,6 +214,7 @@ df_almost_final <-  merge(x = df_var, y = dict_var, by.x = c(i), by.y = c("varia
                  variable,
                  question,
                  sub_question,
+                 likert_type,
                  question_number,
                  variable_name,
                  response_domain))
@@ -231,8 +232,9 @@ df_merged_per_race <- combine_data_frames(actual_data_frames)
 
 #push to postgres in pgAdmin 
 
-# dbWriteTable(con, c('youth_thriving', 'response_analysis_per_race'), df_merged_per_race,
-#              overwrite = FALSE, row.names = FALSE)
+dbWriteTable(con, 
+             Id(schema = 'youth_thriving', table = 'response_analysis_per_race'), 
+             df_merged_per_race, overwrite=FALSE)
 
 table_comment<-paste0("The following is a table of response frequency and rate PER race group. The denominator for each analysis is the total number of youth from the race group who answered the question. In other words- of the potential responses to a question, what % of X race group said Y compared to how many of that race group said Z. W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_racetables_chi_analysis.docx"," Created on ", Sys.Date())
 
