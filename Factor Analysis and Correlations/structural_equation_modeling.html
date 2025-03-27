@@ -358,47 +358,90 @@ Vision Youth Thriving Survey</h1>
 </div>
 
 
+<pre class="r"><code># Updating column names of small_svy_data for readability and understandability
+small_svy_dd &lt;- small_svy_dd %&gt;%
+  select(-c(variable_category)) %&gt;%
+  rename(subcomponent_name = variable_name, 
+         component_name = response_domain)</code></pre>
 <div id="step-3-regression-analysis" class="section level1">
 <h1>Step 3: Regression Analysis</h1>
 <div id="dependent-variable-subcomponent_psychological_distress" class="section level2">
 <h2>Dependent variable: subcomponent_psychological_distress</h2>
 <div id="model-1-all-variables" class="section level3">
 <h3>Model 1: all variables</h3>
-<p>Reference groups: race is nh_white, spa is spa_1</p>
-<pre><code>##                                                      rhs std.lv p_is_significant pvalue fit_measures_met
-## 1                                                 sparks  0.538             TRUE  0.000                2
-## 2                                               nh_other  0.337             TRUE  0.001                2
-## 3                                                nh_aian  0.269            FALSE  0.051                2
-## 4                          subcomponent_microaggressions  0.245             TRUE  0.000                2
-## 5                                        personal_safety  0.202             TRUE  0.000                2
-## 6            component_caring_families_and_relationships  0.180             TRUE  0.000                2
-## 7                         subcomponent_structural_racism  0.160             TRUE  0.000                2
-## 8                                                  spa_6  0.149            FALSE  0.066                2
-## 9                                               nh_black  0.142            FALSE  0.065                2
-## 10                                          undocumented  0.127            FALSE  0.136                2
-## 11                                                 spa_8  0.105            FALSE  0.162                2
-## 12                                              arrested  0.092            FALSE  0.187                2
-## 13                                                 spa_3  0.090            FALSE  0.249                2
-## 14               opportunities_for_community_involvement  0.071            FALSE  0.387                2
-## 15                                                 spa_7  0.071            FALSE  0.265                2
-## 16                           component_cultural_identity  0.057             TRUE  0.008                2
-## 17                         component_vibrant_communities  0.046             TRUE  0.040                2
-## 18                                        growth_mindset  0.030            FALSE  0.828                2
-## 19                                              is_adult  0.026            FALSE  0.467                2
-## 20 subcomponent_experiences_of_racism_and_discrimination  0.016            FALSE  0.606                2
-## 21                                     high_poverty_area  0.014            FALSE  0.755                2
-## 22                                                 spa_2  0.000            FALSE  0.996                2
-## 23                                                 spa_4 -0.002            FALSE  0.978                2
-## 24                                                 spa_5 -0.003            FALSE  0.975                2
-## 25                                           nh_twoormor -0.013            FALSE  0.910                2
-## 26                                             suspended -0.013            FALSE  0.799                2
-## 27                                                latino -0.040            FALSE  0.571                2
-## 28                                          disconnected -0.040            FALSE  0.414                2
-## 29                                              unhoused -0.064            FALSE  0.289                2
-## 30                                             nh_pacisl -0.089            FALSE  0.642                2
-## 31                                      systems_impacted -0.125             TRUE  0.025                2
-## 32                                              nh_asian -0.222             TRUE  0.006                2
-## 33                                        cishet_lgbtqia -0.341             TRUE  0.000                2</code></pre>
+<p>Reference groups: race is nh_white. spa is spa_1.</p>
+<pre><code>##    model_name                                 lhs                                                   rhs std.all std.lv
+## 1           1 subcomponent_psychological_distress                       subcomponent_self_efficacy_hope   0.255  0.255
+## 2           1 subcomponent_psychological_distress                         subcomponent_microaggressions   0.255  0.255
+## 3           1 subcomponent_psychological_distress                        subcomponent_structural_racism   0.145  0.145
+## 4           1 subcomponent_psychological_distress                                                sparks   0.120  0.271
+## 5           1 subcomponent_psychological_distress           component_caring_families_and_relationships   0.092  0.092
+## 6           1 subcomponent_psychological_distress                                    personal_safety_re   0.062  0.166
+## 7           1 subcomponent_psychological_distress                         component_vibrant_communities   0.033  0.033
+## 8           1 subcomponent_psychological_distress                                                 spa_6   0.030  0.065
+## 9           1 subcomponent_psychological_distress                                              arrested   0.025  0.087
+## 10          1 subcomponent_psychological_distress                                          undocumented   0.021  0.099
+## 11          1 subcomponent_psychological_distress                                                 spa_3   0.020  0.064
+## 12          1 subcomponent_psychological_distress                                                 spa_5   0.018  0.088
+## 13          1 subcomponent_psychological_distress subcomponent_experiences_of_racism_and_discrimination   0.017  0.017
+## 14          1 subcomponent_psychological_distress            opportunities_for_community_involvement_re   0.016  0.076
+## 15          1 subcomponent_psychological_distress                                     high_poverty_area   0.013  0.034
+## 16          1 subcomponent_psychological_distress                                                 spa_2   0.010  0.028
+## 17          1 subcomponent_psychological_distress                                          race_nh_aian   0.009  0.065
+## 18          1 subcomponent_psychological_distress                                         race_nh_other   0.002  0.053
+## 19          1 subcomponent_psychological_distress                           component_cultural_identity   0.001  0.001
+## 20          1 subcomponent_psychological_distress                                                 spa_8   0.000 -0.001
+## 21          1 subcomponent_psychological_distress                                                 spa_7   0.000 -0.002
+## 22          1 subcomponent_psychological_distress                                         race_nh_swana  -0.002 -0.023
+## 23          1 subcomponent_psychological_distress                                             suspended  -0.003 -0.009
+## 24          1 subcomponent_psychological_distress                                         race_nh_black  -0.007 -0.018
+## 25          1 subcomponent_psychological_distress                                          disconnected  -0.010 -0.028
+## 26          1 subcomponent_psychological_distress                                              is_adult  -0.010 -0.021
+## 27          1 subcomponent_psychological_distress                                      race_nh_twoormor  -0.015 -0.088
+## 28          1 subcomponent_psychological_distress                                                 spa_4  -0.016 -0.046
+## 29          1 subcomponent_psychological_distress                                          race_nh_nhpi  -0.019 -0.217
+## 30          1 subcomponent_psychological_distress                                        growth_mindset  -0.032 -0.270
+## 31          1 subcomponent_psychological_distress                                              unhoused  -0.038 -0.113
+## 32          1 subcomponent_psychological_distress                                      systems_impacted  -0.048 -0.137
+## 33          1 subcomponent_psychological_distress                                           race_latinx  -0.078 -0.157
+## 34          1 subcomponent_psychological_distress                                         race_nh_asian  -0.083 -0.258
+## 35          1 subcomponent_psychological_distress                                        cishet_lgbtqia  -0.121 -0.288
+##    p_is_significant pvalue      bic      aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1              TRUE  0.000 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 2              TRUE  0.000 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 3              TRUE  0.000 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 4              TRUE  0.000 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 5              TRUE  0.000 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 6              TRUE  0.000 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 7             FALSE  0.130 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 8             FALSE  0.364 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 9             FALSE  0.202 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 10            FALSE  0.244 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 11            FALSE  0.431 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 12            FALSE  0.406 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 13            FALSE  0.565 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 14            FALSE  0.349 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 15            FALSE  0.494 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 16            FALSE  0.717 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 17            FALSE  0.607 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 18            FALSE  0.921 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 19            FALSE  0.954 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 20            FALSE  0.994 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 21            FALSE  0.985 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 22            FALSE  0.892 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 23            FALSE  0.858 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 24            FALSE  0.780 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 25            FALSE  0.558 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 26            FALSE  0.547 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 27            FALSE  0.394 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 28            FALSE  0.556 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 29            FALSE  0.239 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 30            FALSE  0.054 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 31            FALSE  0.058 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 32             TRUE  0.012 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 33             TRUE  0.004 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 34             TRUE  0.000 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056
+## 35             TRUE  0.000 302657.1 301538.8     0.335                2 0.853 0.846 0.038 0.056</code></pre>
 </div>
 <div id="model-1a-running-only-subcomponents" class="section level3">
 <h3>Model 1a: running only (sub)components</h3>
@@ -408,13 +451,20 @@ it’s interesting to see how the effects are ordered from greatest to
 least by individual racism &gt; family &gt; cultural group &gt; local
 community. As if, as the “group” or “category” of population increases
 in size, the effect on the individual decreases.</p>
-<pre><code>##                                                     rhs std.lv p_is_significant pvalue fit_measures_met
-## 1                         subcomponent_microaggressions  0.226             TRUE  0.000                1
-## 2                        subcomponent_structural_racism  0.216             TRUE  0.000                1
-## 3           component_caring_families_and_relationships  0.174             TRUE  0.000                1
-## 4                           component_cultural_identity  0.108             TRUE  0.000                1
-## 5                         component_vibrant_communities  0.046             TRUE  0.036                1
-## 6 subcomponent_experiences_of_racism_and_discrimination  0.014            FALSE  0.652                1</code></pre>
+<pre><code>##   model_name                                 lhs                                                   rhs std.all std.lv
+## 1         1a subcomponent_psychological_distress                         subcomponent_microaggressions   0.229  0.229
+## 2         1a subcomponent_psychological_distress                        subcomponent_structural_racism   0.213  0.213
+## 3         1a subcomponent_psychological_distress           component_caring_families_and_relationships   0.173  0.173
+## 4         1a subcomponent_psychological_distress                           component_cultural_identity   0.109  0.109
+## 5         1a subcomponent_psychological_distress                         component_vibrant_communities   0.048  0.048
+## 6         1a subcomponent_psychological_distress subcomponent_experiences_of_racism_and_discrimination   0.012  0.012
+##   p_is_significant pvalue      bic    aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1             TRUE  0.000 274951.9 274123      0.28                1 0.902 0.893  0.05 0.042
+## 2             TRUE  0.000 274951.9 274123      0.28                1 0.902 0.893  0.05 0.042
+## 3             TRUE  0.000 274951.9 274123      0.28                1 0.902 0.893  0.05 0.042
+## 4             TRUE  0.000 274951.9 274123      0.28                1 0.902 0.893  0.05 0.042
+## 5             TRUE  0.028 274951.9 274123      0.28                1 0.902 0.893  0.05 0.042
+## 6            FALSE  0.703 274951.9 274123      0.28                1 0.902 0.893  0.05 0.042</code></pre>
 </div>
 <div id="model-1b-adding-non-imputed-componentsobserved-variables-removing-subcomponent_experiences_of_racism_and_discrimination" class="section level3">
 <h3>Model 1b: adding non-imputed components/observed variables; removing
@@ -423,15 +473,24 @@ subcomponent_experiences_of_racism_and_discrimination</h3>
 largest coefficients. opportunities_for_community_involvement is not
 statistically significant. growth_mindset is almost statistically
 significant.</p>
-<pre><code>##                                           rhs std.lv p_is_significant pvalue fit_measures_met
-## 1               subcomponent_microaggressions  0.239             TRUE  0.000                1
-## 2                             personal_safety  0.206             TRUE  0.000                1
-## 3              subcomponent_structural_racism  0.191             TRUE  0.000                1
-## 4 component_caring_families_and_relationships  0.168             TRUE  0.000                1
-## 5                 component_cultural_identity  0.106             TRUE  0.000                1
-## 6     opportunities_for_community_involvement  0.104            FALSE  0.215                1
-## 7                              growth_mindset  0.059            FALSE  0.673                1
-## 8               component_vibrant_communities  0.051             TRUE  0.021                1</code></pre>
+<pre><code>##   model_name                                 lhs                                         rhs std.all std.lv
+## 1         1b subcomponent_psychological_distress               subcomponent_microaggressions   0.241  0.241
+## 2         1b subcomponent_psychological_distress              subcomponent_structural_racism   0.189  0.189
+## 3         1b subcomponent_psychological_distress component_caring_families_and_relationships   0.167  0.167
+## 4         1b subcomponent_psychological_distress                 component_cultural_identity   0.108  0.108
+## 5         1b subcomponent_psychological_distress                          personal_safety_re   0.075  0.200
+## 6         1b subcomponent_psychological_distress               component_vibrant_communities   0.052  0.052
+## 7         1b subcomponent_psychological_distress  opportunities_for_community_involvement_re   0.021  0.101
+## 8         1b subcomponent_psychological_distress                              growth_mindset   0.007  0.060
+##   p_is_significant pvalue      bic      aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1             TRUE  0.000 245852.5 245115.6     0.267                1 0.878 0.868 0.053 0.056
+## 2             TRUE  0.000 245852.5 245115.6     0.267                1 0.878 0.868 0.053 0.056
+## 3             TRUE  0.000 245852.5 245115.6     0.267                1 0.878 0.868 0.053 0.056
+## 4             TRUE  0.000 245852.5 245115.6     0.267                1 0.878 0.868 0.053 0.056
+## 5             TRUE  0.000 245852.5 245115.6     0.267                1 0.878 0.868 0.053 0.056
+## 6             TRUE  0.018 245852.5 245115.6     0.267                1 0.878 0.868 0.053 0.056
+## 7            FALSE  0.223 245852.5 245115.6     0.267                1 0.878 0.868 0.053 0.056
+## 8            FALSE  0.671 245852.5 245115.6     0.267                1 0.878 0.868 0.053 0.056</code></pre>
 </div>
 <div id="model-1c-adding-some-demographics-and-subcomponent_experiences_of_racism_and_discrimination-back-in-removing-opportunities_for_community_involvement" class="section level3">
 <h3>Model 1c: adding some demographics and
@@ -451,187 +510,351 @@ not statistically significant.</p>
 spent time in juvenile hall or probation camp, spent time in jail or
 prison, lived in a group home or residential program, or lived with
 relatives who were responsible for you legally?</p>
-<pre><code>##                                                      rhs std.lv p_is_significant pvalue fit_measures_met
-## 1                                               nh_other  0.342             TRUE  0.000                2
-## 2                                                nh_aian  0.250            FALSE  0.061                2
-## 3                          subcomponent_microaggressions  0.236             TRUE  0.000                2
-## 4                                        personal_safety  0.202             TRUE  0.000                2
-## 5            component_caring_families_and_relationships  0.187             TRUE  0.000                2
-## 6                         subcomponent_structural_racism  0.170             TRUE  0.000                2
-## 7                                               nh_black  0.159             TRUE  0.038                2
-## 8                                           undocumented  0.143            FALSE  0.090                2
-## 9                                         growth_mindset  0.105            FALSE  0.445                2
-## 10                           component_cultural_identity  0.080             TRUE  0.000                2
-## 11                         component_vibrant_communities  0.059             TRUE  0.007                2
-## 12                                     high_poverty_area  0.020            FALSE  0.662                2
-## 13 subcomponent_experiences_of_racism_and_discrimination  0.017            FALSE  0.582                2
-## 14                                              is_adult  0.004            FALSE  0.899                2
-## 15                                           nh_twoormor -0.008            FALSE  0.942                2
-## 16                                                latino -0.021            FALSE  0.764                2
-## 17                                             nh_pacisl -0.063            FALSE  0.739                2
-## 18                                      systems_impacted -0.113             TRUE  0.024                2
-## 19                                              nh_asian -0.216             TRUE  0.007                2
-## 20                                        cishet_lgbtqia -0.372             TRUE  0.000                2</code></pre>
+<pre><code>##    model_name                                 lhs                                                   rhs std.all std.lv
+## 1          1c subcomponent_psychological_distress                         subcomponent_microaggressions   0.239  0.239
+## 2          1c subcomponent_psychological_distress           component_caring_families_and_relationships   0.181  0.181
+## 3          1c subcomponent_psychological_distress                        subcomponent_structural_racism   0.162  0.162
+## 4          1c subcomponent_psychological_distress                           component_cultural_identity   0.087  0.087
+## 5          1c subcomponent_psychological_distress                                    personal_safety_re   0.074  0.199
+## 6          1c subcomponent_psychological_distress                         component_vibrant_communities   0.059  0.059
+## 7          1c subcomponent_psychological_distress                                          undocumented   0.029  0.140
+## 8          1c subcomponent_psychological_distress                                     high_poverty_area   0.015  0.039
+## 9          1c subcomponent_psychological_distress subcomponent_experiences_of_racism_and_discrimination   0.013  0.013
+## 10         1c subcomponent_psychological_distress                                        growth_mindset   0.010  0.086
+## 11         1c subcomponent_psychological_distress                                          race_nh_aian   0.010  0.074
+## 12         1c subcomponent_psychological_distress                                         race_nh_black   0.004  0.011
+## 13         1c subcomponent_psychological_distress                                         race_nh_other   0.000  0.007
+## 14         1c subcomponent_psychological_distress                                              is_adult  -0.003 -0.006
+## 15         1c subcomponent_psychological_distress                                         race_nh_swana  -0.008 -0.079
+## 16         1c subcomponent_psychological_distress                                          race_nh_nhpi  -0.019 -0.217
+## 17         1c subcomponent_psychological_distress                                      race_nh_twoormor  -0.025 -0.148
+## 18         1c subcomponent_psychological_distress                                      systems_impacted  -0.046 -0.131
+## 19         1c subcomponent_psychological_distress                                           race_latinx  -0.090 -0.180
+## 20         1c subcomponent_psychological_distress                                         race_nh_asian  -0.117 -0.366
+## 21         1c subcomponent_psychological_distress                                        cishet_lgbtqia  -0.154 -0.369
+##    p_is_significant pvalue      bic      aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1              TRUE  0.000 274453.8 273532.1     0.296                2 0.869 0.861 0.043 0.055
+## 2              TRUE  0.000 274453.8 273532.1     0.296                2 0.869 0.861 0.043 0.055
+## 3              TRUE  0.000 274453.8 273532.1     0.296                2 0.869 0.861 0.043 0.055
+## 4              TRUE  0.000 274453.8 273532.1     0.296                2 0.869 0.861 0.043 0.055
+## 5              TRUE  0.000 274453.8 273532.1     0.296                2 0.869 0.861 0.043 0.055
+## 6              TRUE  0.007 274453.8 273532.1     0.296                2 0.869 0.861 0.043 0.055
+## 7             FALSE  0.099 274453.8 273532.1     0.296                2 0.869 0.861 0.043 0.055
+## 8             FALSE  0.398 274453.8 273532.1     0.296                2 0.869 0.861 0.043 0.055
+## 9             FALSE  0.661 274453.8 273532.1     0.296                2 0.869 0.861 0.043 0.055
+## 10            FALSE  0.537 274453.8 273532.1     0.296                2 0.869 0.861 0.043 0.055
+## 11            FALSE  0.561 274453.8 273532.1     0.296                2 0.869 0.861 0.043 0.055
+## 12            FALSE  0.860 274453.8 273532.1     0.296                2 0.869 0.861 0.043 0.055
+## 13            FALSE  0.990 274453.8 273532.1     0.296                2 0.869 0.861 0.043 0.055
+## 14            FALSE  0.871 274453.8 273532.1     0.296                2 0.869 0.861 0.043 0.055
+## 15            FALSE  0.650 274453.8 273532.1     0.296                2 0.869 0.861 0.043 0.055
+## 16            FALSE  0.245 274453.8 273532.1     0.296                2 0.869 0.861 0.043 0.055
+## 17            FALSE  0.160 274453.8 273532.1     0.296                2 0.869 0.861 0.043 0.055
+## 18             TRUE  0.009 274453.8 273532.1     0.296                2 0.869 0.861 0.043 0.055
+## 19             TRUE  0.001 274453.8 273532.1     0.296                2 0.869 0.861 0.043 0.055
+## 20             TRUE  0.000 274453.8 273532.1     0.296                2 0.869 0.861 0.043 0.055
+## 21             TRUE  0.000 274453.8 273532.1     0.296                2 0.869 0.861 0.043 0.055</code></pre>
 </div>
 <div id="model-1d-adding-unhoused-removing-growth_mindset-and-subcomponent_experiences_of_racism_and_discrimination" class="section level3">
 <h3>Model 1d: adding unhoused; removing growth_mindset and
 subcomponent_experiences_of_racism_and_discrimination</h3>
 <p>Analysis: unhoused is not statistically significant. undocumented is
 almost statistically significant.</p>
-<pre><code>##                                            rhs std.lv p_is_significant pvalue fit_measures_met
-## 1                                     nh_other  0.330             TRUE  0.001                2
-## 2                                      nh_aian  0.254            FALSE  0.058                2
-## 3                subcomponent_microaggressions  0.248             TRUE  0.000                2
-## 4                              personal_safety  0.201             TRUE  0.000                2
-## 5  component_caring_families_and_relationships  0.186             TRUE  0.000                2
-## 6               subcomponent_structural_racism  0.168             TRUE  0.000                2
-## 7                                     nh_black  0.145            FALSE  0.056                2
-## 8                                 undocumented  0.138            FALSE  0.103                2
-## 9                  component_cultural_identity  0.079             TRUE  0.000                2
-## 10               component_vibrant_communities  0.062             TRUE  0.004                2
-## 11                           high_poverty_area  0.023            FALSE  0.615                2
-## 12                                    is_adult  0.005            FALSE  0.882                2
-## 13                                 nh_twoormor -0.006            FALSE  0.958                2
-## 14                                      latino -0.025            FALSE  0.721                2
-## 15                                    unhoused -0.047            FALSE  0.417                2
-## 16                                   nh_pacisl -0.061            FALSE  0.749                2
-## 17                            systems_impacted -0.110             TRUE  0.042                2
-## 18                                    nh_asian -0.222             TRUE  0.006                2
-## 19                              cishet_lgbtqia -0.371             TRUE  0.000                2</code></pre>
+<pre><code>##    model_name                                 lhs                                         rhs std.all std.lv
+## 1          1d subcomponent_psychological_distress               subcomponent_microaggressions   0.250  0.250
+## 2          1d subcomponent_psychological_distress component_caring_families_and_relationships   0.180  0.180
+## 3          1d subcomponent_psychological_distress              subcomponent_structural_racism   0.160  0.160
+## 4          1d subcomponent_psychological_distress                 component_cultural_identity   0.086  0.086
+## 5          1d subcomponent_psychological_distress                          personal_safety_re   0.074  0.197
+## 6          1d subcomponent_psychological_distress               component_vibrant_communities   0.062  0.062
+## 7          1d subcomponent_psychological_distress                                undocumented   0.029  0.136
+## 8          1d subcomponent_psychological_distress                           high_poverty_area   0.015  0.041
+## 9          1d subcomponent_psychological_distress                                race_nh_aian   0.012  0.085
+## 10         1d subcomponent_psychological_distress                               race_nh_black   0.001  0.003
+## 11         1d subcomponent_psychological_distress                               race_nh_other   0.000  0.007
+## 12         1d subcomponent_psychological_distress                                    is_adult  -0.002 -0.004
+## 13         1d subcomponent_psychological_distress                               race_nh_swana  -0.009 -0.090
+## 14         1d subcomponent_psychological_distress                                race_nh_nhpi  -0.019 -0.210
+## 15         1d subcomponent_psychological_distress                                    unhoused  -0.019 -0.057
+## 16         1d subcomponent_psychological_distress                            race_nh_twoormor  -0.024 -0.142
+## 17         1d subcomponent_psychological_distress                            systems_impacted  -0.043 -0.122
+## 18         1d subcomponent_psychological_distress                                 race_latinx  -0.090 -0.180
+## 19         1d subcomponent_psychological_distress                               race_nh_asian  -0.118 -0.368
+## 20         1d subcomponent_psychological_distress                              cishet_lgbtqia  -0.154 -0.367
+##    p_is_significant pvalue      bic      aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1              TRUE  0.000 245212.6 244401.5     0.295                2 0.856 0.847 0.045 0.055
+## 2              TRUE  0.000 245212.6 244401.5     0.295                2 0.856 0.847 0.045 0.055
+## 3              TRUE  0.000 245212.6 244401.5     0.295                2 0.856 0.847 0.045 0.055
+## 4              TRUE  0.000 245212.6 244401.5     0.295                2 0.856 0.847 0.045 0.055
+## 5              TRUE  0.000 245212.6 244401.5     0.295                2 0.856 0.847 0.045 0.055
+## 6              TRUE  0.005 245212.6 244401.5     0.295                2 0.856 0.847 0.045 0.055
+## 7             FALSE  0.109 245212.6 244401.5     0.295                2 0.856 0.847 0.045 0.055
+## 8             FALSE  0.372 245212.6 244401.5     0.295                2 0.856 0.847 0.045 0.055
+## 9             FALSE  0.504 245212.6 244401.5     0.295                2 0.856 0.847 0.045 0.055
+## 10            FALSE  0.959 245212.6 244401.5     0.295                2 0.856 0.847 0.045 0.055
+## 11            FALSE  0.990 245212.6 244401.5     0.295                2 0.856 0.847 0.045 0.055
+## 12            FALSE  0.906 245212.6 244401.5     0.295                2 0.856 0.847 0.045 0.055
+## 13            FALSE  0.603 245212.6 244401.5     0.295                2 0.856 0.847 0.045 0.055
+## 14            FALSE  0.262 245212.6 244401.5     0.295                2 0.856 0.847 0.045 0.055
+## 15            FALSE  0.326 245212.6 244401.5     0.295                2 0.856 0.847 0.045 0.055
+## 16            FALSE  0.177 245212.6 244401.5     0.295                2 0.856 0.847 0.045 0.055
+## 17             TRUE  0.025 245212.6 244401.5     0.295                2 0.856 0.847 0.045 0.055
+## 18             TRUE  0.001 245212.6 244401.5     0.295                2 0.856 0.847 0.045 0.055
+## 19             TRUE  0.000 245212.6 244401.5     0.295                2 0.856 0.847 0.045 0.055
+## 20             TRUE  0.000 245212.6 244401.5     0.295                2 0.856 0.847 0.045 0.055</code></pre>
 </div>
 <div id="model-1e-adding-suspended-removing-unhoused-demographic-variable" class="section level3">
 <h3>Model 1e: adding suspended; removing unhoused demographic
 variable</h3>
 <p>Analysis: suspended is not statistically significant.</p>
-<pre><code>##                                                      rhs std.lv p_is_significant pvalue fit_measures_met
-## 1                                               nh_other  0.338             TRUE  0.000                2
-## 2                                                nh_aian  0.249            FALSE  0.062                2
-## 3                          subcomponent_microaggressions  0.235             TRUE  0.000                2
-## 4                                        personal_safety  0.202             TRUE  0.000                2
-## 5            component_caring_families_and_relationships  0.188             TRUE  0.000                2
-## 6                         subcomponent_structural_racism  0.170             TRUE  0.000                2
-## 7                                               nh_black  0.160             TRUE  0.036                2
-## 8                                           undocumented  0.142            FALSE  0.094                2
-## 9                            component_cultural_identity  0.080             TRUE  0.000                2
-## 10                         component_vibrant_communities  0.060             TRUE  0.006                2
-## 11                                     high_poverty_area  0.018            FALSE  0.689                2
-## 12 subcomponent_experiences_of_racism_and_discrimination  0.018            FALSE  0.569                2
-## 13                                              is_adult  0.005            FALSE  0.885                2
-## 14                                           nh_twoormor -0.007            FALSE  0.950                2
-## 15                                             suspended -0.008            FALSE  0.871                2
-## 16                                                latino -0.021            FALSE  0.766                2
-## 17                                             nh_pacisl -0.062            FALSE  0.742                2
-## 18                                      systems_impacted -0.113             TRUE  0.028                2
-## 19                                              nh_asian -0.216             TRUE  0.007                2
-## 20                                        cishet_lgbtqia -0.371             TRUE  0.000                2</code></pre>
+<pre><code>##    model_name                                 lhs                                                   rhs std.all std.lv
+## 1          1e subcomponent_psychological_distress                         subcomponent_microaggressions   0.239  0.239
+## 2          1e subcomponent_psychological_distress           component_caring_families_and_relationships   0.181  0.181
+## 3          1e subcomponent_psychological_distress                        subcomponent_structural_racism   0.162  0.162
+## 4          1e subcomponent_psychological_distress                           component_cultural_identity   0.088  0.088
+## 5          1e subcomponent_psychological_distress                                    personal_safety_re   0.074  0.198
+## 6          1e subcomponent_psychological_distress                         component_vibrant_communities   0.060  0.060
+## 7          1e subcomponent_psychological_distress                                          undocumented   0.029  0.138
+## 8          1e subcomponent_psychological_distress subcomponent_experiences_of_racism_and_discrimination   0.014  0.014
+## 9          1e subcomponent_psychological_distress                                     high_poverty_area   0.014  0.037
+## 10         1e subcomponent_psychological_distress                                          race_nh_aian   0.010  0.074
+## 11         1e subcomponent_psychological_distress                                         race_nh_black   0.005  0.014
+## 12         1e subcomponent_psychological_distress                                         race_nh_other   0.000  0.008
+## 13         1e subcomponent_psychological_distress                                             suspended  -0.002 -0.006
+## 14         1e subcomponent_psychological_distress                                              is_adult  -0.002 -0.005
+## 15         1e subcomponent_psychological_distress                                         race_nh_swana  -0.008 -0.082
+## 16         1e subcomponent_psychological_distress                                          race_nh_nhpi  -0.019 -0.215
+## 17         1e subcomponent_psychological_distress                                      race_nh_twoormor  -0.025 -0.146
+## 18         1e subcomponent_psychological_distress                                      systems_impacted  -0.046 -0.132
+## 19         1e subcomponent_psychological_distress                                           race_latinx  -0.089 -0.179
+## 20         1e subcomponent_psychological_distress                                         race_nh_asian  -0.116 -0.364
+## 21         1e subcomponent_psychological_distress                                        cishet_lgbtqia  -0.154 -0.368
+##    p_is_significant pvalue      bic      aic r_squared fit_measures_met  cfi   tli rmsea  srmr
+## 1              TRUE  0.000 274292.9 273371.2     0.297                2 0.87 0.862 0.043 0.055
+## 2              TRUE  0.000 274292.9 273371.2     0.297                2 0.87 0.862 0.043 0.055
+## 3              TRUE  0.000 274292.9 273371.2     0.297                2 0.87 0.862 0.043 0.055
+## 4              TRUE  0.000 274292.9 273371.2     0.297                2 0.87 0.862 0.043 0.055
+## 5              TRUE  0.000 274292.9 273371.2     0.297                2 0.87 0.862 0.043 0.055
+## 6              TRUE  0.006 274292.9 273371.2     0.297                2 0.87 0.862 0.043 0.055
+## 7             FALSE  0.105 274292.9 273371.2     0.297                2 0.87 0.862 0.043 0.055
+## 8             FALSE  0.648 274292.9 273371.2     0.297                2 0.87 0.862 0.043 0.055
+## 9             FALSE  0.420 274292.9 273371.2     0.297                2 0.87 0.862 0.043 0.055
+## 10            FALSE  0.560 274292.9 273371.2     0.297                2 0.87 0.862 0.043 0.055
+## 11            FALSE  0.830 274292.9 273371.2     0.297                2 0.87 0.862 0.043 0.055
+## 12            FALSE  0.988 274292.9 273371.2     0.297                2 0.87 0.862 0.043 0.055
+## 13            FALSE  0.904 274292.9 273371.2     0.297                2 0.87 0.862 0.043 0.055
+## 14            FALSE  0.882 274292.9 273371.2     0.297                2 0.87 0.862 0.043 0.055
+## 15            FALSE  0.635 274292.9 273371.2     0.297                2 0.87 0.862 0.043 0.055
+## 16            FALSE  0.250 274292.9 273371.2     0.297                2 0.87 0.862 0.043 0.055
+## 17            FALSE  0.164 274292.9 273371.2     0.297                2 0.87 0.862 0.043 0.055
+## 18             TRUE  0.011 274292.9 273371.2     0.297                2 0.87 0.862 0.043 0.055
+## 19             TRUE  0.001 274292.9 273371.2     0.297                2 0.87 0.862 0.043 0.055
+## 20             TRUE  0.000 274292.9 273371.2     0.297                2 0.87 0.862 0.043 0.055
+## 21             TRUE  0.000 274292.9 273371.2     0.297                2 0.87 0.862 0.043 0.055</code></pre>
 </div>
 <div id="model-1f-adding-disconnected-removing-suspended" class="section level3">
 <h3>Model 1f: adding disconnected; removing suspended</h3>
 <p>Analysis: disconnected is not statistically significant.</p>
-<pre><code>##                                                      rhs std.lv p_is_significant pvalue fit_measures_met
-## 1                                               nh_other  0.340             TRUE  0.000                2
-## 2                                                nh_aian  0.249            FALSE  0.062                2
-## 3                          subcomponent_microaggressions  0.236             TRUE  0.000                2
-## 4                                        personal_safety  0.201             TRUE  0.000                2
-## 5            component_caring_families_and_relationships  0.188             TRUE  0.000                2
-## 6                         subcomponent_structural_racism  0.170             TRUE  0.000                2
-## 7                                               nh_black  0.162             TRUE  0.033                2
-## 8                                           undocumented  0.140            FALSE  0.097                2
-## 9                            component_cultural_identity  0.081             TRUE  0.000                2
-## 10                         component_vibrant_communities  0.058             TRUE  0.008                2
-## 11                                     high_poverty_area  0.019            FALSE  0.678                2
-## 12 subcomponent_experiences_of_racism_and_discrimination  0.017            FALSE  0.576                2
-## 13                                              is_adult  0.004            FALSE  0.915                2
-## 14                                           nh_twoormor -0.005            FALSE  0.965                2
-## 15                                                latino -0.019            FALSE  0.788                2
-## 16                                          disconnected -0.028            FALSE  0.566                2
-## 17                                             nh_pacisl -0.062            FALSE  0.746                2
-## 18                                      systems_impacted -0.111             TRUE  0.027                2
-## 19                                              nh_asian -0.215             TRUE  0.007                2
-## 20                                        cishet_lgbtqia -0.374             TRUE  0.000                2</code></pre>
+<pre><code>##    model_name                                 lhs                                                   rhs std.all std.lv
+## 1          1f subcomponent_psychological_distress                         subcomponent_microaggressions   0.240  0.240
+## 2          1f subcomponent_psychological_distress           component_caring_families_and_relationships   0.181  0.181
+## 3          1f subcomponent_psychological_distress                        subcomponent_structural_racism   0.162  0.162
+## 4          1f subcomponent_psychological_distress                           component_cultural_identity   0.088  0.088
+## 5          1f subcomponent_psychological_distress                                    personal_safety_re   0.074  0.198
+## 6          1f subcomponent_psychological_distress                         component_vibrant_communities   0.058  0.058
+## 7          1f subcomponent_psychological_distress                                          undocumented   0.029  0.137
+## 8          1f subcomponent_psychological_distress                                     high_poverty_area   0.014  0.038
+## 9          1f subcomponent_psychological_distress subcomponent_experiences_of_racism_and_discrimination   0.014  0.014
+## 10         1f subcomponent_psychological_distress                                          race_nh_aian   0.010  0.073
+## 11         1f subcomponent_psychological_distress                                         race_nh_black   0.006  0.016
+## 12         1f subcomponent_psychological_distress                                         race_nh_other   0.000  0.010
+## 13         1f subcomponent_psychological_distress                                              is_adult  -0.003 -0.006
+## 14         1f subcomponent_psychological_distress                                         race_nh_swana  -0.008 -0.085
+## 15         1f subcomponent_psychological_distress                                          disconnected  -0.010 -0.029
+## 16         1f subcomponent_psychological_distress                                          race_nh_nhpi  -0.019 -0.215
+## 17         1f subcomponent_psychological_distress                                      race_nh_twoormor  -0.025 -0.145
+## 18         1f subcomponent_psychological_distress                                      systems_impacted  -0.045 -0.129
+## 19         1f subcomponent_psychological_distress                                           race_latinx  -0.088 -0.178
+## 20         1f subcomponent_psychological_distress                                         race_nh_asian  -0.116 -0.364
+## 21         1f subcomponent_psychological_distress                                        cishet_lgbtqia  -0.155 -0.370
+##    p_is_significant pvalue      bic    aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1              TRUE  0.000 274218.7 273297     0.297                2 0.869 0.861 0.043 0.055
+## 2              TRUE  0.000 274218.7 273297     0.297                2 0.869 0.861 0.043 0.055
+## 3              TRUE  0.000 274218.7 273297     0.297                2 0.869 0.861 0.043 0.055
+## 4              TRUE  0.000 274218.7 273297     0.297                2 0.869 0.861 0.043 0.055
+## 5              TRUE  0.000 274218.7 273297     0.297                2 0.869 0.861 0.043 0.055
+## 6              TRUE  0.008 274218.7 273297     0.297                2 0.869 0.861 0.043 0.055
+## 7             FALSE  0.106 274218.7 273297     0.297                2 0.869 0.861 0.043 0.055
+## 8             FALSE  0.410 274218.7 273297     0.297                2 0.869 0.861 0.043 0.055
+## 9             FALSE  0.657 274218.7 273297     0.297                2 0.869 0.861 0.043 0.055
+## 10            FALSE  0.564 274218.7 273297     0.297                2 0.869 0.861 0.043 0.055
+## 11            FALSE  0.809 274218.7 273297     0.297                2 0.869 0.861 0.043 0.055
+## 12            FALSE  0.985 274218.7 273297     0.297                2 0.869 0.861 0.043 0.055
+## 13            FALSE  0.851 274218.7 273297     0.297                2 0.869 0.861 0.043 0.055
+## 14            FALSE  0.623 274218.7 273297     0.297                2 0.869 0.861 0.043 0.055
+## 15            FALSE  0.547 274218.7 273297     0.297                2 0.869 0.861 0.043 0.055
+## 16            FALSE  0.250 274218.7 273297     0.297                2 0.869 0.861 0.043 0.055
+## 17            FALSE  0.168 274218.7 273297     0.297                2 0.869 0.861 0.043 0.055
+## 18             TRUE  0.010 274218.7 273297     0.297                2 0.869 0.861 0.043 0.055
+## 19             TRUE  0.001 274218.7 273297     0.297                2 0.869 0.861 0.043 0.055
+## 20             TRUE  0.000 274218.7 273297     0.297                2 0.869 0.861 0.043 0.055
+## 21             TRUE  0.000 274218.7 273297     0.297                2 0.869 0.861 0.043 0.055</code></pre>
 </div>
 <div id="model-1g-adding-arrested-removing-disconnected" class="section level3">
 <h3>Model 1g: adding arrested; removing disconnected</h3>
 <p>Analysis: arrested is not statistically significant.</p>
-<pre><code>##                                                      rhs std.lv p_is_significant pvalue fit_measures_met
-## 1                                               nh_other  0.339             TRUE  0.000                2
-## 2                                                nh_aian  0.254            FALSE  0.056                2
-## 3                          subcomponent_microaggressions  0.236             TRUE  0.000                2
-## 4                                        personal_safety  0.201             TRUE  0.000                2
-## 5            component_caring_families_and_relationships  0.189             TRUE  0.000                2
-## 6                         subcomponent_structural_racism  0.170             TRUE  0.000                2
-## 7                                               nh_black  0.161             TRUE  0.035                2
-## 8                                           undocumented  0.135            FALSE  0.111                2
-## 9                            component_cultural_identity  0.080             TRUE  0.000                2
-## 10                         component_vibrant_communities  0.060             TRUE  0.006                2
-## 11                                              arrested  0.053            FALSE  0.401                2
-## 12 subcomponent_experiences_of_racism_and_discrimination  0.018            FALSE  0.549                2
-## 13                                     high_poverty_area  0.018            FALSE  0.694                2
-## 14                                              is_adult  0.003            FALSE  0.934                2
-## 15                                           nh_twoormor -0.006            FALSE  0.955                2
-## 16                                                latino -0.018            FALSE  0.792                2
-## 17                                             nh_pacisl -0.066            FALSE  0.727                2
-## 18                                      systems_impacted -0.130             TRUE  0.013                2
-## 19                                              nh_asian -0.212             TRUE  0.008                2
-## 20                                        cishet_lgbtqia -0.373             TRUE  0.000                2</code></pre>
+<pre><code>##    model_name                                 lhs                                                   rhs std.all std.lv
+## 1          1g subcomponent_psychological_distress                         subcomponent_microaggressions   0.240  0.240
+## 2          1g subcomponent_psychological_distress           component_caring_families_and_relationships   0.183  0.183
+## 3          1g subcomponent_psychological_distress                        subcomponent_structural_racism   0.162  0.162
+## 4          1g subcomponent_psychological_distress                           component_cultural_identity   0.087  0.087
+## 5          1g subcomponent_psychological_distress                                    personal_safety_re   0.074  0.198
+## 6          1g subcomponent_psychological_distress                         component_vibrant_communities   0.060  0.060
+## 7          1g subcomponent_psychological_distress                                          undocumented   0.027  0.130
+## 8          1g subcomponent_psychological_distress                                              arrested   0.018  0.063
+## 9          1g subcomponent_psychological_distress subcomponent_experiences_of_racism_and_discrimination   0.015  0.015
+## 10         1g subcomponent_psychological_distress                                     high_poverty_area   0.014  0.036
+## 11         1g subcomponent_psychological_distress                                          race_nh_aian   0.011  0.079
+## 12         1g subcomponent_psychological_distress                                         race_nh_black   0.005  0.014
+## 13         1g subcomponent_psychological_distress                                         race_nh_other   0.000 -0.005
+## 14         1g subcomponent_psychological_distress                                              is_adult  -0.004 -0.007
+## 15         1g subcomponent_psychological_distress                                         race_nh_swana  -0.008 -0.085
+## 16         1g subcomponent_psychological_distress                                          race_nh_nhpi  -0.019 -0.220
+## 17         1g subcomponent_psychological_distress                                      race_nh_twoormor  -0.025 -0.146
+## 18         1g subcomponent_psychological_distress                                      systems_impacted  -0.053 -0.150
+## 19         1g subcomponent_psychological_distress                                           race_latinx  -0.088 -0.177
+## 20         1g subcomponent_psychological_distress                                         race_nh_asian  -0.116 -0.361
+## 21         1g subcomponent_psychological_distress                                        cishet_lgbtqia  -0.155 -0.370
+##    p_is_significant pvalue      bic      aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1              TRUE  0.000 274373.6 273451.9     0.299                2 0.869 0.861 0.043 0.057
+## 2              TRUE  0.000 274373.6 273451.9     0.299                2 0.869 0.861 0.043 0.057
+## 3              TRUE  0.000 274373.6 273451.9     0.299                2 0.869 0.861 0.043 0.057
+## 4              TRUE  0.000 274373.6 273451.9     0.299                2 0.869 0.861 0.043 0.057
+## 5              TRUE  0.000 274373.6 273451.9     0.299                2 0.869 0.861 0.043 0.057
+## 6              TRUE  0.006 274373.6 273451.9     0.299                2 0.869 0.861 0.043 0.057
+## 7             FALSE  0.127 274373.6 273451.9     0.299                2 0.869 0.861 0.043 0.057
+## 8             FALSE  0.322 274373.6 273451.9     0.299                2 0.869 0.861 0.043 0.057
+## 9             FALSE  0.624 274373.6 273451.9     0.299                2 0.869 0.861 0.043 0.057
+## 10            FALSE  0.424 274373.6 273451.9     0.299                2 0.869 0.861 0.043 0.057
+## 11            FALSE  0.533 274373.6 273451.9     0.299                2 0.869 0.861 0.043 0.057
+## 12            FALSE  0.825 274373.6 273451.9     0.299                2 0.869 0.861 0.043 0.057
+## 13            FALSE  0.993 274373.6 273451.9     0.299                2 0.869 0.861 0.043 0.057
+## 14            FALSE  0.829 274373.6 273451.9     0.299                2 0.869 0.861 0.043 0.057
+## 15            FALSE  0.624 274373.6 273451.9     0.299                2 0.869 0.861 0.043 0.057
+## 16            FALSE  0.238 274373.6 273451.9     0.299                2 0.869 0.861 0.043 0.057
+## 17            FALSE  0.163 274373.6 273451.9     0.299                2 0.869 0.861 0.043 0.057
+## 18             TRUE  0.004 274373.6 273451.9     0.299                2 0.869 0.861 0.043 0.057
+## 19             TRUE  0.001 274373.6 273451.9     0.299                2 0.869 0.861 0.043 0.057
+## 20             TRUE  0.000 274373.6 273451.9     0.299                2 0.869 0.861 0.043 0.057
+## 21             TRUE  0.000 274373.6 273451.9     0.299                2 0.869 0.861 0.043 0.057</code></pre>
 </div>
 <div id="model-1h-adding-sparks-removing-arrested" class="section level3">
 <h3>Model 1h: adding sparks; removing arrested</h3>
 <p>Analysis: sparks is statistically significant and the largest
 positive coefficient. undocumented is not statistically significant.</p>
-<pre><code>##                                            rhs std.lv p_is_significant pvalue fit_measures_met
-## 1                                       sparks  0.533             TRUE  0.000                2
-## 2                                     nh_other  0.350             TRUE  0.000                2
-## 3                                      nh_aian  0.256            FALSE  0.056                2
-## 4                subcomponent_microaggressions  0.255             TRUE  0.000                2
-## 5                              personal_safety  0.197             TRUE  0.000                2
-## 6  component_caring_families_and_relationships  0.180             TRUE  0.000                2
-## 7               subcomponent_structural_racism  0.163             TRUE  0.000                2
-## 8                                     nh_black  0.140            FALSE  0.066                2
-## 9                                 undocumented  0.115            FALSE  0.171                2
-## 10                 component_cultural_identity  0.058             TRUE  0.007                2
-## 11               component_vibrant_communities  0.054             TRUE  0.013                2
-## 12                           high_poverty_area  0.028            FALSE  0.538                2
-## 13                                    is_adult  0.017            FALSE  0.626                2
-## 14                                 nh_twoormor -0.016            FALSE  0.887                2
-## 15                                      latino -0.023            FALSE  0.737                2
-## 16                                   nh_pacisl -0.060            FALSE  0.752                2
-## 17                            systems_impacted -0.135             TRUE  0.007                2
-## 18                                    nh_asian -0.221             TRUE  0.006                2
-## 19                              cishet_lgbtqia -0.352             TRUE  0.000                2</code></pre>
+<pre><code>##    model_name                                 lhs                                         rhs std.all std.lv
+## 1          1h subcomponent_psychological_distress               subcomponent_microaggressions   0.262  0.262
+## 2          1h subcomponent_psychological_distress component_caring_families_and_relationships   0.167  0.167
+## 3          1h subcomponent_psychological_distress              subcomponent_structural_racism   0.155  0.155
+## 4          1h subcomponent_psychological_distress                                      sparks   0.155  0.350
+## 5          1h subcomponent_psychological_distress                          personal_safety_re   0.072  0.192
+## 6          1h subcomponent_psychological_distress                 component_cultural_identity   0.063  0.063
+## 7          1h subcomponent_psychological_distress               component_vibrant_communities   0.044  0.044
+## 8          1h subcomponent_psychological_distress                                undocumented   0.020  0.094
+## 9          1h subcomponent_psychological_distress                           high_poverty_area   0.015  0.040
+## 10         1h subcomponent_psychological_distress                                race_nh_aian   0.012  0.085
+## 11         1h subcomponent_psychological_distress                               race_nh_other   0.007  0.251
+## 12         1h subcomponent_psychological_distress                               race_nh_black  -0.004 -0.011
+## 13         1h subcomponent_psychological_distress                               race_nh_swana  -0.007 -0.069
+## 14         1h subcomponent_psychological_distress                                    is_adult  -0.008 -0.016
+## 15         1h subcomponent_psychological_distress                                race_nh_nhpi  -0.019 -0.217
+## 16         1h subcomponent_psychological_distress                            race_nh_twoormor  -0.023 -0.132
+## 17         1h subcomponent_psychological_distress                            systems_impacted  -0.057 -0.161
+## 18         1h subcomponent_psychological_distress                                 race_latinx  -0.085 -0.170
+## 19         1h subcomponent_psychological_distress                               race_nh_asian  -0.114 -0.356
+## 20         1h subcomponent_psychological_distress                              cishet_lgbtqia  -0.150 -0.358
+##    p_is_significant pvalue    bic      aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1              TRUE  0.000 245077 244265.9     0.301                2 0.853 0.843 0.046 0.055
+## 2              TRUE  0.000 245077 244265.9     0.301                2 0.853 0.843 0.046 0.055
+## 3              TRUE  0.000 245077 244265.9     0.301                2 0.853 0.843 0.046 0.055
+## 4              TRUE  0.000 245077 244265.9     0.301                2 0.853 0.843 0.046 0.055
+## 5              TRUE  0.000 245077 244265.9     0.301                2 0.853 0.843 0.046 0.055
+## 6              TRUE  0.003 245077 244265.9     0.301                2 0.853 0.843 0.046 0.055
+## 7              TRUE  0.045 245077 244265.9     0.301                2 0.853 0.843 0.046 0.055
+## 8             FALSE  0.268 245077 244265.9     0.301                2 0.853 0.843 0.046 0.055
+## 9             FALSE  0.377 245077 244265.9     0.301                2 0.853 0.843 0.046 0.055
+## 10            FALSE  0.501 245077 244265.9     0.301                2 0.853 0.843 0.046 0.055
+## 11            FALSE  0.645 245077 244265.9     0.301                2 0.853 0.843 0.046 0.055
+## 12            FALSE  0.867 245077 244265.9     0.301                2 0.853 0.843 0.046 0.055
+## 13            FALSE  0.690 245077 244265.9     0.301                2 0.853 0.843 0.046 0.055
+## 14            FALSE  0.643 245077 244265.9     0.301                2 0.853 0.843 0.046 0.055
+## 15            FALSE  0.245 245077 244265.9     0.301                2 0.853 0.843 0.046 0.055
+## 16            FALSE  0.208 245077 244265.9     0.301                2 0.853 0.843 0.046 0.055
+## 17             TRUE  0.001 245077 244265.9     0.301                2 0.853 0.843 0.046 0.055
+## 18             TRUE  0.002 245077 244265.9     0.301                2 0.853 0.843 0.046 0.055
+## 19             TRUE  0.000 245077 244265.9     0.301                2 0.853 0.843 0.046 0.055
+## 20             TRUE  0.000 245077 244265.9     0.301                2 0.853 0.843 0.046 0.055</code></pre>
 </div>
-<div id="model-1i-add-spa-removing-high_poverty_area-and-undocumented" class="section level3">
-<h3>Model 1i: add spa; removing high_poverty_area and undocumented</h3>
+<div id="model-1i-adding-spa-removing-high_poverty_area-and-undocumented" class="section level3">
+<h3>Model 1i: adding spa; removing high_poverty_area and
+undocumented</h3>
 <p>Analysis: Only spa_6 (South) is statistically significant. Recall
 that the reference group is spa_1 (Antelope Valley).</p>
-<pre><code>##                                            rhs std.lv p_is_significant pvalue fit_measures_met
-## 1                                       sparks  0.538             TRUE  0.000                2
-## 2                                     nh_other  0.342             TRUE  0.000                2
-## 3                                      nh_aian  0.269            FALSE  0.050                2
-## 4                subcomponent_microaggressions  0.252             TRUE  0.000                2
-## 5                              personal_safety  0.194             TRUE  0.000                2
-## 6  component_caring_families_and_relationships  0.182             TRUE  0.000                2
-## 7               subcomponent_structural_racism  0.164             TRUE  0.000                2
-## 8                                        spa_6  0.155            FALSE  0.056                2
-## 9                                     nh_black  0.125            FALSE  0.097                2
-## 10                                       spa_8  0.105            FALSE  0.163                2
-## 11                                       spa_3  0.101            FALSE  0.199                2
-## 12                                       spa_7  0.071            FALSE  0.267                2
-## 13                 component_cultural_identity  0.056             TRUE  0.009                2
-## 14               component_vibrant_communities  0.053             TRUE  0.015                2
-## 15                                    is_adult  0.027            FALSE  0.443                2
-## 16                                       spa_2  0.002            FALSE  0.982                2
-## 17                                       spa_5 -0.001            FALSE  0.993                2
-## 18                                       spa_4 -0.006            FALSE  0.925                2
-## 19                                 nh_twoormor -0.014            FALSE  0.900                2
-## 20                                      latino -0.033            FALSE  0.632                2
-## 21                                   nh_pacisl -0.073            FALSE  0.702                2
-## 22                            systems_impacted -0.128             TRUE  0.010                2
-## 23                                    nh_asian -0.219             TRUE  0.006                2
-## 24                              cishet_lgbtqia -0.345             TRUE  0.000                2</code></pre>
+<pre><code>##    model_name                                 lhs                                         rhs std.all std.lv
+## 1          1i subcomponent_psychological_distress               subcomponent_microaggressions   0.260  0.260
+## 2          1i subcomponent_psychological_distress component_caring_families_and_relationships   0.167  0.167
+## 3          1i subcomponent_psychological_distress                                      sparks   0.158  0.357
+## 4          1i subcomponent_psychological_distress              subcomponent_structural_racism   0.154  0.154
+## 5          1i subcomponent_psychological_distress                          personal_safety_re   0.072  0.193
+## 6          1i subcomponent_psychological_distress                 component_cultural_identity   0.061  0.061
+## 7          1i subcomponent_psychological_distress               component_vibrant_communities   0.046  0.046
+## 8          1i subcomponent_psychological_distress                                       spa_6   0.043  0.094
+## 9          1i subcomponent_psychological_distress                                       spa_3   0.019  0.061
+## 10         1i subcomponent_psychological_distress                                       spa_2   0.018  0.053
+## 11         1i subcomponent_psychological_distress                                       spa_5   0.017  0.084
+## 12         1i subcomponent_psychological_distress                                race_nh_aian   0.011  0.082
+## 13         1i subcomponent_psychological_distress                                       spa_7   0.011  0.037
+## 14         1i subcomponent_psychological_distress                               race_nh_other   0.008  0.267
+## 15         1i subcomponent_psychological_distress                                       spa_8   0.002  0.007
+## 16         1i subcomponent_psychological_distress                               race_nh_black  -0.004 -0.011
+## 17         1i subcomponent_psychological_distress                                       spa_4  -0.005 -0.015
+## 18         1i subcomponent_psychological_distress                                    is_adult  -0.007 -0.015
+## 19         1i subcomponent_psychological_distress                               race_nh_swana  -0.009 -0.090
+## 20         1i subcomponent_psychological_distress                                race_nh_nhpi  -0.018 -0.209
+## 21         1i subcomponent_psychological_distress                            race_nh_twoormor  -0.025 -0.144
+## 22         1i subcomponent_psychological_distress                            systems_impacted  -0.052 -0.149
+## 23         1i subcomponent_psychological_distress                                 race_latinx  -0.085 -0.171
+## 24         1i subcomponent_psychological_distress                               race_nh_asian  -0.111 -0.349
+## 25         1i subcomponent_psychological_distress                              cishet_lgbtqia  -0.149 -0.355
+##    p_is_significant pvalue      bic      aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1              TRUE  0.000 245019.6 244177.9       0.3                2 0.852 0.843 0.042 0.051
+## 2              TRUE  0.000 245019.6 244177.9       0.3                2 0.852 0.843 0.042 0.051
+## 3              TRUE  0.000 245019.6 244177.9       0.3                2 0.852 0.843 0.042 0.051
+## 4              TRUE  0.000 245019.6 244177.9       0.3                2 0.852 0.843 0.042 0.051
+## 5              TRUE  0.000 245019.6 244177.9       0.3                2 0.852 0.843 0.042 0.051
+## 6              TRUE  0.004 245019.6 244177.9       0.3                2 0.852 0.843 0.042 0.051
+## 7              TRUE  0.036 245019.6 244177.9       0.3                2 0.852 0.843 0.042 0.051
+## 8             FALSE  0.184 245019.6 244177.9       0.3                2 0.852 0.843 0.042 0.051
+## 9             FALSE  0.461 245019.6 244177.9       0.3                2 0.852 0.843 0.042 0.051
+## 10            FALSE  0.504 245019.6 244177.9       0.3                2 0.852 0.843 0.042 0.051
+## 11            FALSE  0.420 245019.6 244177.9       0.3                2 0.852 0.843 0.042 0.051
+## 12            FALSE  0.517 245019.6 244177.9       0.3                2 0.852 0.843 0.042 0.051
+## 13            FALSE  0.659 245019.6 244177.9       0.3                2 0.852 0.843 0.042 0.051
+## 14            FALSE  0.626 245019.6 244177.9       0.3                2 0.852 0.843 0.042 0.051
+## 15            FALSE  0.934 245019.6 244177.9       0.3                2 0.852 0.843 0.042 0.051
+## 16            FALSE  0.862 245019.6 244177.9       0.3                2 0.852 0.843 0.042 0.051
+## 17            FALSE  0.850 245019.6 244177.9       0.3                2 0.852 0.843 0.042 0.051
+## 18            FALSE  0.675 245019.6 244177.9       0.3                2 0.852 0.843 0.042 0.051
+## 19            FALSE  0.603 245019.6 244177.9       0.3                2 0.852 0.843 0.042 0.051
+## 20            FALSE  0.262 245019.6 244177.9       0.3                2 0.852 0.843 0.042 0.051
+## 21            FALSE  0.170 245019.6 244177.9       0.3                2 0.852 0.843 0.042 0.051
+## 22             TRUE  0.003 245019.6 244177.9       0.3                2 0.852 0.843 0.042 0.051
+## 23             TRUE  0.002 245019.6 244177.9       0.3                2 0.852 0.843 0.042 0.051
+## 24             TRUE  0.000 245019.6 244177.9       0.3                2 0.852 0.843 0.042 0.051
+## 25             TRUE  0.000 245019.6 244177.9       0.3                2 0.852 0.843 0.042 0.051</code></pre>
 </div>
-<div id="model-1j-add-high_poverty_area-back-in-remove-spa" class="section level3">
-<h3>Model 1j: add high_poverty_area back in; remove spa</h3>
+<div id="model-1j-adding-high_poverty_area-back-in-remove-spa" class="section level3">
+<h3>Model 1j: adding high_poverty_area back in; remove spa</h3>
 <p>Analysis: Having a spark, experiencing less microaggressions, and
 feeling safe are associated with more freedom from psychological
 distress. Being LGBTQIA+, Asian, and systems-impacted is associated with
@@ -646,26 +869,1141 @@ not statistically significant are included if they are useful control
 variables (e.g. is_adult, high_poverty_area) or they must be included in
 the model in order to accurately interpret the categorical variable’s
 coefficients (e.g. nh_twoormor)</p>
-<pre><code>##                                            rhs std.lv p_is_significant pvalue fit_measures_met
-## 1                                       sparks  0.536             TRUE  0.000                2
-## 2                                     nh_other  0.349             TRUE  0.000                2
-## 3                                      nh_aian  0.261            FALSE  0.051                2
-## 4                subcomponent_microaggressions  0.252             TRUE  0.000                2
-## 5                              personal_safety  0.197             TRUE  0.000                2
-## 6  component_caring_families_and_relationships  0.180             TRUE  0.000                2
-## 7               subcomponent_structural_racism  0.163             TRUE  0.000                2
-## 8                                     nh_black  0.138            FALSE  0.070                2
-## 9                  component_cultural_identity  0.057             TRUE  0.008                2
-## 10               component_vibrant_communities  0.054             TRUE  0.013                2
-## 11                           high_poverty_area  0.029            FALSE  0.520                2
-## 12                                    is_adult  0.019            FALSE  0.590                2
-## 13                                 nh_twoormor -0.022            FALSE  0.842                2
-## 14                                      latino -0.026            FALSE  0.712                2
-## 15                                   nh_pacisl -0.053            FALSE  0.779                2
-## 16                            systems_impacted -0.122             TRUE  0.014                2
-## 17                                    nh_asian -0.225             TRUE  0.005                2
-## 18                              cishet_lgbtqia -0.352             TRUE  0.000                2</code></pre>
+<pre><code>##    model_name                                 lhs                                         rhs std.all std.lv
+## 1          1j subcomponent_psychological_distress               subcomponent_microaggressions   0.259  0.259
+## 2          1j subcomponent_psychological_distress component_caring_families_and_relationships   0.167  0.167
+## 3          1j subcomponent_psychological_distress                                      sparks   0.156  0.352
+## 4          1j subcomponent_psychological_distress              subcomponent_structural_racism   0.155  0.155
+## 5          1j subcomponent_psychological_distress                          personal_safety_re   0.071  0.191
+## 6          1j subcomponent_psychological_distress                 component_cultural_identity   0.062  0.062
+## 7          1j subcomponent_psychological_distress               component_vibrant_communities   0.044  0.044
+## 8          1j subcomponent_psychological_distress                           high_poverty_area   0.016  0.041
+## 9          1j subcomponent_psychological_distress                                race_nh_aian   0.012  0.090
+## 10         1j subcomponent_psychological_distress                               race_nh_other   0.007  0.249
+## 11         1j subcomponent_psychological_distress                               race_nh_black  -0.004 -0.012
+## 12         1j subcomponent_psychological_distress                               race_nh_swana  -0.007 -0.072
+## 13         1j subcomponent_psychological_distress                                    is_adult  -0.007 -0.015
+## 14         1j subcomponent_psychological_distress                                race_nh_nhpi  -0.019 -0.211
+## 15         1j subcomponent_psychological_distress                            race_nh_twoormor  -0.023 -0.137
+## 16         1j subcomponent_psychological_distress                            systems_impacted  -0.053 -0.150
+## 17         1j subcomponent_psychological_distress                                 race_latinx  -0.085 -0.171
+## 18         1j subcomponent_psychological_distress                               race_nh_asian  -0.115 -0.359
+## 19         1j subcomponent_psychological_distress                              cishet_lgbtqia  -0.149 -0.357
+##    p_is_significant pvalue      bic      aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1              TRUE  0.000 244943.8 244138.9     0.299                2 0.855 0.846 0.046 0.055
+## 2              TRUE  0.000 244943.8 244138.9     0.299                2 0.855 0.846 0.046 0.055
+## 3              TRUE  0.000 244943.8 244138.9     0.299                2 0.855 0.846 0.046 0.055
+## 4              TRUE  0.000 244943.8 244138.9     0.299                2 0.855 0.846 0.046 0.055
+## 5              TRUE  0.000 244943.8 244138.9     0.299                2 0.855 0.846 0.046 0.055
+## 6              TRUE  0.004 244943.8 244138.9     0.299                2 0.855 0.846 0.046 0.055
+## 7              TRUE  0.043 244943.8 244138.9     0.299                2 0.855 0.846 0.046 0.055
+## 8             FALSE  0.367 244943.8 244138.9     0.299                2 0.855 0.846 0.046 0.055
+## 9             FALSE  0.479 244943.8 244138.9     0.299                2 0.855 0.846 0.046 0.055
+## 10            FALSE  0.649 244943.8 244138.9     0.299                2 0.855 0.846 0.046 0.055
+## 11            FALSE  0.850 244943.8 244138.9     0.299                2 0.855 0.846 0.046 0.055
+## 12            FALSE  0.680 244943.8 244138.9     0.299                2 0.855 0.846 0.046 0.055
+## 13            FALSE  0.670 244943.8 244138.9     0.299                2 0.855 0.846 0.046 0.055
+## 14            FALSE  0.258 244943.8 244138.9     0.299                2 0.855 0.846 0.046 0.055
+## 15            FALSE  0.192 244943.8 244138.9     0.299                2 0.855 0.846 0.046 0.055
+## 16             TRUE  0.002 244943.8 244138.9     0.299                2 0.855 0.846 0.046 0.055
+## 17             TRUE  0.002 244943.8 244138.9     0.299                2 0.855 0.846 0.046 0.055
+## 18             TRUE  0.000 244943.8 244138.9     0.299                2 0.855 0.846 0.046 0.055
+## 19             TRUE  0.000 244943.8 244138.9     0.299                2 0.855 0.846 0.046 0.055</code></pre>
 </div>
+<div id="model-1j.2-removing-is_adult-replacing-high_poverty_area-with-perc_below_200_fpl-poverty-as-a-continuous-variable-adding-undocumented-spa-and-likert-dummy-coding-of-personal_safety-opportunities_for_community_involvement-and-growth_mindset" class="section level3">
+<h3>Model 1j.2: removing is_adult; replacing high_poverty_area with
+perc_below_200_fpl (poverty as a continuous variable); adding
+undocumented, spa, and likert dummy coding of personal_safety,
+opportunities_for_community_involvement, and growth_mindset</h3>
+<p>Reference groups: spa is spa_5 (West LA). personal_safety is column
+personal_safety_5, representing “Never” response (the better outcome).
+opportunities_for_community_involvement is column
+opportunities_for_community_involvement_1, representing “Never true”
+(the worse outcome). For both growth_mindset questions, it’s the columns
+growth_mindset_cr_1 and growth_mindset_cs_1, representing “Never true”
+(the worse outcome).</p>
+<p>Analysis: growth_mindset_cs_4 is almost statistically significant (I
+don’t give up easily -&gt; Always true). personal_safety_1, 2, and 3 are
+statistically significant (Sometimes, Most of the time, All of the
+time)</p>
+<pre><code>##    model_name                                 lhs                                         rhs std.all std.lv
+## 1        1j.2 subcomponent_psychological_distress               subcomponent_microaggressions   0.263  0.263
+## 2        1j.2 subcomponent_psychological_distress                                      sparks   0.144  0.326
+## 3        1j.2 subcomponent_psychological_distress component_caring_families_and_relationships   0.138  0.138
+## 4        1j.2 subcomponent_psychological_distress              subcomponent_structural_racism   0.136  0.136
+## 5        1j.2 subcomponent_psychological_distress                         growth_mindset_cs_4   0.084  0.174
+## 6        1j.2 subcomponent_psychological_distress   opportunities_for_community_involvement_4   0.072  0.149
+## 7        1j.2 subcomponent_psychological_distress   opportunities_for_community_involvement_2   0.052  0.124
+## 8        1j.2 subcomponent_psychological_distress   opportunities_for_community_involvement_3   0.048  0.100
+## 9        1j.2 subcomponent_psychological_distress                 component_cultural_identity   0.046  0.046
+## 10       1j.2 subcomponent_psychological_distress               component_vibrant_communities   0.038  0.038
+## 11       1j.2 subcomponent_psychological_distress                         growth_mindset_cr_4   0.030  0.059
+## 12       1j.2 subcomponent_psychological_distress                          perc_below_200_fpl   0.021  0.002
+## 13       1j.2 subcomponent_psychological_distress                                undocumented   0.019  0.091
+## 14       1j.2 subcomponent_psychological_distress                                race_nh_aian   0.010  0.072
+## 15       1j.2 subcomponent_psychological_distress                               race_nh_other   0.005  0.180
+## 16       1j.2 subcomponent_psychological_distress                                       spa_6  -0.002 -0.004
+## 17       1j.2 subcomponent_psychological_distress                               race_nh_black  -0.003 -0.009
+## 18       1j.2 subcomponent_psychological_distress                               race_nh_swana  -0.005 -0.052
+## 19       1j.2 subcomponent_psychological_distress                         growth_mindset_cs_2  -0.009 -0.021
+## 20       1j.2 subcomponent_psychological_distress                                       spa_3  -0.011 -0.037
+## 21       1j.2 subcomponent_psychological_distress                         growth_mindset_cs_3  -0.012 -0.025
+## 22       1j.2 subcomponent_psychological_distress                                       spa_2  -0.013 -0.039
+## 23       1j.2 subcomponent_psychological_distress                         growth_mindset_cr_3  -0.013 -0.028
+## 24       1j.2 subcomponent_psychological_distress                                race_nh_nhpi  -0.015 -0.166
+## 25       1j.2 subcomponent_psychological_distress                                       spa_7  -0.019 -0.064
+## 26       1j.2 subcomponent_psychological_distress                         growth_mindset_cr_2  -0.022 -0.066
+## 27       1j.2 subcomponent_psychological_distress                            race_nh_twoormor  -0.022 -0.131
+## 28       1j.2 subcomponent_psychological_distress                                       spa_1  -0.023 -0.094
+## 29       1j.2 subcomponent_psychological_distress                                       spa_8  -0.027 -0.085
+## 30       1j.2 subcomponent_psychological_distress                                       spa_4  -0.041 -0.118
+## 31       1j.2 subcomponent_psychological_distress                           personal_safety_4  -0.044 -0.100
+## 32       1j.2 subcomponent_psychological_distress                            systems_impacted  -0.059 -0.168
+## 33       1j.2 subcomponent_psychological_distress                           personal_safety_1  -0.071 -0.257
+## 34       1j.2 subcomponent_psychological_distress                                 race_latinx  -0.075 -0.151
+## 35       1j.2 subcomponent_psychological_distress                           personal_safety_2  -0.096 -0.281
+## 36       1j.2 subcomponent_psychological_distress                               race_nh_asian  -0.096 -0.300
+## 37       1j.2 subcomponent_psychological_distress                           personal_safety_3  -0.113 -0.236
+## 38       1j.2 subcomponent_psychological_distress                              cishet_lgbtqia  -0.143 -0.342
+##    p_is_significant pvalue      bic      aic r_squared fit_measures_met   cfi  tli rmsea  srmr
+## 1              TRUE  0.000 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 2              TRUE  0.000 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 3              TRUE  0.000 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 4              TRUE  0.000 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 5             FALSE  0.088 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 6             FALSE  0.098 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 7             FALSE  0.149 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 8             FALSE  0.245 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 9              TRUE  0.034 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 10            FALSE  0.088 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 11            FALSE  0.671 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 12            FALSE  0.352 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 13            FALSE  0.284 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 14            FALSE  0.573 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 15            FALSE  0.742 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 16            FALSE  0.968 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 17            FALSE  0.892 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 18            FALSE  0.768 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 19            FALSE  0.837 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 20            FALSE  0.705 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 21            FALSE  0.806 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 22            FALSE  0.677 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 23            FALSE  0.838 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 24            FALSE  0.378 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 25            FALSE  0.531 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 26            FALSE  0.642 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 27            FALSE  0.215 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 28            FALSE  0.379 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 29            FALSE  0.382 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 30            FALSE  0.227 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 31            FALSE  0.055 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 32             TRUE  0.001 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 33             TRUE  0.001 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 34             TRUE  0.007 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 35             TRUE  0.000 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 36             TRUE  0.000 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 37             TRUE  0.000 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058
+## 38             TRUE  0.000 243849.6 242927.9     0.296                2 0.819 0.81 0.041 0.058</code></pre>
+<div id="create-postgres-table-for-1j.2" class="section level4">
+<h4>Create postgres table for 1j.2</h4>
+</div>
+</div>
+<div id="model-1j.4-adding-cisgender" class="section level3">
+<h3>Model 1j.4: adding cisgender</h3>
+<pre><code>##    model_name                                 lhs                                         rhs std.all std.lv
+## 1        1j.4 subcomponent_psychological_distress               subcomponent_microaggressions   0.261  0.261
+## 2        1j.4 subcomponent_psychological_distress component_caring_families_and_relationships   0.168  0.168
+## 3        1j.4 subcomponent_psychological_distress                                      sparks   0.152  0.345
+## 4        1j.4 subcomponent_psychological_distress              subcomponent_structural_racism   0.152  0.152
+## 5        1j.4 subcomponent_psychological_distress                 component_cultural_identity   0.068  0.068
+## 6        1j.4 subcomponent_psychological_distress                          personal_safety_re   0.068  0.183
+## 7        1j.4 subcomponent_psychological_distress               component_vibrant_communities   0.047  0.047
+## 8        1j.4 subcomponent_psychological_distress                           high_poverty_area   0.017  0.046
+## 9        1j.4 subcomponent_psychological_distress                                race_nh_aian   0.013  0.095
+## 10       1j.4 subcomponent_psychological_distress                               race_nh_other   0.007  0.223
+## 11       1j.4 subcomponent_psychological_distress                               race_nh_black  -0.006 -0.016
+## 12       1j.4 subcomponent_psychological_distress                                    is_adult  -0.006 -0.013
+## 13       1j.4 subcomponent_psychological_distress                               race_nh_swana  -0.006 -0.067
+## 14       1j.4 subcomponent_psychological_distress                                race_nh_nhpi  -0.020 -0.227
+## 15       1j.4 subcomponent_psychological_distress                            race_nh_twoormor  -0.023 -0.133
+## 16       1j.4 subcomponent_psychological_distress                            systems_impacted  -0.053 -0.152
+## 17       1j.4 subcomponent_psychological_distress                                  cis_female  -0.055 -0.111
+## 18       1j.4 subcomponent_psychological_distress                                 race_latinx  -0.079 -0.159
+## 19       1j.4 subcomponent_psychological_distress                               race_nh_asian  -0.112 -0.349
+## 20       1j.4 subcomponent_psychological_distress                              cishet_lgbtqia  -0.149 -0.357
+##    p_is_significant pvalue      bic      aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1              TRUE  0.000 244743.9 243932.8     0.303                2 0.853 0.843 0.046 0.055
+## 2              TRUE  0.000 244743.9 243932.8     0.303                2 0.853 0.843 0.046 0.055
+## 3              TRUE  0.000 244743.9 243932.8     0.303                2 0.853 0.843 0.046 0.055
+## 4              TRUE  0.000 244743.9 243932.8     0.303                2 0.853 0.843 0.046 0.055
+## 5              TRUE  0.001 244743.9 243932.8     0.303                2 0.853 0.843 0.046 0.055
+## 6              TRUE  0.000 244743.9 243932.8     0.303                2 0.853 0.843 0.046 0.055
+## 7              TRUE  0.030 244743.9 243932.8     0.303                2 0.853 0.843 0.046 0.055
+## 8             FALSE  0.318 244743.9 243932.8     0.303                2 0.853 0.843 0.046 0.055
+## 9             FALSE  0.455 244743.9 243932.8     0.303                2 0.853 0.843 0.046 0.055
+## 10            FALSE  0.683 244743.9 243932.8     0.303                2 0.853 0.843 0.046 0.055
+## 11            FALSE  0.799 244743.9 243932.8     0.303                2 0.853 0.843 0.046 0.055
+## 12            FALSE  0.704 244743.9 243932.8     0.303                2 0.853 0.843 0.046 0.055
+## 13            FALSE  0.700 244743.9 243932.8     0.303                2 0.853 0.843 0.046 0.055
+## 14            FALSE  0.224 244743.9 243932.8     0.303                2 0.853 0.843 0.046 0.055
+## 15            FALSE  0.206 244743.9 243932.8     0.303                2 0.853 0.843 0.046 0.055
+## 16             TRUE  0.002 244743.9 243932.8     0.303                2 0.853 0.843 0.046 0.055
+## 17             TRUE  0.001 244743.9 243932.8     0.303                2 0.853 0.843 0.046 0.055
+## 18             TRUE  0.004 244743.9 243932.8     0.303                2 0.853 0.843 0.046 0.055
+## 19             TRUE  0.000 244743.9 243932.8     0.303                2 0.853 0.843 0.046 0.055
+## 20             TRUE  0.000 244743.9 243932.8     0.303                2 0.853 0.843 0.046 0.055</code></pre>
+</div>
+<div id="model-1j.5-final" class="section level3">
+<h3>Model 1j.5: FINAL</h3>
+<p>Q19. How often do you worry about your own safety while in the
+neighborhood you live in now? 5 = Never 4 = Rarely 3 = Sometimes 2 =
+Most of the time 1 = All of the time</p>
+<pre><code>##    model_name                                 lhs                                         rhs std.all std.lv
+## 1        1j.5 subcomponent_psychological_distress               subcomponent_microaggressions   0.263  0.263
+## 2        1j.5 subcomponent_psychological_distress component_caring_families_and_relationships   0.167  0.167
+## 3        1j.5 subcomponent_psychological_distress              subcomponent_structural_racism   0.155  0.155
+## 4        1j.5 subcomponent_psychological_distress                                      sparks   0.154  0.350
+## 5        1j.5 subcomponent_psychological_distress                          personal_safety_re   0.070  0.188
+## 6        1j.5 subcomponent_psychological_distress                 component_cultural_identity   0.063  0.063
+## 7        1j.5 subcomponent_psychological_distress               component_vibrant_communities   0.042  0.042
+## 8        1j.5 subcomponent_psychological_distress                                undocumented   0.020  0.096
+## 9        1j.5 subcomponent_psychological_distress                                race_nh_aian   0.011  0.083
+## 10       1j.5 subcomponent_psychological_distress                               race_nh_other   0.008  0.259
+## 11       1j.5 subcomponent_psychological_distress                               race_nh_black  -0.002 -0.006
+## 12       1j.5 subcomponent_psychological_distress                               race_nh_swana  -0.008 -0.080
+## 13       1j.5 subcomponent_psychological_distress                                race_nh_nhpi  -0.019 -0.220
+## 14       1j.5 subcomponent_psychological_distress                            race_nh_twoormor  -0.023 -0.138
+## 15       1j.5 subcomponent_psychological_distress                            systems_impacted  -0.056 -0.160
+## 16       1j.5 subcomponent_psychological_distress                                 race_latinx  -0.081 -0.162
+## 17       1j.5 subcomponent_psychological_distress                               race_nh_asian  -0.113 -0.353
+## 18       1j.5 subcomponent_psychological_distress                              cishet_lgbtqia  -0.151 -0.360
+##    p_is_significant pvalue      bic      aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1              TRUE  0.000 245150.3 244351.6     0.301                2 0.859 0.849 0.046 0.056
+## 2              TRUE  0.000 245150.3 244351.6     0.301                2 0.859 0.849 0.046 0.056
+## 3              TRUE  0.000 245150.3 244351.6     0.301                2 0.859 0.849 0.046 0.056
+## 4              TRUE  0.000 245150.3 244351.6     0.301                2 0.859 0.849 0.046 0.056
+## 5              TRUE  0.000 245150.3 244351.6     0.301                2 0.859 0.849 0.046 0.056
+## 6              TRUE  0.003 245150.3 244351.6     0.301                2 0.859 0.849 0.046 0.056
+## 7             FALSE  0.050 245150.3 244351.6     0.301                2 0.859 0.849 0.046 0.056
+## 8             FALSE  0.255 245150.3 244351.6     0.301                2 0.859 0.849 0.046 0.056
+## 9             FALSE  0.515 245150.3 244351.6     0.301                2 0.859 0.849 0.046 0.056
+## 10            FALSE  0.635 245150.3 244351.6     0.301                2 0.859 0.849 0.046 0.056
+## 11            FALSE  0.924 245150.3 244351.6     0.301                2 0.859 0.849 0.046 0.056
+## 12            FALSE  0.642 245150.3 244351.6     0.301                2 0.859 0.849 0.046 0.056
+## 13            FALSE  0.238 245150.3 244351.6     0.301                2 0.859 0.849 0.046 0.056
+## 14            FALSE  0.188 245150.3 244351.6     0.301                2 0.859 0.849 0.046 0.056
+## 15             TRUE  0.001 245150.3 244351.6     0.301                2 0.859 0.849 0.046 0.056
+## 16             TRUE  0.003 245150.3 244351.6     0.301                2 0.859 0.849 0.046 0.056
+## 17             TRUE  0.000 245150.3 244351.6     0.301                2 0.859 0.849 0.046 0.056
+## 18             TRUE  0.000 245150.3 244351.6     0.301                2 0.859 0.849 0.046 0.056</code></pre>
+</div>
+<div id="model-1j.6-final-subsetted-by-cisgender-respondents-only" class="section level3">
+<h3>Model 1j.6: FINAL; subsetted by cisgender respondents only</h3>
+<p>Analysis: Being cisgender female is associated with more
+psychological distress, compared to being cisgender male. Latinx becomes
+not statistically significant, compared to model 1j.5.</p>
+<pre><code>##    model_name                                 lhs                                         rhs std.all std.lv
+## 1        1j.6 subcomponent_psychological_distress               subcomponent_microaggressions   0.298  0.298
+## 2        1j.6 subcomponent_psychological_distress component_caring_families_and_relationships   0.170  0.170
+## 3        1j.6 subcomponent_psychological_distress              subcomponent_structural_racism   0.147  0.147
+## 4        1j.6 subcomponent_psychological_distress                                      sparks   0.143  0.328
+## 5        1j.6 subcomponent_psychological_distress                 component_cultural_identity   0.062  0.062
+## 6        1j.6 subcomponent_psychological_distress                          personal_safety_re   0.058  0.154
+## 7        1j.6 subcomponent_psychological_distress               component_vibrant_communities   0.053  0.053
+## 8        1j.6 subcomponent_psychological_distress                               race_nh_black   0.026  0.071
+## 9        1j.6 subcomponent_psychological_distress                                undocumented   0.019  0.094
+## 10       1j.6 subcomponent_psychological_distress                                race_nh_aian   0.016  0.121
+## 11       1j.6 subcomponent_psychological_distress                               race_nh_swana   0.009  0.096
+## 12       1j.6 subcomponent_psychological_distress                               race_nh_other   0.008  0.254
+## 13       1j.6 subcomponent_psychological_distress                                race_nh_nhpi  -0.015 -0.166
+## 14       1j.6 subcomponent_psychological_distress                            race_nh_twoormor  -0.022 -0.130
+## 15       1j.6 subcomponent_psychological_distress                                 race_latinx  -0.041 -0.083
+## 16       1j.6 subcomponent_psychological_distress                            systems_impacted  -0.055 -0.159
+## 17       1j.6 subcomponent_psychological_distress                                cisgender_mf  -0.067 -0.135
+## 18       1j.6 subcomponent_psychological_distress                               race_nh_asian  -0.083 -0.255
+## 19       1j.6 subcomponent_psychological_distress                              cishet_lgbtqia  -0.111 -0.300
+##    p_is_significant pvalue      bic      aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1              TRUE  0.000 219700.1 218909.3     0.318                2 0.856 0.847 0.046 0.054
+## 2              TRUE  0.000 219700.1 218909.3     0.318                2 0.856 0.847 0.046 0.054
+## 3              TRUE  0.000 219700.1 218909.3     0.318                2 0.856 0.847 0.046 0.054
+## 4              TRUE  0.000 219700.1 218909.3     0.318                2 0.856 0.847 0.046 0.054
+## 5              TRUE  0.006 219700.1 218909.3     0.318                2 0.856 0.847 0.046 0.054
+## 6              TRUE  0.001 219700.1 218909.3     0.318                2 0.856 0.847 0.046 0.054
+## 7              TRUE  0.017 219700.1 218909.3     0.318                2 0.856 0.847 0.046 0.054
+## 8             FALSE  0.308 219700.1 218909.3     0.318                2 0.856 0.847 0.046 0.054
+## 9             FALSE  0.291 219700.1 218909.3     0.318                2 0.856 0.847 0.046 0.054
+## 10            FALSE  0.378 219700.1 218909.3     0.318                2 0.856 0.847 0.046 0.054
+## 11            FALSE  0.612 219700.1 218909.3     0.318                2 0.856 0.847 0.046 0.054
+## 12            FALSE  0.641 219700.1 218909.3     0.318                2 0.856 0.847 0.046 0.054
+## 13            FALSE  0.393 219700.1 218909.3     0.318                2 0.856 0.847 0.046 0.054
+## 14            FALSE  0.256 219700.1 218909.3     0.318                2 0.856 0.847 0.046 0.054
+## 15            FALSE  0.170 219700.1 218909.3     0.318                2 0.856 0.847 0.046 0.054
+## 16             TRUE  0.002 219700.1 218909.3     0.318                2 0.856 0.847 0.046 0.054
+## 17             TRUE  0.000 219700.1 218909.3     0.318                2 0.856 0.847 0.046 0.054
+## 18             TRUE  0.001 219700.1 218909.3     0.318                2 0.856 0.847 0.046 0.054
+## 19             TRUE  0.000 219700.1 218909.3     0.318                2 0.856 0.847 0.046 0.054</code></pre>
+<div id="create-postgres-table-for-1j.5-and-1j.6" class="section level4">
+<h4>Create postgres table for 1j.5 and 1j.6</h4>
+</div>
+</div>
+<div id="model-1k-adding-subcomponent_self_efficacy_hope" class="section level3">
+<h3>Model 1k: adding subcomponent_self_efficacy_hope</h3>
+<p>Analysis: The BIC increases, indicating worse model fit compared to
+model_1j.</p>
+<pre><code>##    model_name                                 lhs                                         rhs std.all std.lv
+## 1          1k subcomponent_psychological_distress               subcomponent_microaggressions   0.262  0.262
+## 2          1k subcomponent_psychological_distress             subcomponent_self_efficacy_hope   0.245  0.245
+## 3          1k subcomponent_psychological_distress              subcomponent_structural_racism   0.153  0.153
+## 4          1k subcomponent_psychological_distress                                      sparks   0.119  0.269
+## 5          1k subcomponent_psychological_distress component_caring_families_and_relationships   0.096  0.096
+## 6          1k subcomponent_psychological_distress                          personal_safety_re   0.061  0.164
+## 7          1k subcomponent_psychological_distress               component_vibrant_communities   0.036  0.036
+## 8          1k subcomponent_psychological_distress                           high_poverty_area   0.014  0.036
+## 9          1k subcomponent_psychological_distress                                race_nh_aian   0.010  0.071
+## 10         1k subcomponent_psychological_distress                 component_cultural_identity   0.002  0.002
+## 11         1k subcomponent_psychological_distress                               race_nh_other   0.000  0.008
+## 12         1k subcomponent_psychological_distress                               race_nh_swana  -0.001 -0.014
+## 13         1k subcomponent_psychological_distress                                    is_adult  -0.012 -0.024
+## 14         1k subcomponent_psychological_distress                               race_nh_black  -0.015 -0.040
+## 15         1k subcomponent_psychological_distress                            race_nh_twoormor  -0.016 -0.093
+## 16         1k subcomponent_psychological_distress                                race_nh_nhpi  -0.019 -0.219
+## 17         1k subcomponent_psychological_distress                            systems_impacted  -0.058 -0.164
+## 18         1k subcomponent_psychological_distress                                 race_latinx  -0.076 -0.152
+## 19         1k subcomponent_psychological_distress                               race_nh_asian  -0.087 -0.271
+## 20         1k subcomponent_psychological_distress                              cishet_lgbtqia  -0.126 -0.300
+##    p_is_significant pvalue    bic      aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1              TRUE  0.000 273526 272610.5     0.328                2 0.856 0.847 0.044 0.055
+## 2              TRUE  0.000 273526 272610.5     0.328                2 0.856 0.847 0.044 0.055
+## 3              TRUE  0.000 273526 272610.5     0.328                2 0.856 0.847 0.044 0.055
+## 4              TRUE  0.000 273526 272610.5     0.328                2 0.856 0.847 0.044 0.055
+## 5              TRUE  0.000 273526 272610.5     0.328                2 0.856 0.847 0.044 0.055
+## 6              TRUE  0.000 273526 272610.5     0.328                2 0.856 0.847 0.044 0.055
+## 7             FALSE  0.099 273526 272610.5     0.328                2 0.856 0.847 0.044 0.055
+## 8             FALSE  0.422 273526 272610.5     0.328                2 0.856 0.847 0.044 0.055
+## 9             FALSE  0.574 273526 272610.5     0.328                2 0.856 0.847 0.044 0.055
+## 10            FALSE  0.937 273526 272610.5     0.328                2 0.856 0.847 0.044 0.055
+## 11            FALSE  0.988 273526 272610.5     0.328                2 0.856 0.847 0.044 0.055
+## 12            FALSE  0.937 273526 272610.5     0.328                2 0.856 0.847 0.044 0.055
+## 13            FALSE  0.477 273526 272610.5     0.328                2 0.856 0.847 0.044 0.055
+## 14            FALSE  0.524 273526 272610.5     0.328                2 0.856 0.847 0.044 0.055
+## 15            FALSE  0.370 273526 272610.5     0.328                2 0.856 0.847 0.044 0.055
+## 16            FALSE  0.236 273526 272610.5     0.328                2 0.856 0.847 0.044 0.055
+## 17             TRUE  0.001 273526 272610.5     0.328                2 0.856 0.847 0.044 0.055
+## 18             TRUE  0.005 273526 272610.5     0.328                2 0.856 0.847 0.044 0.055
+## 19             TRUE  0.000 273526 272610.5     0.328                2 0.856 0.847 0.044 0.055
+## 20             TRUE  0.000 273526 272610.5     0.328                2 0.856 0.847 0.044 0.055</code></pre>
+</div>
+<div id="model-2-all-variables" class="section level3">
+<h3>Model 2: all variables</h3>
+<pre><code>##    model_name                             lhs                                                   rhs std.all std.lv
+## 1           2 subcomponent_self_efficacy_hope           component_caring_families_and_relationships   0.255  0.255
+## 2           2 subcomponent_self_efficacy_hope                   subcomponent_psychological_distress   0.239  0.239
+## 3           2 subcomponent_self_efficacy_hope                           component_cultural_identity   0.212  0.212
+## 4           2 subcomponent_self_efficacy_hope                                        growth_mindset   0.196  1.647
+## 5           2 subcomponent_self_efficacy_hope                                                sparks   0.169  0.382
+## 6           2 subcomponent_self_efficacy_hope                                              unhoused   0.073  0.216
+## 7           2 subcomponent_self_efficacy_hope                                    personal_safety_re   0.051  0.136
+## 8           2 subcomponent_self_efficacy_hope                                         race_nh_black   0.047  0.128
+## 9           2 subcomponent_self_efficacy_hope                                         race_nh_other   0.033  1.103
+## 10          2 subcomponent_self_efficacy_hope            opportunities_for_community_involvement_re   0.030  0.141
+## 11          2 subcomponent_self_efficacy_hope                                                 spa_4   0.023  0.067
+## 12          2 subcomponent_self_efficacy_hope                                                 spa_2   0.022  0.064
+## 13          2 subcomponent_self_efficacy_hope                                                 spa_7   0.019  0.064
+## 14          2 subcomponent_self_efficacy_hope                                              is_adult   0.017  0.034
+## 15          2 subcomponent_self_efficacy_hope                                          race_nh_aian   0.014  0.101
+## 16          2 subcomponent_self_efficacy_hope                                     high_poverty_area   0.012  0.031
+## 17          2 subcomponent_self_efficacy_hope                                             suspended   0.011  0.032
+## 18          2 subcomponent_self_efficacy_hope                         component_vibrant_communities   0.009  0.009
+## 19          2 subcomponent_self_efficacy_hope                                          undocumented   0.008  0.039
+## 20          2 subcomponent_self_efficacy_hope                                                 spa_6   0.005  0.011
+## 21          2 subcomponent_self_efficacy_hope                                          race_nh_nhpi   0.005  0.056
+## 22          2 subcomponent_self_efficacy_hope                                      systems_impacted   0.004  0.011
+## 23          2 subcomponent_self_efficacy_hope                                          disconnected  -0.005 -0.013
+## 24          2 subcomponent_self_efficacy_hope                                                 spa_8  -0.009 -0.029
+## 25          2 subcomponent_self_efficacy_hope                                                 spa_5  -0.012 -0.062
+## 26          2 subcomponent_self_efficacy_hope                                              arrested  -0.013 -0.045
+## 27          2 subcomponent_self_efficacy_hope subcomponent_experiences_of_racism_and_discrimination  -0.014 -0.014
+## 28          2 subcomponent_self_efficacy_hope                                         race_nh_swana  -0.016 -0.167
+## 29          2 subcomponent_self_efficacy_hope                        subcomponent_structural_racism  -0.025 -0.025
+## 30          2 subcomponent_self_efficacy_hope                                           race_latinx  -0.035 -0.070
+## 31          2 subcomponent_self_efficacy_hope                                                 spa_3  -0.037 -0.119
+## 32          2 subcomponent_self_efficacy_hope                                      race_nh_twoormor  -0.039 -0.228
+## 33          2 subcomponent_self_efficacy_hope                         subcomponent_microaggressions  -0.050 -0.050
+## 34          2 subcomponent_self_efficacy_hope                                        cishet_lgbtqia  -0.103 -0.245
+## 35          2 subcomponent_self_efficacy_hope                                         race_nh_asian  -0.124 -0.388
+##    p_is_significant pvalue      bic      aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1              TRUE  0.000 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 2              TRUE  0.000 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 3              TRUE  0.000 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 4              TRUE  0.000 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 5              TRUE  0.000 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 6              TRUE  0.000 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 7              TRUE  0.004 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 8             FALSE  0.048 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 9              TRUE  0.045 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 10            FALSE  0.086 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 11            FALSE  0.400 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 12            FALSE  0.423 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 13            FALSE  0.448 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 14            FALSE  0.325 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 15            FALSE  0.427 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 16            FALSE  0.541 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 17            FALSE  0.548 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 18            FALSE  0.676 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 19            FALSE  0.648 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 20            FALSE  0.875 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 21            FALSE  0.766 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 22            FALSE  0.849 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 23            FALSE  0.786 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 24            FALSE  0.721 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 25            FALSE  0.564 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 26            FALSE  0.522 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 27            FALSE  0.641 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 28            FALSE  0.339 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 29            FALSE  0.307 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 30            FALSE  0.204 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 31            FALSE  0.153 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 32             TRUE  0.031 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 33            FALSE  0.158 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 34             TRUE  0.000 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056
+## 35             TRUE  0.000 302423.1 301304.8     0.385                2 0.857 0.849 0.038 0.056</code></pre>
+</div>
+<div id="model-2a-running-only-subcomponents" class="section level3">
+<h3>Model 2a: running only (sub)components</h3>
+<p>Analysis: component_vibrant_communities and
+subcomponent_microaggressions are not statistically significant.</p>
+<pre><code>##   model_name                             lhs                                         rhs std.all std.lv
+## 1         2a subcomponent_self_efficacy_hope component_caring_families_and_relationships   0.301  0.301
+## 2         2a subcomponent_self_efficacy_hope                 component_cultural_identity   0.290  0.290
+## 3         2a subcomponent_self_efficacy_hope              subcomponent_structural_racism   0.050  0.050
+## 4         2a subcomponent_self_efficacy_hope               component_vibrant_communities   0.036  0.036
+## 5         2a subcomponent_self_efficacy_hope               subcomponent_microaggressions  -0.026 -0.026
+##   p_is_significant pvalue    bic      aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1             TRUE  0.000 221587 220905.5     0.277                1 0.901 0.891 0.052 0.039
+## 2             TRUE  0.000 221587 220905.5     0.277                1 0.901 0.891 0.052 0.039
+## 3             TRUE  0.033 221587 220905.5     0.277                1 0.901 0.891 0.052 0.039
+## 4            FALSE  0.104 221587 220905.5     0.277                1 0.901 0.891 0.052 0.039
+## 5            FALSE  0.299 221587 220905.5     0.277                1 0.901 0.891 0.052 0.039</code></pre>
+</div>
+<div id="model-2b-adding-non-imputed-componentsobserved-variables" class="section level3">
+<h3>Model 2b: adding non-imputed components/observed variables</h3>
+<p>Analysis: growth_mindset is likely too similar to
+subcomponent_self_efficacy_hope because the coefficient shouldn’t be
+&gt;1.</p>
+<pre><code>##   model_name                             lhs                                                   rhs std.all std.lv
+## 1         2b subcomponent_self_efficacy_hope           component_caring_families_and_relationships   0.283  0.283
+## 2         2b subcomponent_self_efficacy_hope                           component_cultural_identity   0.282  0.282
+## 3         2b subcomponent_self_efficacy_hope                                        growth_mindset   0.193  1.622
+## 4         2b subcomponent_self_efficacy_hope                                    personal_safety_re   0.067  0.180
+## 5         2b subcomponent_self_efficacy_hope                        subcomponent_structural_racism   0.034  0.034
+## 6         2b subcomponent_self_efficacy_hope            opportunities_for_community_involvement_re   0.028  0.132
+## 7         2b subcomponent_self_efficacy_hope                         component_vibrant_communities   0.028  0.028
+## 8         2b subcomponent_self_efficacy_hope                         subcomponent_microaggressions  -0.012 -0.012
+## 9         2b subcomponent_self_efficacy_hope subcomponent_experiences_of_racism_and_discrimination  -0.039 -0.039
+##   p_is_significant pvalue      bic    aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1             TRUE  0.000 250597.6 249787     0.288                2 0.896 0.886 0.049 0.055
+## 2             TRUE  0.000 250597.6 249787     0.288                2 0.896 0.886 0.049 0.055
+## 3             TRUE  0.000 250597.6 249787     0.288                2 0.896 0.886 0.049 0.055
+## 4             TRUE  0.000 250597.6 249787     0.288                2 0.896 0.886 0.049 0.055
+## 5            FALSE  0.166 250597.6 249787     0.288                2 0.896 0.886 0.049 0.055
+## 6            FALSE  0.121 250597.6 249787     0.288                2 0.896 0.886 0.049 0.055
+## 7            FALSE  0.224 250597.6 249787     0.288                2 0.896 0.886 0.049 0.055
+## 8            FALSE  0.735 250597.6 249787     0.288                2 0.896 0.886 0.049 0.055
+## 9            FALSE  0.216 250597.6 249787     0.288                2 0.896 0.886 0.049 0.055</code></pre>
+</div>
+<div id="model-2c-removing-growth_mindset" class="section level3">
+<h3>Model 2c: removing growth_mindset</h3>
+<p>Analysis: opportunities_for_community_involvement is now significant.
+Racism subcomponents are not significant.</p>
+<pre><code>##   model_name                             lhs                                                   rhs std.all std.lv
+## 1         2c subcomponent_self_efficacy_hope           component_caring_families_and_relationships   0.293  0.293
+## 2         2c subcomponent_self_efficacy_hope                           component_cultural_identity   0.289  0.289
+## 3         2c subcomponent_self_efficacy_hope                                    personal_safety_re   0.059  0.159
+## 4         2c subcomponent_self_efficacy_hope            opportunities_for_community_involvement_re   0.049  0.235
+## 5         2c subcomponent_self_efficacy_hope                         component_vibrant_communities   0.035  0.035
+## 6         2c subcomponent_self_efficacy_hope                        subcomponent_structural_racism   0.034  0.034
+## 7         2c subcomponent_self_efficacy_hope                         subcomponent_microaggressions  -0.010 -0.010
+## 8         2c subcomponent_self_efficacy_hope subcomponent_experiences_of_racism_and_discrimination  -0.030 -0.030
+##   p_is_significant pvalue      bic    aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1             TRUE  0.000 250660.5 249856     0.269                2 0.897 0.887  0.05 0.054
+## 2             TRUE  0.000 250660.5 249856     0.269                2 0.897 0.887  0.05 0.054
+## 3             TRUE  0.001 250660.5 249856     0.269                2 0.897 0.887  0.05 0.054
+## 4             TRUE  0.006 250660.5 249856     0.269                2 0.897 0.887  0.05 0.054
+## 5            FALSE  0.128 250660.5 249856     0.269                2 0.897 0.887  0.05 0.054
+## 6            FALSE  0.162 250660.5 249856     0.269                2 0.897 0.887  0.05 0.054
+## 7            FALSE  0.780 250660.5 249856     0.269                2 0.897 0.887  0.05 0.054
+## 8            FALSE  0.345 250660.5 249856     0.269                2 0.897 0.887  0.05 0.054</code></pre>
+</div>
+<div id="model-2d-removing-racism-subcomponents" class="section level3">
+<h3>Model 2d: removing racism subcomponents</h3>
+<p>Analysis: BIC decreased substantially.</p>
+<pre><code>##   model_name                             lhs                                         rhs std.all std.lv
+## 1         2d subcomponent_self_efficacy_hope component_caring_families_and_relationships   0.290  0.290
+## 2         2d subcomponent_self_efficacy_hope                 component_cultural_identity   0.289  0.289
+## 3         2d subcomponent_self_efficacy_hope                          personal_safety_re   0.067  0.179
+## 4         2d subcomponent_self_efficacy_hope  opportunities_for_community_involvement_re   0.050  0.239
+## 5         2d subcomponent_self_efficacy_hope               component_vibrant_communities   0.036  0.036
+##   p_is_significant pvalue      bic      aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1             TRUE  0.000 121150.4 120714.5     0.268                1 0.908 0.896 0.054 0.052
+## 2             TRUE  0.000 121150.4 120714.5     0.268                1 0.908 0.896 0.054 0.052
+## 3             TRUE  0.000 121150.4 120714.5     0.268                1 0.908 0.896 0.054 0.052
+## 4             TRUE  0.005 121150.4 120714.5     0.268                1 0.908 0.896 0.054 0.052
+## 5            FALSE  0.111 121150.4 120714.5     0.268                1 0.908 0.896 0.054 0.052</code></pre>
+</div>
+<div id="model-2e-adding-demographics-removing-component_vibrant_communities" class="section level3">
+<h3>Model 2e: adding demographics, removing
+component_vibrant_communities</h3>
+<p>Analysis: BIC decreased. spa_3 (San Gabriel) is statistically
+significant.</p>
+<pre><code>##    model_name                             lhs                                         rhs std.all std.lv
+## 1          2e subcomponent_self_efficacy_hope component_caring_families_and_relationships   0.328  0.328
+## 2          2e subcomponent_self_efficacy_hope                 component_cultural_identity   0.265  0.265
+## 3          2e subcomponent_self_efficacy_hope                                    unhoused   0.070  0.208
+## 4          2e subcomponent_self_efficacy_hope                          personal_safety_re   0.069  0.184
+## 5          2e subcomponent_self_efficacy_hope  opportunities_for_community_involvement_re   0.067  0.321
+## 6          2e subcomponent_self_efficacy_hope                               race_nh_black   0.062  0.168
+## 7          2e subcomponent_self_efficacy_hope                                       spa_4   0.035  0.101
+## 8          2e subcomponent_self_efficacy_hope                                       spa_2   0.028  0.085
+## 9          2e subcomponent_self_efficacy_hope                                       spa_7   0.028  0.092
+## 10         2e subcomponent_self_efficacy_hope                               race_nh_other   0.025  0.836
+## 11         2e subcomponent_self_efficacy_hope                                    is_adult   0.022  0.045
+## 12         2e subcomponent_self_efficacy_hope                                race_nh_aian   0.014  0.100
+## 13         2e subcomponent_self_efficacy_hope                                       spa_6   0.013  0.029
+## 14         2e subcomponent_self_efficacy_hope                                undocumented   0.012  0.057
+## 15         2e subcomponent_self_efficacy_hope                                       spa_8   0.010  0.031
+## 16         2e subcomponent_self_efficacy_hope                           high_poverty_area   0.002  0.006
+## 17         2e subcomponent_self_efficacy_hope                                race_nh_nhpi   0.000  0.004
+## 18         2e subcomponent_self_efficacy_hope                                       spa_5  -0.002 -0.008
+## 19         2e subcomponent_self_efficacy_hope                            systems_impacted  -0.002 -0.005
+## 20         2e subcomponent_self_efficacy_hope                                   suspended  -0.003 -0.008
+## 21         2e subcomponent_self_efficacy_hope                               race_nh_swana  -0.026 -0.273
+## 22         2e subcomponent_self_efficacy_hope                                       spa_3  -0.027 -0.088
+## 23         2e subcomponent_self_efficacy_hope                            race_nh_twoormor  -0.039 -0.228
+## 24         2e subcomponent_self_efficacy_hope                                 race_latinx  -0.053 -0.107
+## 25         2e subcomponent_self_efficacy_hope                               race_nh_asian  -0.135 -0.422
+## 26         2e subcomponent_self_efficacy_hope                              cishet_lgbtqia  -0.146 -0.349
+##    p_is_significant pvalue      bic     aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1              TRUE  0.000 95296.43 94890.9     0.324                2 0.905 0.894 0.038 0.035
+## 2              TRUE  0.000 95296.43 94890.9     0.324                2 0.905 0.894 0.038 0.035
+## 3              TRUE  0.001 95296.43 94890.9     0.324                2 0.905 0.894 0.038 0.035
+## 4              TRUE  0.000 95296.43 94890.9     0.324                2 0.905 0.894 0.038 0.035
+## 5              TRUE  0.000 95296.43 94890.9     0.324                2 0.905 0.894 0.038 0.035
+## 6              TRUE  0.011 95296.43 94890.9     0.324                2 0.905 0.894 0.038 0.035
+## 7             FALSE  0.210 95296.43 94890.9     0.324                2 0.905 0.894 0.038 0.035
+## 8             FALSE  0.302 95296.43 94890.9     0.324                2 0.905 0.894 0.038 0.035
+## 9             FALSE  0.284 95296.43 94890.9     0.324                2 0.905 0.894 0.038 0.035
+## 10            FALSE  0.136 95296.43 94890.9     0.324                2 0.905 0.894 0.038 0.035
+## 11            FALSE  0.207 95296.43 94890.9     0.324                2 0.905 0.894 0.038 0.035
+## 12            FALSE  0.442 95296.43 94890.9     0.324                2 0.905 0.894 0.038 0.035
+## 13            FALSE  0.700 95296.43 94890.9     0.324                2 0.905 0.894 0.038 0.035
+## 14            FALSE  0.513 95296.43 94890.9     0.324                2 0.905 0.894 0.038 0.035
+## 15            FALSE  0.708 95296.43 94890.9     0.324                2 0.905 0.894 0.038 0.035
+## 16            FALSE  0.911 95296.43 94890.9     0.324                2 0.905 0.894 0.038 0.035
+## 17            FALSE  0.982 95296.43 94890.9     0.324                2 0.905 0.894 0.038 0.035
+## 18            FALSE  0.942 95296.43 94890.9     0.324                2 0.905 0.894 0.038 0.035
+## 19            FALSE  0.924 95296.43 94890.9     0.324                2 0.905 0.894 0.038 0.035
+## 20            FALSE  0.881 95296.43 94890.9     0.324                2 0.905 0.894 0.038 0.035
+## 21            FALSE  0.128 95296.43 94890.9     0.324                2 0.905 0.894 0.038 0.035
+## 22            FALSE  0.300 95296.43 94890.9     0.324                2 0.905 0.894 0.038 0.035
+## 23             TRUE  0.035 95296.43 94890.9     0.324                2 0.905 0.894 0.038 0.035
+## 24            FALSE  0.057 95296.43 94890.9     0.324                2 0.905 0.894 0.038 0.035
+## 25             TRUE  0.000 95296.43 94890.9     0.324                2 0.905 0.894 0.038 0.035
+## 26             TRUE  0.000 95296.43 94890.9     0.324                2 0.905 0.894 0.038 0.035</code></pre>
+</div>
+<div id="model-2f-removing-spa" class="section level3">
+<h3>Model 2f: removing spa</h3>
+<p>Analysis: BIC decreased a bit.</p>
+<pre><code>##    model_name                             lhs                                         rhs std.all std.lv
+## 1          2f subcomponent_self_efficacy_hope component_caring_families_and_relationships   0.327  0.327
+## 2          2f subcomponent_self_efficacy_hope                 component_cultural_identity   0.268  0.268
+## 3          2f subcomponent_self_efficacy_hope                                    unhoused   0.071  0.211
+## 4          2f subcomponent_self_efficacy_hope  opportunities_for_community_involvement_re   0.068  0.326
+## 5          2f subcomponent_self_efficacy_hope                          personal_safety_re   0.066  0.176
+## 6          2f subcomponent_self_efficacy_hope                               race_nh_black   0.058  0.158
+## 7          2f subcomponent_self_efficacy_hope                               race_nh_other   0.025  0.860
+## 8          2f subcomponent_self_efficacy_hope                                    is_adult   0.022  0.045
+## 9          2f subcomponent_self_efficacy_hope                                undocumented   0.013  0.062
+## 10         2f subcomponent_self_efficacy_hope                                race_nh_aian   0.012  0.085
+## 11         2f subcomponent_self_efficacy_hope                           high_poverty_area   0.005  0.013
+## 12         2f subcomponent_self_efficacy_hope                                race_nh_nhpi   0.000  0.003
+## 13         2f subcomponent_self_efficacy_hope                                   suspended  -0.002 -0.007
+## 14         2f subcomponent_self_efficacy_hope                            systems_impacted  -0.005 -0.014
+## 15         2f subcomponent_self_efficacy_hope                               race_nh_swana  -0.028 -0.290
+## 16         2f subcomponent_self_efficacy_hope                            race_nh_twoormor  -0.041 -0.238
+## 17         2f subcomponent_self_efficacy_hope                                 race_latinx  -0.057 -0.114
+## 18         2f subcomponent_self_efficacy_hope                               race_nh_asian  -0.139 -0.433
+## 19         2f subcomponent_self_efficacy_hope                              cishet_lgbtqia  -0.146 -0.349
+##    p_is_significant pvalue      bic      aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1              TRUE  0.000 95282.44 94919.92     0.321                2 0.905 0.893 0.044 0.041
+## 2              TRUE  0.000 95282.44 94919.92     0.321                2 0.905 0.893 0.044 0.041
+## 3              TRUE  0.000 95282.44 94919.92     0.321                2 0.905 0.893 0.044 0.041
+## 4              TRUE  0.000 95282.44 94919.92     0.321                2 0.905 0.893 0.044 0.041
+## 5              TRUE  0.000 95282.44 94919.92     0.321                2 0.905 0.893 0.044 0.041
+## 6              TRUE  0.016 95282.44 94919.92     0.321                2 0.905 0.893 0.044 0.041
+## 7             FALSE  0.125 95282.44 94919.92     0.321                2 0.905 0.893 0.044 0.041
+## 8             FALSE  0.206 95282.44 94919.92     0.321                2 0.905 0.893 0.044 0.041
+## 9             FALSE  0.477 95282.44 94919.92     0.321                2 0.905 0.893 0.044 0.041
+## 10            FALSE  0.511 95282.44 94919.92     0.321                2 0.905 0.893 0.044 0.041
+## 11            FALSE  0.786 95282.44 94919.92     0.321                2 0.905 0.893 0.044 0.041
+## 12            FALSE  0.989 95282.44 94919.92     0.321                2 0.905 0.893 0.044 0.041
+## 13            FALSE  0.896 95282.44 94919.92     0.321                2 0.905 0.893 0.044 0.041
+## 14            FALSE  0.802 95282.44 94919.92     0.321                2 0.905 0.893 0.044 0.041
+## 15            FALSE  0.106 95282.44 94919.92     0.321                2 0.905 0.893 0.044 0.041
+## 16             TRUE  0.028 95282.44 94919.92     0.321                2 0.905 0.893 0.044 0.041
+## 17             TRUE  0.042 95282.44 94919.92     0.321                2 0.905 0.893 0.044 0.041
+## 18             TRUE  0.000 95282.44 94919.92     0.321                2 0.905 0.893 0.044 0.041
+## 19             TRUE  0.000 95282.44 94919.92     0.321                2 0.905 0.893 0.044 0.041</code></pre>
+</div>
+<div id="model-2f.1-adding-sparks-spa-continuous-poverty-removing-is_adult" class="section level3">
+<h3>Model 2f.1: adding sparks, SPA, continuous poverty; removing
+is_adult</h3>
+<p>Analysis: sparks is statistically significant. perc_below_200_fpl and
+spa are not statistically significant. BIC decreased.</p>
+<pre><code>##    model_name                             lhs                                         rhs std.all std.lv
+## 1        2f.1 subcomponent_self_efficacy_hope component_caring_families_and_relationships   0.308  0.308
+## 2        2f.1 subcomponent_self_efficacy_hope                 component_cultural_identity   0.237  0.237
+## 3        2f.1 subcomponent_self_efficacy_hope                                      sparks   0.204  0.463
+## 4        2f.1 subcomponent_self_efficacy_hope                                    unhoused   0.066  0.194
+## 5        2f.1 subcomponent_self_efficacy_hope                          personal_safety_re   0.065  0.175
+## 6        2f.1 subcomponent_self_efficacy_hope  opportunities_for_community_involvement_re   0.064  0.306
+## 7        2f.1 subcomponent_self_efficacy_hope                               race_nh_black   0.056  0.151
+## 8        2f.1 subcomponent_self_efficacy_hope                               race_nh_other   0.036  1.207
+## 9        2f.1 subcomponent_self_efficacy_hope                                       spa_2   0.032  0.095
+## 10       2f.1 subcomponent_self_efficacy_hope                                       spa_4   0.030  0.086
+## 11       2f.1 subcomponent_self_efficacy_hope                                       spa_7   0.028  0.093
+## 12       2f.1 subcomponent_self_efficacy_hope                                race_nh_aian   0.016  0.117
+## 13       2f.1 subcomponent_self_efficacy_hope                          perc_below_200_fpl   0.015  0.001
+## 14       2f.1 subcomponent_self_efficacy_hope                                       spa_6   0.013  0.029
+## 15       2f.1 subcomponent_self_efficacy_hope                                   suspended   0.004  0.010
+## 16       2f.1 subcomponent_self_efficacy_hope                                       spa_8   0.003  0.008
+## 17       2f.1 subcomponent_self_efficacy_hope                                undocumented   0.002  0.012
+## 18       2f.1 subcomponent_self_efficacy_hope                                       spa_1   0.001  0.006
+## 19       2f.1 subcomponent_self_efficacy_hope                                race_nh_nhpi   0.001  0.013
+## 20       2f.1 subcomponent_self_efficacy_hope                            systems_impacted  -0.007 -0.019
+## 21       2f.1 subcomponent_self_efficacy_hope                                       spa_3  -0.019 -0.061
+## 22       2f.1 subcomponent_self_efficacy_hope                               race_nh_swana  -0.024 -0.255
+## 23       2f.1 subcomponent_self_efficacy_hope                            race_nh_twoormor  -0.037 -0.216
+## 24       2f.1 subcomponent_self_efficacy_hope                                 race_latinx  -0.050 -0.100
+## 25       2f.1 subcomponent_self_efficacy_hope                              cishet_lgbtqia  -0.137 -0.327
+## 26       2f.1 subcomponent_self_efficacy_hope                               race_nh_asian  -0.137 -0.428
+##    p_is_significant pvalue      bic      aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1              TRUE  0.000 94247.21 93841.68     0.329                2 0.895 0.882 0.041 0.041
+## 2              TRUE  0.000 94247.21 93841.68     0.329                2 0.895 0.882 0.041 0.041
+## 3              TRUE  0.000 94247.21 93841.68     0.329                2 0.895 0.882 0.041 0.041
+## 4              TRUE  0.001 94247.21 93841.68     0.329                2 0.895 0.882 0.041 0.041
+## 5              TRUE  0.000 94247.21 93841.68     0.329                2 0.895 0.882 0.041 0.041
+## 6              TRUE  0.000 94247.21 93841.68     0.329                2 0.895 0.882 0.041 0.041
+## 7              TRUE  0.022 94247.21 93841.68     0.329                2 0.895 0.882 0.041 0.041
+## 8              TRUE  0.033 94247.21 93841.68     0.329                2 0.895 0.882 0.041 0.041
+## 9             FALSE  0.324 94247.21 93841.68     0.329                2 0.895 0.882 0.041 0.041
+## 10            FALSE  0.390 94247.21 93841.68     0.329                2 0.895 0.882 0.041 0.041
+## 11            FALSE  0.373 94247.21 93841.68     0.329                2 0.895 0.882 0.041 0.041
+## 12            FALSE  0.366 94247.21 93841.68     0.329                2 0.895 0.882 0.041 0.041
+## 13            FALSE  0.505 94247.21 93841.68     0.329                2 0.895 0.882 0.041 0.041
+## 14            FALSE  0.775 94247.21 93841.68     0.329                2 0.895 0.882 0.041 0.041
+## 15            FALSE  0.848 94247.21 93841.68     0.329                2 0.895 0.882 0.041 0.041
+## 16            FALSE  0.935 94247.21 93841.68     0.329                2 0.895 0.882 0.041 0.041
+## 17            FALSE  0.892 94247.21 93841.68     0.329                2 0.895 0.882 0.041 0.041
+## 18            FALSE  0.956 94247.21 93841.68     0.329                2 0.895 0.882 0.041 0.041
+## 19            FALSE  0.945 94247.21 93841.68     0.329                2 0.895 0.882 0.041 0.041
+## 20            FALSE  0.738 94247.21 93841.68     0.329                2 0.895 0.882 0.041 0.041
+## 21            FALSE  0.540 94247.21 93841.68     0.329                2 0.895 0.882 0.041 0.041
+## 22            FALSE  0.156 94247.21 93841.68     0.329                2 0.895 0.882 0.041 0.041
+## 23            FALSE  0.046 94247.21 93841.68     0.329                2 0.895 0.882 0.041 0.041
+## 24            FALSE  0.077 94247.21 93841.68     0.329                2 0.895 0.882 0.041 0.041
+## 25             TRUE  0.000 94247.21 93841.68     0.329                2 0.895 0.882 0.041 0.041
+## 26             TRUE  0.000 94247.21 93841.68     0.329                2 0.895 0.882 0.041 0.041</code></pre>
+</div>
+<div id="model-2f.2-removing-spa" class="section level3">
+<h3>Model 2f.2: removing spa</h3>
+<p>Analysis: BIC decreased. perc_below_200_fpl is not statistically
+significant.</p>
+<pre><code>##    model_name                             lhs                                         rhs std.all std.lv
+## 1        2f.2 subcomponent_self_efficacy_hope component_caring_families_and_relationships   0.307  0.307
+## 2        2f.2 subcomponent_self_efficacy_hope                 component_cultural_identity   0.238  0.238
+## 3        2f.2 subcomponent_self_efficacy_hope                                      sparks   0.206  0.466
+## 4        2f.2 subcomponent_self_efficacy_hope                                    unhoused   0.066  0.195
+## 5        2f.2 subcomponent_self_efficacy_hope  opportunities_for_community_involvement_re   0.065  0.311
+## 6        2f.2 subcomponent_self_efficacy_hope                          personal_safety_re   0.063  0.170
+## 7        2f.2 subcomponent_self_efficacy_hope                               race_nh_black   0.051  0.139
+## 8        2f.2 subcomponent_self_efficacy_hope                               race_nh_other   0.036  1.229
+## 9        2f.2 subcomponent_self_efficacy_hope                          perc_below_200_fpl   0.017  0.001
+## 10       2f.2 subcomponent_self_efficacy_hope                                race_nh_aian   0.015  0.108
+## 11       2f.2 subcomponent_self_efficacy_hope                                   suspended   0.004  0.012
+## 12       2f.2 subcomponent_self_efficacy_hope                                undocumented   0.003  0.014
+## 13       2f.2 subcomponent_self_efficacy_hope                                race_nh_nhpi   0.001  0.008
+## 14       2f.2 subcomponent_self_efficacy_hope                            systems_impacted  -0.010 -0.027
+## 15       2f.2 subcomponent_self_efficacy_hope                               race_nh_swana  -0.026 -0.267
+## 16       2f.2 subcomponent_self_efficacy_hope                            race_nh_twoormor  -0.038 -0.224
+## 17       2f.2 subcomponent_self_efficacy_hope                                 race_latinx  -0.052 -0.105
+## 18       2f.2 subcomponent_self_efficacy_hope                              cishet_lgbtqia  -0.137 -0.328
+## 19       2f.2 subcomponent_self_efficacy_hope                               race_nh_asian  -0.140 -0.439
+##    p_is_significant pvalue     bic      aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1              TRUE  0.000 94197.1 93834.58     0.326                2 0.895 0.882 0.047 0.049
+## 2              TRUE  0.000 94197.1 93834.58     0.326                2 0.895 0.882 0.047 0.049
+## 3              TRUE  0.000 94197.1 93834.58     0.326                2 0.895 0.882 0.047 0.049
+## 4              TRUE  0.001 94197.1 93834.58     0.326                2 0.895 0.882 0.047 0.049
+## 5              TRUE  0.000 94197.1 93834.58     0.326                2 0.895 0.882 0.047 0.049
+## 6              TRUE  0.000 94197.1 93834.58     0.326                2 0.895 0.882 0.047 0.049
+## 7              TRUE  0.034 94197.1 93834.58     0.326                2 0.895 0.882 0.047 0.049
+## 8              TRUE  0.030 94197.1 93834.58     0.326                2 0.895 0.882 0.047 0.049
+## 9             FALSE  0.339 94197.1 93834.58     0.326                2 0.895 0.882 0.047 0.049
+## 10            FALSE  0.405 94197.1 93834.58     0.326                2 0.895 0.882 0.047 0.049
+## 11            FALSE  0.812 94197.1 93834.58     0.326                2 0.895 0.882 0.047 0.049
+## 12            FALSE  0.875 94197.1 93834.58     0.326                2 0.895 0.882 0.047 0.049
+## 13            FALSE  0.968 94197.1 93834.58     0.326                2 0.895 0.882 0.047 0.049
+## 14            FALSE  0.635 94197.1 93834.58     0.326                2 0.895 0.882 0.047 0.049
+## 15            FALSE  0.136 94197.1 93834.58     0.326                2 0.895 0.882 0.047 0.049
+## 16             TRUE  0.038 94197.1 93834.58     0.326                2 0.895 0.882 0.047 0.049
+## 17            FALSE  0.061 94197.1 93834.58     0.326                2 0.895 0.882 0.047 0.049
+## 18             TRUE  0.000 94197.1 93834.58     0.326                2 0.895 0.882 0.047 0.049
+## 19             TRUE  0.000 94197.1 93834.58     0.326                2 0.895 0.882 0.047 0.049</code></pre>
+</div>
+<div id="model-2f.3-removing-perc_below_200_fpl" class="section level3">
+<h3>Model 2f.3: removing perc_below_200_fpl</h3>
+<p>Analysis: BIC increased.</p>
+<pre><code>##    model_name                             lhs                                         rhs std.all std.lv
+## 1        2f.3 subcomponent_self_efficacy_hope component_caring_families_and_relationships   0.305  0.305
+## 2        2f.3 subcomponent_self_efficacy_hope                 component_cultural_identity   0.239  0.239
+## 3        2f.3 subcomponent_self_efficacy_hope                                      sparks   0.206  0.466
+## 4        2f.3 subcomponent_self_efficacy_hope                                    unhoused   0.067  0.197
+## 5        2f.3 subcomponent_self_efficacy_hope  opportunities_for_community_involvement_re   0.065  0.310
+## 6        2f.3 subcomponent_self_efficacy_hope                          personal_safety_re   0.061  0.164
+## 7        2f.3 subcomponent_self_efficacy_hope                               race_nh_black   0.052  0.143
+## 8        2f.3 subcomponent_self_efficacy_hope                               race_nh_other   0.037  1.242
+## 9        2f.3 subcomponent_self_efficacy_hope                                race_nh_aian   0.015  0.107
+## 10       2f.3 subcomponent_self_efficacy_hope                                   suspended   0.004  0.010
+## 11       2f.3 subcomponent_self_efficacy_hope                                undocumented   0.004  0.017
+## 12       2f.3 subcomponent_self_efficacy_hope                                race_nh_nhpi   0.001  0.006
+## 13       2f.3 subcomponent_self_efficacy_hope                            systems_impacted  -0.010 -0.028
+## 14       2f.3 subcomponent_self_efficacy_hope                               race_nh_swana  -0.027 -0.276
+## 15       2f.3 subcomponent_self_efficacy_hope                            race_nh_twoormor  -0.039 -0.229
+## 16       2f.3 subcomponent_self_efficacy_hope                                 race_latinx  -0.049 -0.098
+## 17       2f.3 subcomponent_self_efficacy_hope                              cishet_lgbtqia  -0.138 -0.330
+## 18       2f.3 subcomponent_self_efficacy_hope                               race_nh_asian  -0.142 -0.443
+##    p_is_significant pvalue     bic      aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1              TRUE  0.000 95115.1 94758.72     0.326                2 0.895 0.882 0.047 0.051
+## 2              TRUE  0.000 95115.1 94758.72     0.326                2 0.895 0.882 0.047 0.051
+## 3              TRUE  0.000 95115.1 94758.72     0.326                2 0.895 0.882 0.047 0.051
+## 4              TRUE  0.001 95115.1 94758.72     0.326                2 0.895 0.882 0.047 0.051
+## 5              TRUE  0.000 95115.1 94758.72     0.326                2 0.895 0.882 0.047 0.051
+## 6              TRUE  0.000 95115.1 94758.72     0.326                2 0.895 0.882 0.047 0.051
+## 7              TRUE  0.029 95115.1 94758.72     0.326                2 0.895 0.882 0.047 0.051
+## 8              TRUE  0.028 95115.1 94758.72     0.326                2 0.895 0.882 0.047 0.051
+## 9             FALSE  0.410 95115.1 94758.72     0.326                2 0.895 0.882 0.047 0.051
+## 10            FALSE  0.840 95115.1 94758.72     0.326                2 0.895 0.882 0.047 0.051
+## 11            FALSE  0.847 95115.1 94758.72     0.326                2 0.895 0.882 0.047 0.051
+## 12            FALSE  0.976 95115.1 94758.72     0.326                2 0.895 0.882 0.047 0.051
+## 13            FALSE  0.626 95115.1 94758.72     0.326                2 0.895 0.882 0.047 0.051
+## 14            FALSE  0.122 95115.1 94758.72     0.326                2 0.895 0.882 0.047 0.051
+## 15             TRUE  0.034 95115.1 94758.72     0.326                2 0.895 0.882 0.047 0.051
+## 16            FALSE  0.078 95115.1 94758.72     0.326                2 0.895 0.882 0.047 0.051
+## 17             TRUE  0.000 95115.1 94758.72     0.326                2 0.895 0.882 0.047 0.051
+## 18             TRUE  0.000 95115.1 94758.72     0.326                2 0.895 0.882 0.047 0.051</code></pre>
+</div>
+<div id="model-2f.4-adding-perc_below_200_fpl-back-removing-suspended" class="section level3">
+<h3>Model 2f.4: adding perc_below_200_fpl back, removing suspended</h3>
+<p>Analysis: BIC increased compared to model 2f.2.</p>
+<pre><code>##    model_name                             lhs                                         rhs std.all std.lv
+## 1        2f.4 subcomponent_self_efficacy_hope component_caring_families_and_relationships   0.307  0.307
+## 2        2f.4 subcomponent_self_efficacy_hope                 component_cultural_identity   0.238  0.238
+## 3        2f.4 subcomponent_self_efficacy_hope                                      sparks   0.206  0.466
+## 4        2f.4 subcomponent_self_efficacy_hope                                    unhoused   0.067  0.197
+## 5        2f.4 subcomponent_self_efficacy_hope  opportunities_for_community_involvement_re   0.066  0.312
+## 6        2f.4 subcomponent_self_efficacy_hope                          personal_safety_re   0.063  0.170
+## 7        2f.4 subcomponent_self_efficacy_hope                               race_nh_black   0.051  0.140
+## 8        2f.4 subcomponent_self_efficacy_hope                               race_nh_other   0.036  1.232
+## 9        2f.4 subcomponent_self_efficacy_hope                          perc_below_200_fpl   0.017  0.001
+## 10       2f.4 subcomponent_self_efficacy_hope                                race_nh_aian   0.015  0.107
+## 11       2f.4 subcomponent_self_efficacy_hope                                undocumented   0.004  0.018
+## 12       2f.4 subcomponent_self_efficacy_hope                                race_nh_nhpi   0.001  0.008
+## 13       2f.4 subcomponent_self_efficacy_hope                            systems_impacted  -0.008 -0.023
+## 14       2f.4 subcomponent_self_efficacy_hope                               race_nh_swana  -0.026 -0.266
+## 15       2f.4 subcomponent_self_efficacy_hope                            race_nh_twoormor  -0.038 -0.224
+## 16       2f.4 subcomponent_self_efficacy_hope                                 race_latinx  -0.052 -0.105
+## 17       2f.4 subcomponent_self_efficacy_hope                              cishet_lgbtqia  -0.137 -0.328
+## 18       2f.4 subcomponent_self_efficacy_hope                               race_nh_asian  -0.140 -0.439
+##    p_is_significant pvalue      bic      aic r_squared fit_measures_met   cfi   tli rmsea srmr
+## 1              TRUE  0.000 94279.32 93922.94     0.326                2 0.895 0.882 0.048 0.05
+## 2              TRUE  0.000 94279.32 93922.94     0.326                2 0.895 0.882 0.048 0.05
+## 3              TRUE  0.000 94279.32 93922.94     0.326                2 0.895 0.882 0.048 0.05
+## 4              TRUE  0.001 94279.32 93922.94     0.326                2 0.895 0.882 0.048 0.05
+## 5              TRUE  0.000 94279.32 93922.94     0.326                2 0.895 0.882 0.048 0.05
+## 6              TRUE  0.000 94279.32 93922.94     0.326                2 0.895 0.882 0.048 0.05
+## 7              TRUE  0.033 94279.32 93922.94     0.326                2 0.895 0.882 0.048 0.05
+## 8              TRUE  0.029 94279.32 93922.94     0.326                2 0.895 0.882 0.048 0.05
+## 9             FALSE  0.352 94279.32 93922.94     0.326                2 0.895 0.882 0.048 0.05
+## 10            FALSE  0.410 94279.32 93922.94     0.326                2 0.895 0.882 0.048 0.05
+## 11            FALSE  0.833 94279.32 93922.94     0.326                2 0.895 0.882 0.048 0.05
+## 12            FALSE  0.968 94279.32 93922.94     0.326                2 0.895 0.882 0.048 0.05
+## 13            FALSE  0.684 94279.32 93922.94     0.326                2 0.895 0.882 0.048 0.05
+## 14            FALSE  0.137 94279.32 93922.94     0.326                2 0.895 0.882 0.048 0.05
+## 15             TRUE  0.038 94279.32 93922.94     0.326                2 0.895 0.882 0.048 0.05
+## 16            FALSE  0.061 94279.32 93922.94     0.326                2 0.895 0.882 0.048 0.05
+## 17             TRUE  0.000 94279.32 93922.94     0.326                2 0.895 0.882 0.048 0.05
+## 18             TRUE  0.000 94279.32 93922.94     0.326                2 0.895 0.882 0.048 0.05</code></pre>
+</div>
+<div id="model-2f.5-adding-suspended-back-removing-systems_impacted" class="section level3">
+<h3>Model 2f.5: adding suspended back, removing systems_impacted</h3>
+<p>Analysis: BIC increased compared to model 2f.2.</p>
+<pre><code>##    model_name                             lhs                                         rhs std.all std.lv
+## 1        2f.5 subcomponent_self_efficacy_hope component_caring_families_and_relationships   0.307  0.307
+## 2        2f.5 subcomponent_self_efficacy_hope                 component_cultural_identity   0.238  0.238
+## 3        2f.5 subcomponent_self_efficacy_hope                                      sparks   0.206  0.466
+## 4        2f.5 subcomponent_self_efficacy_hope  opportunities_for_community_involvement_re   0.065  0.311
+## 5        2f.5 subcomponent_self_efficacy_hope                          personal_safety_re   0.063  0.170
+## 6        2f.5 subcomponent_self_efficacy_hope                                    unhoused   0.061  0.181
+## 7        2f.5 subcomponent_self_efficacy_hope                               race_nh_black   0.051  0.138
+## 8        2f.5 subcomponent_self_efficacy_hope                               race_nh_other   0.037  1.238
+## 9        2f.5 subcomponent_self_efficacy_hope                          perc_below_200_fpl   0.017  0.001
+## 10       2f.5 subcomponent_self_efficacy_hope                                race_nh_aian   0.015  0.109
+## 11       2f.5 subcomponent_self_efficacy_hope                                   suspended   0.003  0.009
+## 12       2f.5 subcomponent_self_efficacy_hope                                undocumented   0.002  0.009
+## 13       2f.5 subcomponent_self_efficacy_hope                                race_nh_nhpi   0.001  0.010
+## 14       2f.5 subcomponent_self_efficacy_hope                               race_nh_swana  -0.025 -0.265
+## 15       2f.5 subcomponent_self_efficacy_hope                            race_nh_twoormor  -0.038 -0.224
+## 16       2f.5 subcomponent_self_efficacy_hope                                 race_latinx  -0.052 -0.104
+## 17       2f.5 subcomponent_self_efficacy_hope                              cishet_lgbtqia  -0.137 -0.328
+## 18       2f.5 subcomponent_self_efficacy_hope                               race_nh_asian  -0.140 -0.437
+##    p_is_significant pvalue      bic     aic r_squared fit_measures_met   cfi   tli rmsea srmr
+## 1              TRUE  0.000 94285.78 93929.4     0.326                2 0.895 0.881 0.048 0.05
+## 2              TRUE  0.000 94285.78 93929.4     0.326                2 0.895 0.881 0.048 0.05
+## 3              TRUE  0.000 94285.78 93929.4     0.326                2 0.895 0.881 0.048 0.05
+## 4              TRUE  0.000 94285.78 93929.4     0.326                2 0.895 0.881 0.048 0.05
+## 5              TRUE  0.000 94285.78 93929.4     0.326                2 0.895 0.881 0.048 0.05
+## 6              TRUE  0.001 94285.78 93929.4     0.326                2 0.895 0.881 0.048 0.05
+## 7              TRUE  0.035 94285.78 93929.4     0.326                2 0.895 0.881 0.048 0.05
+## 8              TRUE  0.029 94285.78 93929.4     0.326                2 0.895 0.881 0.048 0.05
+## 9             FALSE  0.327 94285.78 93929.4     0.326                2 0.895 0.881 0.048 0.05
+## 10            FALSE  0.403 94285.78 93929.4     0.326                2 0.895 0.881 0.048 0.05
+## 11            FALSE  0.859 94285.78 93929.4     0.326                2 0.895 0.881 0.048 0.05
+## 12            FALSE  0.920 94285.78 93929.4     0.326                2 0.895 0.881 0.048 0.05
+## 13            FALSE  0.960 94285.78 93929.4     0.326                2 0.895 0.881 0.048 0.05
+## 14            FALSE  0.138 94285.78 93929.4     0.326                2 0.895 0.881 0.048 0.05
+## 15             TRUE  0.038 94285.78 93929.4     0.326                2 0.895 0.881 0.048 0.05
+## 16            FALSE  0.063 94285.78 93929.4     0.326                2 0.895 0.881 0.048 0.05
+## 17             TRUE  0.000 94285.78 93929.4     0.326                2 0.895 0.881 0.048 0.05
+## 18             TRUE  0.000 94285.78 93929.4     0.326                2 0.895 0.881 0.048 0.05</code></pre>
+</div>
+<div id="model-2f.6-final-adding-systems_impacted-back-removing-undocumented" class="section level3">
+<h3>Model 2f.6: FINAL, adding systems_impacted back, removing
+undocumented</h3>
+<p>Analysis: BIC decreased compared to model 2f.2.</p>
+<pre><code>##    model_name                             lhs                                         rhs std.all std.lv
+## 1        2f.6 subcomponent_self_efficacy_hope component_caring_families_and_relationships   0.307  0.307
+## 2        2f.6 subcomponent_self_efficacy_hope                 component_cultural_identity   0.238  0.238
+## 3        2f.6 subcomponent_self_efficacy_hope                                      sparks   0.206  0.467
+## 4        2f.6 subcomponent_self_efficacy_hope                                    unhoused   0.067  0.197
+## 5        2f.6 subcomponent_self_efficacy_hope  opportunities_for_community_involvement_re   0.065  0.311
+## 6        2f.6 subcomponent_self_efficacy_hope                          personal_safety_re   0.063  0.169
+## 7        2f.6 subcomponent_self_efficacy_hope                               race_nh_black   0.051  0.139
+## 8        2f.6 subcomponent_self_efficacy_hope                               race_nh_other   0.036  1.229
+## 9        2f.6 subcomponent_self_efficacy_hope                          perc_below_200_fpl   0.017  0.001
+## 10       2f.6 subcomponent_self_efficacy_hope                                race_nh_aian   0.015  0.109
+## 11       2f.6 subcomponent_self_efficacy_hope                                   suspended   0.004  0.012
+## 12       2f.6 subcomponent_self_efficacy_hope                                race_nh_nhpi   0.001  0.009
+## 13       2f.6 subcomponent_self_efficacy_hope                            systems_impacted  -0.009 -0.025
+## 14       2f.6 subcomponent_self_efficacy_hope                               race_nh_swana  -0.026 -0.267
+## 15       2f.6 subcomponent_self_efficacy_hope                            race_nh_twoormor  -0.038 -0.225
+## 16       2f.6 subcomponent_self_efficacy_hope                                 race_latinx  -0.052 -0.105
+## 17       2f.6 subcomponent_self_efficacy_hope                              cishet_lgbtqia  -0.137 -0.328
+## 18       2f.6 subcomponent_self_efficacy_hope                               race_nh_asian  -0.140 -0.439
+##    p_is_significant pvalue      bic      aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1              TRUE  0.000 94046.63 93690.26     0.326                2 0.895 0.882 0.048 0.051
+## 2              TRUE  0.000 94046.63 93690.26     0.326                2 0.895 0.882 0.048 0.051
+## 3              TRUE  0.000 94046.63 93690.26     0.326                2 0.895 0.882 0.048 0.051
+## 4              TRUE  0.001 94046.63 93690.26     0.326                2 0.895 0.882 0.048 0.051
+## 5              TRUE  0.000 94046.63 93690.26     0.326                2 0.895 0.882 0.048 0.051
+## 6              TRUE  0.000 94046.63 93690.26     0.326                2 0.895 0.882 0.048 0.051
+## 7              TRUE  0.035 94046.63 93690.26     0.326                2 0.895 0.882 0.048 0.051
+## 8              TRUE  0.030 94046.63 93690.26     0.326                2 0.895 0.882 0.048 0.051
+## 9             FALSE  0.338 94046.63 93690.26     0.326                2 0.895 0.882 0.048 0.051
+## 10            FALSE  0.402 94046.63 93690.26     0.326                2 0.895 0.882 0.048 0.051
+## 11            FALSE  0.814 94046.63 93690.26     0.326                2 0.895 0.882 0.048 0.051
+## 12            FALSE  0.964 94046.63 93690.26     0.326                2 0.895 0.882 0.048 0.051
+## 13            FALSE  0.655 94046.63 93690.26     0.326                2 0.895 0.882 0.048 0.051
+## 14            FALSE  0.136 94046.63 93690.26     0.326                2 0.895 0.882 0.048 0.051
+## 15             TRUE  0.037 94046.63 93690.26     0.326                2 0.895 0.882 0.048 0.051
+## 16            FALSE  0.061 94046.63 93690.26     0.326                2 0.895 0.882 0.048 0.051
+## 17             TRUE  0.000 94046.63 93690.26     0.326                2 0.895 0.882 0.048 0.051
+## 18             TRUE  0.000 94046.63 93690.26     0.326                2 0.895 0.882 0.048 0.051</code></pre>
+</div>
+<div id="model-2f.8-final-same-as-model-2f.6-but-only-on-cisgender-respondents" class="section level3">
+<h3>Model 2f.8: FINAL, same as model 2f.6 but only on cisgender
+respondents</h3>
+<p>Analysis: cisgender_mf is stat sig, but Black and Latinx are no
+longer stat sig as compared to model 2f.6.</p>
+<pre><code>##    model_name                             lhs                                         rhs std.all std.lv
+## 1        2f.8 subcomponent_self_efficacy_hope component_caring_families_and_relationships   0.304  0.304
+## 2        2f.8 subcomponent_self_efficacy_hope                 component_cultural_identity   0.239  0.239
+## 3        2f.8 subcomponent_self_efficacy_hope                                      sparks   0.215  0.491
+## 4        2f.8 subcomponent_self_efficacy_hope                                    unhoused   0.081  0.242
+## 5        2f.8 subcomponent_self_efficacy_hope  opportunities_for_community_involvement_re   0.067  0.331
+## 6        2f.8 subcomponent_self_efficacy_hope                          personal_safety_re   0.057  0.150
+## 7        2f.8 subcomponent_self_efficacy_hope                               race_nh_black   0.041  0.112
+## 8        2f.8 subcomponent_self_efficacy_hope                               race_nh_other   0.035  1.135
+## 9        2f.8 subcomponent_self_efficacy_hope                          perc_below_200_fpl   0.028  0.002
+## 10       2f.8 subcomponent_self_efficacy_hope                                race_nh_aian   0.014  0.104
+## 11       2f.8 subcomponent_self_efficacy_hope                                   suspended   0.005  0.015
+## 12       2f.8 subcomponent_self_efficacy_hope                                race_nh_nhpi  -0.009 -0.101
+## 13       2f.8 subcomponent_self_efficacy_hope                            systems_impacted  -0.022 -0.064
+## 14       2f.8 subcomponent_self_efficacy_hope                               race_nh_swana  -0.026 -0.284
+## 15       2f.8 subcomponent_self_efficacy_hope                            race_nh_twoormor  -0.036 -0.216
+## 16       2f.8 subcomponent_self_efficacy_hope                                 race_latinx  -0.050 -0.100
+## 17       2f.8 subcomponent_self_efficacy_hope                                cisgender_mf  -0.065 -0.133
+## 18       2f.8 subcomponent_self_efficacy_hope                              cishet_lgbtqia  -0.086 -0.233
+## 19       2f.8 subcomponent_self_efficacy_hope                               race_nh_asian  -0.148 -0.452
+##    p_is_significant pvalue      bic     aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1              TRUE  0.000 84641.96 84285.8     0.324                2 0.894 0.881 0.047 0.048
+## 2              TRUE  0.000 84641.96 84285.8     0.324                2 0.894 0.881 0.047 0.048
+## 3              TRUE  0.000 84641.96 84285.8     0.324                2 0.894 0.881 0.047 0.048
+## 4              TRUE  0.000 84641.96 84285.8     0.324                2 0.894 0.881 0.047 0.048
+## 5              TRUE  0.000 84641.96 84285.8     0.324                2 0.894 0.881 0.047 0.048
+## 6              TRUE  0.002 84641.96 84285.8     0.324                2 0.894 0.881 0.047 0.048
+## 7             FALSE  0.123 84641.96 84285.8     0.324                2 0.894 0.881 0.047 0.048
+## 8             FALSE  0.046 84641.96 84285.8     0.324                2 0.894 0.881 0.047 0.048
+## 9             FALSE  0.141 84641.96 84285.8     0.324                2 0.894 0.881 0.047 0.048
+## 10            FALSE  0.464 84641.96 84285.8     0.324                2 0.894 0.881 0.047 0.048
+## 11            FALSE  0.783 84641.96 84285.8     0.324                2 0.894 0.881 0.047 0.048
+## 12            FALSE  0.620 84641.96 84285.8     0.324                2 0.894 0.881 0.047 0.048
+## 13            FALSE  0.296 84641.96 84285.8     0.324                2 0.894 0.881 0.047 0.048
+## 14            FALSE  0.148 84641.96 84285.8     0.324                2 0.894 0.881 0.047 0.048
+## 15            FALSE  0.070 84641.96 84285.8     0.324                2 0.894 0.881 0.047 0.048
+## 16            FALSE  0.114 84641.96 84285.8     0.324                2 0.894 0.881 0.047 0.048
+## 17             TRUE  0.000 84641.96 84285.8     0.324                2 0.894 0.881 0.047 0.048
+## 18             TRUE  0.000 84641.96 84285.8     0.324                2 0.894 0.881 0.047 0.048
+## 19             TRUE  0.000 84641.96 84285.8     0.324                2 0.894 0.881 0.047 0.048</code></pre>
+<div id="create-postgres-table-for-2f.6-and-2f.8" class="section level4">
+<h4>Create postgres table for 2f.6 and 2f.8</h4>
+</div>
+</div>
+<div id="model-2f.7-removing-suspended" class="section level3">
+<h3>Model 2f.7: removing suspended</h3>
+<p>Analysis: BIC decreased. Therefore, amongst the “f” models, model
+2f.6 has the lowest BIC. However, model 2f.1 is the only “f” model that
+meets 2 fit measures.</p>
+<pre><code>##    model_name                             lhs                                         rhs std.all std.lv
+## 1        2f.7 subcomponent_self_efficacy_hope component_caring_families_and_relationships   0.248  0.248
+## 2        2f.7 subcomponent_self_efficacy_hope                 component_cultural_identity   0.229  0.229
+## 3        2f.7 subcomponent_self_efficacy_hope                                      sparks   0.204  0.461
+## 4        2f.7 subcomponent_self_efficacy_hope     opportunities_for_community_involvement   0.162  0.183
+## 5        2f.7 subcomponent_self_efficacy_hope                                    unhoused   0.071  0.211
+## 6        2f.7 subcomponent_self_efficacy_hope                               race_nh_black   0.057  0.154
+## 7        2f.7 subcomponent_self_efficacy_hope                             personal_safety   0.042  0.037
+## 8        2f.7 subcomponent_self_efficacy_hope                               race_nh_other   0.040  1.368
+## 9        2f.7 subcomponent_self_efficacy_hope                          perc_below_200_fpl   0.021  0.002
+## 10       2f.7 subcomponent_self_efficacy_hope                                race_nh_aian   0.017  0.126
+## 11       2f.7 subcomponent_self_efficacy_hope                                race_nh_nhpi   0.003  0.032
+## 12       2f.7 subcomponent_self_efficacy_hope                            systems_impacted  -0.006 -0.017
+## 13       2f.7 subcomponent_self_efficacy_hope                               race_nh_swana  -0.027 -0.282
+## 14       2f.7 subcomponent_self_efficacy_hope                                 race_latinx  -0.043 -0.087
+## 15       2f.7 subcomponent_self_efficacy_hope                            race_nh_twoormor  -0.044 -0.259
+## 16       2f.7 subcomponent_self_efficacy_hope                               race_nh_asian  -0.143 -0.446
+## 17       2f.7 subcomponent_self_efficacy_hope                              cishet_lgbtqia  -0.143 -0.343
+##    p_is_significant pvalue      bic      aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1              TRUE  0.000 93579.52 93229.29     0.304                1 0.857 0.838 0.058 0.069
+## 2              TRUE  0.000 93579.52 93229.29     0.304                1 0.857 0.838 0.058 0.069
+## 3              TRUE  0.000 93579.52 93229.29     0.304                1 0.857 0.838 0.058 0.069
+## 4              TRUE  0.000 93579.52 93229.29     0.304                1 0.857 0.838 0.058 0.069
+## 5              TRUE  0.000 93579.52 93229.29     0.304                1 0.857 0.838 0.058 0.069
+## 6              TRUE  0.020 93579.52 93229.29     0.304                1 0.857 0.838 0.058 0.069
+## 7              TRUE  0.019 93579.52 93229.29     0.304                1 0.857 0.838 0.058 0.069
+## 8              TRUE  0.017 93579.52 93229.29     0.304                1 0.857 0.838 0.058 0.069
+## 9             FALSE  0.252 93579.52 93229.29     0.304                1 0.857 0.838 0.058 0.069
+## 10            FALSE  0.339 93579.52 93229.29     0.304                1 0.857 0.838 0.058 0.069
+## 11            FALSE  0.870 93579.52 93229.29     0.304                1 0.857 0.838 0.058 0.069
+## 12            FALSE  0.770 93579.52 93229.29     0.304                1 0.857 0.838 0.058 0.069
+## 13            FALSE  0.119 93579.52 93229.29     0.304                1 0.857 0.838 0.058 0.069
+## 14            FALSE  0.126 93579.52 93229.29     0.304                1 0.857 0.838 0.058 0.069
+## 15             TRUE  0.018 93579.52 93229.29     0.304                1 0.857 0.838 0.058 0.069
+## 16             TRUE  0.000 93579.52 93229.29     0.304                1 0.857 0.838 0.058 0.069
+## 17             TRUE  0.000 93579.52 93229.29     0.304                1 0.857 0.838 0.058 0.069</code></pre>
+</div>
+<div id="model-2g-adding-secondary-variables-disconnected-and-arrested-to-model-2f.6" class="section level3">
+<h3>Model 2g: adding secondary variables disconnected and arrested to
+model 2f.6</h3>
+<p>Analysis: BIC decreased.</p>
+<pre><code>##    model_name                             lhs                                         rhs std.all std.lv
+## 1          2g subcomponent_self_efficacy_hope component_caring_families_and_relationships   0.249  0.249
+## 2          2g subcomponent_self_efficacy_hope                 component_cultural_identity   0.228  0.228
+## 3          2g subcomponent_self_efficacy_hope                                      sparks   0.204  0.462
+## 4          2g subcomponent_self_efficacy_hope     opportunities_for_community_involvement   0.163  0.183
+## 5          2g subcomponent_self_efficacy_hope                                    unhoused   0.070  0.205
+## 6          2g subcomponent_self_efficacy_hope                               race_nh_black   0.057  0.154
+## 7          2g subcomponent_self_efficacy_hope                             personal_safety   0.042  0.037
+## 8          2g subcomponent_self_efficacy_hope                               race_nh_other   0.040  1.360
+## 9          2g subcomponent_self_efficacy_hope                          perc_below_200_fpl   0.022  0.002
+## 10         2g subcomponent_self_efficacy_hope                                race_nh_aian   0.018  0.127
+## 11         2g subcomponent_self_efficacy_hope                                   suspended   0.009  0.026
+## 12         2g subcomponent_self_efficacy_hope                                    arrested   0.004  0.013
+## 13         2g subcomponent_self_efficacy_hope                                race_nh_nhpi   0.003  0.030
+## 14         2g subcomponent_self_efficacy_hope                                disconnected  -0.005 -0.015
+## 15         2g subcomponent_self_efficacy_hope                            systems_impacted  -0.011 -0.030
+## 16         2g subcomponent_self_efficacy_hope                               race_nh_swana  -0.027 -0.284
+## 17         2g subcomponent_self_efficacy_hope                                 race_latinx  -0.043 -0.087
+## 18         2g subcomponent_self_efficacy_hope                            race_nh_twoormor  -0.044 -0.259
+## 19         2g subcomponent_self_efficacy_hope                               race_nh_asian  -0.142 -0.445
+## 20         2g subcomponent_self_efficacy_hope                              cishet_lgbtqia  -0.144 -0.344
+##    p_is_significant pvalue      bic      aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1              TRUE  0.000 93364.73 92996.07     0.304                1 0.856 0.839 0.054 0.065
+## 2              TRUE  0.000 93364.73 92996.07     0.304                1 0.856 0.839 0.054 0.065
+## 3              TRUE  0.000 93364.73 92996.07     0.304                1 0.856 0.839 0.054 0.065
+## 4              TRUE  0.000 93364.73 92996.07     0.304                1 0.856 0.839 0.054 0.065
+## 5              TRUE  0.001 93364.73 92996.07     0.304                1 0.856 0.839 0.054 0.065
+## 6              TRUE  0.021 93364.73 92996.07     0.304                1 0.856 0.839 0.054 0.065
+## 7              TRUE  0.018 93364.73 92996.07     0.304                1 0.856 0.839 0.054 0.065
+## 8              TRUE  0.018 93364.73 92996.07     0.304                1 0.856 0.839 0.054 0.065
+## 9             FALSE  0.233 93364.73 92996.07     0.304                1 0.856 0.839 0.054 0.065
+## 10            FALSE  0.335 93364.73 92996.07     0.304                1 0.856 0.839 0.054 0.065
+## 11            FALSE  0.643 93364.73 92996.07     0.304                1 0.856 0.839 0.054 0.065
+## 12            FALSE  0.861 93364.73 92996.07     0.304                1 0.856 0.839 0.054 0.065
+## 13            FALSE  0.877 93364.73 92996.07     0.304                1 0.856 0.839 0.054 0.065
+## 14            FALSE  0.766 93364.73 92996.07     0.304                1 0.856 0.839 0.054 0.065
+## 15            FALSE  0.605 93364.73 92996.07     0.304                1 0.856 0.839 0.054 0.065
+## 16            FALSE  0.117 93364.73 92996.07     0.304                1 0.856 0.839 0.054 0.065
+## 17            FALSE  0.128 93364.73 92996.07     0.304                1 0.856 0.839 0.054 0.065
+## 18             TRUE  0.018 93364.73 92996.07     0.304                1 0.856 0.839 0.054 0.065
+## 19             TRUE  0.000 93364.73 92996.07     0.304                1 0.856 0.839 0.054 0.065
+## 20             TRUE  0.000 93364.73 92996.07     0.304                1 0.856 0.839 0.054 0.065</code></pre>
+</div>
+<div id="model-2g.1-adding-secondary-variable-subcomponent_psychological_distress" class="section level3">
+<h3>Model 2g.1: adding secondary variable
+subcomponent_psychological_distress</h3>
+<p>Analysis: BIC increased.</p>
+<pre><code>##    model_name                             lhs                                         rhs std.all std.lv
+## 1        2g.1 subcomponent_self_efficacy_hope         subcomponent_psychological_distress   0.219  0.219
+## 2        2g.1 subcomponent_self_efficacy_hope                 component_cultural_identity   0.218  0.218
+## 3        2g.1 subcomponent_self_efficacy_hope component_caring_families_and_relationships   0.202  0.202
+## 4        2g.1 subcomponent_self_efficacy_hope                                      sparks   0.173  0.392
+## 5        2g.1 subcomponent_self_efficacy_hope     opportunities_for_community_involvement   0.153  0.172
+## 6        2g.1 subcomponent_self_efficacy_hope                                    unhoused   0.079  0.234
+## 7        2g.1 subcomponent_self_efficacy_hope                               race_nh_black   0.059  0.161
+## 8        2g.1 subcomponent_self_efficacy_hope                               race_nh_other   0.038  1.295
+## 9        2g.1 subcomponent_self_efficacy_hope                                race_nh_aian   0.017  0.125
+## 10       2g.1 subcomponent_self_efficacy_hope                          perc_below_200_fpl   0.016  0.001
+## 11       2g.1 subcomponent_self_efficacy_hope                                   suspended   0.011  0.030
+## 12       2g.1 subcomponent_self_efficacy_hope                                race_nh_nhpi   0.007  0.079
+## 13       2g.1 subcomponent_self_efficacy_hope                                    arrested   0.003  0.011
+## 14       2g.1 subcomponent_self_efficacy_hope                            systems_impacted   0.002  0.006
+## 15       2g.1 subcomponent_self_efficacy_hope                                disconnected  -0.001 -0.004
+## 16       2g.1 subcomponent_self_efficacy_hope                             personal_safety  -0.001 -0.001
+## 17       2g.1 subcomponent_self_efficacy_hope                               race_nh_swana  -0.024 -0.254
+## 18       2g.1 subcomponent_self_efficacy_hope                                 race_latinx  -0.030 -0.059
+## 19       2g.1 subcomponent_self_efficacy_hope                            race_nh_twoormor  -0.041 -0.240
+## 20       2g.1 subcomponent_self_efficacy_hope                              cishet_lgbtqia  -0.107 -0.255
+## 21       2g.1 subcomponent_self_efficacy_hope                               race_nh_asian  -0.125 -0.392
+##    p_is_significant pvalue      bic      aic r_squared fit_measures_met  cfi   tli rmsea  srmr
+## 1              TRUE  0.000 146687.1 146189.4     0.336                1 0.85 0.836 0.053 0.068
+## 2              TRUE  0.000 146687.1 146189.4     0.336                1 0.85 0.836 0.053 0.068
+## 3              TRUE  0.000 146687.1 146189.4     0.336                1 0.85 0.836 0.053 0.068
+## 4              TRUE  0.000 146687.1 146189.4     0.336                1 0.85 0.836 0.053 0.068
+## 5              TRUE  0.000 146687.1 146189.4     0.336                1 0.85 0.836 0.053 0.068
+## 6              TRUE  0.000 146687.1 146189.4     0.336                1 0.85 0.836 0.053 0.068
+## 7              TRUE  0.014 146687.1 146189.4     0.336                1 0.85 0.836 0.053 0.068
+## 8              TRUE  0.022 146687.1 146189.4     0.336                1 0.85 0.836 0.053 0.068
+## 9             FALSE  0.337 146687.1 146189.4     0.336                1 0.85 0.836 0.053 0.068
+## 10            FALSE  0.379 146687.1 146189.4     0.336                1 0.85 0.836 0.053 0.068
+## 11            FALSE  0.579 146687.1 146189.4     0.336                1 0.85 0.836 0.053 0.068
+## 12            FALSE  0.683 146687.1 146189.4     0.336                1 0.85 0.836 0.053 0.068
+## 13            FALSE  0.872 146687.1 146189.4     0.336                1 0.85 0.836 0.053 0.068
+## 14            FALSE  0.913 146687.1 146189.4     0.336                1 0.85 0.836 0.053 0.068
+## 15            FALSE  0.942 146687.1 146189.4     0.336                1 0.85 0.836 0.053 0.068
+## 16            FALSE  0.940 146687.1 146189.4     0.336                1 0.85 0.836 0.053 0.068
+## 17            FALSE  0.154 146687.1 146189.4     0.336                1 0.85 0.836 0.053 0.068
+## 18            FALSE  0.290 146687.1 146189.4     0.336                1 0.85 0.836 0.053 0.068
+## 19             TRUE  0.026 146687.1 146189.4     0.336                1 0.85 0.836 0.053 0.068
+## 20             TRUE  0.000 146687.1 146189.4     0.336                1 0.85 0.836 0.053 0.068
+## 21             TRUE  0.000 146687.1 146189.4     0.336                1 0.85 0.836 0.053 0.068</code></pre>
+</div>
+<div id="model-2h-adding-component_vibrant_communities-back-to-2f.6" class="section level3">
+<h3>Model 2h: adding component_vibrant_communities back to 2f.6</h3>
+<p>Analysis: component_vibrant_communities not stat sig. BIC
+increased.</p>
+<pre><code>##    model_name                             lhs                                         rhs std.all std.lv
+## 1          2h subcomponent_self_efficacy_hope component_caring_families_and_relationships   0.253  0.253
+## 2          2h subcomponent_self_efficacy_hope                 component_cultural_identity   0.229  0.229
+## 3          2h subcomponent_self_efficacy_hope                                      sparks   0.201  0.455
+## 4          2h subcomponent_self_efficacy_hope     opportunities_for_community_involvement   0.156  0.176
+## 5          2h subcomponent_self_efficacy_hope                                    unhoused   0.071  0.209
+## 6          2h subcomponent_self_efficacy_hope                               race_nh_black   0.056  0.152
+## 7          2h subcomponent_self_efficacy_hope                             personal_safety   0.042  0.037
+## 8          2h subcomponent_self_efficacy_hope                               race_nh_other   0.040  1.352
+## 9          2h subcomponent_self_efficacy_hope                          perc_below_200_fpl   0.023  0.002
+## 10         2h subcomponent_self_efficacy_hope                                race_nh_aian   0.018  0.130
+## 11         2h subcomponent_self_efficacy_hope                                   suspended   0.009  0.025
+## 12         2h subcomponent_self_efficacy_hope                                race_nh_nhpi   0.003  0.038
+## 13         2h subcomponent_self_efficacy_hope               component_vibrant_communities   0.002  0.002
+## 14         2h subcomponent_self_efficacy_hope                            systems_impacted  -0.008 -0.024
+## 15         2h subcomponent_self_efficacy_hope                               race_nh_swana  -0.027 -0.281
+## 16         2h subcomponent_self_efficacy_hope                                 race_latinx  -0.042 -0.084
+## 17         2h subcomponent_self_efficacy_hope                            race_nh_twoormor  -0.044 -0.261
+## 18         2h subcomponent_self_efficacy_hope                              cishet_lgbtqia  -0.143 -0.342
+## 19         2h subcomponent_self_efficacy_hope                               race_nh_asian  -0.144 -0.452
+##    p_is_significant pvalue      bic      aic r_squared fit_measures_met  cfi   tli rmsea  srmr
+## 1              TRUE  0.000 118692.5 118170.2     0.305                2 0.85 0.837 0.048 0.066
+## 2              TRUE  0.000 118692.5 118170.2     0.305                2 0.85 0.837 0.048 0.066
+## 3              TRUE  0.000 118692.5 118170.2     0.305                2 0.85 0.837 0.048 0.066
+## 4              TRUE  0.000 118692.5 118170.2     0.305                2 0.85 0.837 0.048 0.066
+## 5              TRUE  0.001 118692.5 118170.2     0.305                2 0.85 0.837 0.048 0.066
+## 6              TRUE  0.022 118692.5 118170.2     0.305                2 0.85 0.837 0.048 0.066
+## 7              TRUE  0.019 118692.5 118170.2     0.305                2 0.85 0.837 0.048 0.066
+## 8              TRUE  0.018 118692.5 118170.2     0.305                2 0.85 0.837 0.048 0.066
+## 9             FALSE  0.217 118692.5 118170.2     0.305                2 0.85 0.837 0.048 0.066
+## 10            FALSE  0.321 118692.5 118170.2     0.305                2 0.85 0.837 0.048 0.066
+## 11            FALSE  0.625 118692.5 118170.2     0.305                2 0.85 0.837 0.048 0.066
+## 12            FALSE  0.848 118692.5 118170.2     0.305                2 0.85 0.837 0.048 0.066
+## 13            FALSE  0.916 118692.5 118170.2     0.305                2 0.85 0.837 0.048 0.066
+## 14            FALSE  0.676 118692.5 118170.2     0.305                2 0.85 0.837 0.048 0.066
+## 15            FALSE  0.121 118692.5 118170.2     0.305                2 0.85 0.837 0.048 0.066
+## 16            FALSE  0.140 118692.5 118170.2     0.305                2 0.85 0.837 0.048 0.066
+## 17             TRUE  0.017 118692.5 118170.2     0.305                2 0.85 0.837 0.048 0.066
+## 18             TRUE  0.000 118692.5 118170.2     0.305                2 0.85 0.837 0.048 0.066
+## 19             TRUE  0.000 118692.5 118170.2     0.305                2 0.85 0.837 0.048 0.066</code></pre>
+</div>
+<div id="model-2i-removing-systems_impacted-and-suspended-from-2f.6" class="section level3">
+<h3>Model 2i: removing systems_impacted and suspended from 2f.6</h3>
+<p>Analysis: component_vibrant_communities not stat sig. BIC
+increased.</p>
+<pre><code>##    model_name                             lhs                                         rhs std.all std.lv
+## 1          2i subcomponent_self_efficacy_hope component_caring_families_and_relationships   0.249  0.249
+## 2          2i subcomponent_self_efficacy_hope                 component_cultural_identity   0.228  0.228
+## 3          2i subcomponent_self_efficacy_hope                                      sparks   0.204  0.461
+## 4          2i subcomponent_self_efficacy_hope     opportunities_for_community_involvement   0.162  0.183
+## 5          2i subcomponent_self_efficacy_hope                                    unhoused   0.068  0.199
+## 6          2i subcomponent_self_efficacy_hope                               race_nh_black   0.056  0.154
+## 7          2i subcomponent_self_efficacy_hope                             personal_safety   0.042  0.036
+## 8          2i subcomponent_self_efficacy_hope                               race_nh_other   0.041  1.373
+## 9          2i subcomponent_self_efficacy_hope                          perc_below_200_fpl   0.021  0.002
+## 10         2i subcomponent_self_efficacy_hope                                race_nh_aian   0.017  0.126
+## 11         2i subcomponent_self_efficacy_hope                                race_nh_nhpi   0.003  0.033
+## 12         2i subcomponent_self_efficacy_hope                               race_nh_swana  -0.027 -0.281
+## 13         2i subcomponent_self_efficacy_hope                                 race_latinx  -0.043 -0.086
+## 14         2i subcomponent_self_efficacy_hope                            race_nh_twoormor  -0.044 -0.258
+## 15         2i subcomponent_self_efficacy_hope                               race_nh_asian  -0.142 -0.445
+## 16         2i subcomponent_self_efficacy_hope                              cishet_lgbtqia  -0.143 -0.342
+##    p_is_significant pvalue      bic      aic r_squared fit_measures_met   cfi   tli rmsea  srmr
+## 1              TRUE  0.000 93681.48 93337.39     0.303                0 0.857 0.838  0.06 0.071
+## 2              TRUE  0.000 93681.48 93337.39     0.303                0 0.857 0.838  0.06 0.071
+## 3              TRUE  0.000 93681.48 93337.39     0.303                0 0.857 0.838  0.06 0.071
+## 4              TRUE  0.000 93681.48 93337.39     0.303                0 0.857 0.838  0.06 0.071
+## 5              TRUE  0.000 93681.48 93337.39     0.303                0 0.857 0.838  0.06 0.071
+## 6              TRUE  0.021 93681.48 93337.39     0.303                0 0.857 0.838  0.06 0.071
+## 7              TRUE  0.020 93681.48 93337.39     0.303                0 0.857 0.838  0.06 0.071
+## 8              TRUE  0.016 93681.48 93337.39     0.303                0 0.857 0.838  0.06 0.071
+## 9             FALSE  0.246 93681.48 93337.39     0.303                0 0.857 0.838  0.06 0.071
+## 10            FALSE  0.336 93681.48 93337.39     0.303                0 0.857 0.838  0.06 0.071
+## 11            FALSE  0.868 93681.48 93337.39     0.303                0 0.857 0.838  0.06 0.071
+## 12            FALSE  0.121 93681.48 93337.39     0.303                0 0.857 0.838  0.06 0.071
+## 13            FALSE  0.128 93681.48 93337.39     0.303                0 0.857 0.838  0.06 0.071
+## 14             TRUE  0.018 93681.48 93337.39     0.303                0 0.857 0.838  0.06 0.071
+## 15             TRUE  0.000 93681.48 93337.39     0.303                0 0.857 0.838  0.06 0.071
+## 16             TRUE  0.000 93681.48 93337.39     0.303                0 0.857 0.838  0.06 0.071</code></pre>
+<pre class="r"><code># Compile all the model results into a standard data frame
+all_results &lt;- as.data.frame(rbind(sem_output_2f,sem_output_2f.1,sem_output_2f.2,sem_output_2f.3,sem_output_2f.4,sem_output_2f.5,sem_output_2f.6,sem_output_2f.7))</code></pre>
+</div>
+</div>
+<div id="create-postgres-table-for-1-1j-2-2f" class="section level2">
+<h2>Create postgres table for 1-1j, 2-2f</h2>
 </div>
 </div>
 
