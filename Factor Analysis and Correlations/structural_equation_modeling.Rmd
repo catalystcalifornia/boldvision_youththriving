@@ -1976,7 +1976,7 @@ indicator <- "A table with the results of the structural equation modeling for t
 source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Factor Analysis and Correlations/structural_equation_modeling.Rmd "
 qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_structural_equation_modeling_2.docx"
 table_comment <- paste0(indicator, source)
-dbWriteTable(con, Id(schema, table_name), all_results_weighted, overwrite = FALSE, row.names = FALSE)
+# dbWriteTable(con, Id(schema, table_name), all_results_weighted, overwrite = FALSE, row.names = FALSE)
 
 # Comment on table and columns
 column_names <- colnames(all_results_weighted) # Get column names
@@ -1989,12 +1989,5 @@ column_comments <- c(
 
 add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
 ```
-```{r}
-results_weighted <- as.data.frame(rbind(sem_output_1j.5_weighted %>% filter(p_is_significant==TRUE), sem_output_2f.6_weighted %>% filter(p_is_significant==TRUE)))
 
-counting <- results_weighted %>%
-  group_by(rhs) %>%
-  count() %>%
-  arrange(desc(n))
-```
 
