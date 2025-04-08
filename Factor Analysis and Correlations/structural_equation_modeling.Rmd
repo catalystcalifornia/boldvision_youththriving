@@ -27,9 +27,6 @@ source("W:\\RDA Team\\R\\Github\\RDA Functions\\main\\RDA-Functions\\Utility_Fun
 source("W:\\RDA Team\\R\\credentials_source.R")
 con <- connect_to_db("bold_vision")
 
-# Get lavaan.survey functions
-source(".\\lavaan.survey.R")
-
 # Pull in the survey data and data dictionary
 raw_svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
 svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024")
@@ -919,6 +916,18 @@ fit_1j.5_weighted <- lavaan.survey(fit_1j.5, svy_data_weighted)
 sem_output_1j.5_weighted <- get_sem_results(fit_1j.5_weighted) %>% 
   mutate(model_name="1j.5_weighted") %>%
   select(model_name, everything())
+
+fit_test <- sem(model_1j.5, data = svy_data, sampling.weights = "weights_final", std.lv = TRUE, missing = "fiml.x")
+summary(fit_test)
+sem_output_1j.5_weighted_qa <- get_sem_results(fit_test) %>% 
+  mutate(model_name="1j.5_weighted_qa") %>%
+  select(model_name, everything())
+
+fit_test_2 <- sem(model_1j.5, data = svy_data, sampling.weights = "weights_final", std.lv = TRUE)
+sem_output_1j.5_weighted_qa_2 <- get_sem_results(fit_test_2) %>% 
+  mutate(model_name="1j.5_weighted_qa_2") %>%
+  select(model_name, everything())
+
 
 compare_1j.5_weighted <- compare_models_weighted(sem_output_1j.5, sem_output_1j.5_weighted)
 ```
