@@ -2024,12 +2024,14 @@ column_comments <- c(
 
 ## Create table of unweighted and weighted final model results
 ```{r}
-all_results_weighted <- as.data.frame(rbind(compare_1j.5_weighted, compare_1j.6_weighted, compare_2f.2_weighted, compare_2f.6_weighted, compare_2f.8_weighted))
+# all_results_weighted <- as.data.frame(rbind(compare_1j.5_weighted, compare_1j.6_weighted, compare_2f.2_weighted, compare_2f.6_weighted, compare_2f.8_weighted))
+
+all_results_weighted <- as.data.frame(rbind(compare_1j.5_weighted, compare_2f.6_weighted))
 
 # Write table with metadata
 table_name <- "factor_analysis_sem_results_weighted"
 schema <- "youth_thriving"
-indicator <- "A table with the results of the structural equation modeling for the unweighted and weighted final models 1j.5, 1j.6, 2f.2, 2f.6, and 2f.8. For each model, the independent variables are ordered from greatest to least effect size (with the absolute value taken). Only the statistically significant (p<0.05) independent variables are included in this table."
+indicator <- "A table with the results of the structural equation modeling for the unweighted and weighted final models 1j.5 and 2f.6. For each model, the independent variables are ordered from greatest to least effect size (with the absolute value taken). "
 source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Factor Analysis and Correlations/structural_equation_modeling.Rmd "
 qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_structural_equation_modeling_2.docx"
 table_comment <- paste0(indicator, source)
@@ -2044,7 +2046,8 @@ column_comments <- c(
   "The independent variable effect size, without the absolute value taken"
 )
 
-add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
 ```
 
 
