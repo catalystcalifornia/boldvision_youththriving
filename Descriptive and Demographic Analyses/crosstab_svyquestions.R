@@ -78,7 +78,7 @@ cross_tab_df <- function(data, var1, var2, data_dict) {
 
 cross_dd_de <- cross_tab_df(svy_data, "dd", "de", svy_dd)
 
-View(cross_dd_de)
+# View(cross_dd_de)
 
 #### STEP 3: Close db connection ####
 dbDisconnect(con)
