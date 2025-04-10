@@ -5,7 +5,7 @@ date: "2025-02-10"
 output: html_document
 ---
 
-```{r, include=FALSE}
+```{r setup, include=FALSE}
 # Step 0: Data Preparation
 
 options(scipen=999) # Turn off scientific notation
@@ -14,8 +14,11 @@ options(width = 120) # Use wider boxes in the html output
 library(tidyverse)
 library(RPostgres)
 library(lavaan)
+library(srvyr)
 library(psych)
 library(fastDummies)
+library(car)
+library(survey)
 
 # Used to get RDA function for adding table comments
 source("W:\\RDA Team\\R\\Github\\RDA Functions\\main\\RDA-Functions\\Utility_Functions.R")
@@ -29,7 +32,8 @@ raw_svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
 svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024")
 ```
 
-```{r, include=FALSE}
+```{r smallsvydata, include=FALSE}
+## ---- smallsvydata ----
 # Filter svy_dd and raw_svy_data to only contain the likert questions needed for the factor analysis
 
 # In the data dictionary, variable_name = subcomponent and response_domain = component
@@ -46,7 +50,8 @@ small_svy_data <- raw_svy_data %>%
   select(response_id, all_of(small_svy_dd$variable))
 ```
 
-```{r, include=FALSE}
+```{r naresponse, include=FALSE}
+## ---- naresponse ----
 # In the survey data, change the responses of "Don't wish to answer", "Not sure", "Not Sure", "Does not apply to me", "Don't know" into NA values. Use this na_responses if trying to replicate results from Step 1. Here, we recode the "Don't know" responses into NA values. 
 #na_responses <- c("Don't wish to answer", "Not sure", "Not Sure", "Does not apply to me", "Don't know")
 
@@ -81,14 +86,18 @@ for (col in names(small_svy_data)) {
 }
 ```
 
-```{r, include=FALSE}
+```{r recode1, include=FALSE}
+## ---- recode1 ----
+
 # This chunk is needed for running factor score predictions in Step 2. For component "Vibrant Communities", we are recoding the "Don't know" responses to "No", instead of NA. There are too many "Don't know" responses for this component, causing us to have too many NA values, and thus, too many incomplete rows in predicted_results.
 
 small_svy_data <- small_svy_data %>%
   mutate(across(c(do, dp, dq, dr, ds, dt, du, dv), ~ ifelse(. == 3, 1, .)))
 ```
 
-```{r, include=FALSE}
+```{r recode2, include=FALSE}
+## ---- recode2 ----
+
 # Reverse the likert scales in the survey data for the scales that need reversing
 
 # Identify columns to reverse
@@ -114,7 +123,9 @@ for (col in columns_to_reverse) {
 }
 ```
 
-```{r}
+```{r recode3}
+## ---- recode3 ----
+
 # Updating column names of small_svy_data for readability and understandability
 small_svy_dd <- small_svy_dd %>%
   select(-c(variable_category)) %>%
@@ -122,7 +133,9 @@ small_svy_dd <- small_svy_dd %>%
          component_name = response_domain)
 ```
 
-```{r, include=FALSE}
+```{r svydata, include=FALSE}
+## ----svydata ----
+
 # Create df svy_data, which contains all the columns of raw_survey_data, but the matching columns from small_svy_data are used instead.
 
 # Get the common columns between raw_svy_data and small_svy_data, except for response_id
@@ -135,7 +148,9 @@ svy_data <- raw_svy_data %>%
   left_join(small_svy_data, by = "response_id") # Re-add them from small_svy_data
 ```
 
-```{r, include=FALSE}
+```{r demo, include=FALSE}
+## ---- demo ----
+
 # Get demographic data from other tables
 demographics_binary_df <- dbGetQuery(con, "SELECT * FROM youth_thriving.demographics_binary_data")
 
@@ -153,7 +168,9 @@ poverty_rate_df <- poverty_rate_data %>%
   mutate(high_poverty_area = ifelse(perc_below_200_fpl>=26.0,1,0))
 ```
 
-```{r, include=FALSE}
+```{r svydata2, include=FALSE}
+## ---- svydata2 ----
+
 # Merge all data frames into svy_data using response_id
 svy_data <- svy_data %>%
   left_join(demographics_binary_df, by = "response_id") %>%
@@ -198,6 +215,15 @@ svy_data <- svy_data %>%
 # Survey data with only cisgender respondents
 cisgender_svy_data <- svy_data %>% 
   filter(!is.na(cisgender_mf))
+
+# Create weighted versions of survey data
+svy_data_weighted <- svydesign(id=~0, weights=~weights_final, data=svy_data)
+cisgender_svy_data_weighted <- svydesign(id=~0, weights=~weights_final, data=cisgender_svy_data) 
+
+# To get VIF scores we need to join the survey data with the predicted component scores
+predicted_df <- dbGetQuery(con, "SELECT * FROM youth_thriving.factor_analysis_predicted")
+svy_data_predicted <- svy_data %>% left_join(predicted_df)
+cisgender_predicted <- cisgender_svy_data %>% left_join(predicted_df)
 
 ```
 
@@ -282,6 +308,43 @@ get_sem_results <- function(fitted_model){
   select(c(lhs,rhs,std.all,std.lv,p_is_significant,pvalue,bic,aic,r_squared,fit_measures_met,cfi,tli,rmsea,srmr)) %>%
   arrange(desc(std.all)) # Rearrange the dataframe so that std.all values are in descending order
   return(sem_output)
+}
+
+get_sem_results_se <- function(fitted_model){
+  sem_output <- parameterEstimates(fitted_model, standardized = TRUE) %>%
+  filter(op %in% c("~")) %>% # Filter for the regression results
+  mutate(p_is_significant = ifelse(round(pvalue,2)<0.05,TRUE,FALSE)) %>%
+  mutate(across(everything())) %>%  
+  bind_cols(get_fit_measures(fitted_model)) %>%  
+  select(c(lhs,rhs,std.all,std.lv,p_is_significant,pvalue,se,bic,aic,r_squared,fit_measures_met,cfi,tli,rmsea,srmr)) %>%
+  arrange(desc(std.all)) # Rearrange the dataframe so that std.all values are in descending order
+  return(sem_output)
+}
+
+# Function that compares the unweighted and weighted version of a model. 
+# Returns a dataframe with the statistically significant variables ordered 
+# from greatest to least effect size.
+compare_models_weighted <- function(unweighted_output, weighted_output_fiml, weighted_output)
+{
+  unweighted_sig_vars_ordered <- unweighted_output %>% 
+    # filter(p_is_significant==TRUE) %>%
+    mutate(std.all.abs = abs(std.all)) %>%
+    arrange(desc(std.all.abs)) %>%
+    select(model_name,rhs,std.all.abs, std.all, p_is_significant, pvalue,se)
+
+  weighted_fiml_sig_vars_ordered <- weighted_output_fiml %>% 
+    # filter(p_is_significant==TRUE) %>%
+    mutate(std.all.abs = abs(std.all)) %>%
+    arrange(desc(std.all.abs)) %>%
+    select(model_name,rhs,std.all.abs, std.all, p_is_significant, pvalue, se)
+  
+    weighted_sig_vars_ordered <- weighted_output %>% 
+    # filter(p_is_significant==TRUE) %>%
+    mutate(std.all.abs = abs(std.all)) %>%
+    arrange(desc(std.all.abs)) %>%
+    select(model_name,rhs,std.all.abs, std.all, p_is_significant, pvalue, se)
+    
+  return(rbind(unweighted_sig_vars_ordered, weighted_fiml_sig_vars_ordered, weighted_sig_vars_ordered))
 }
 ```
 
@@ -847,12 +910,6 @@ sem_output_1j.4
 ```
 
 ### Model 1j.5: FINAL
-Q19. How often do you worry about your own safety while in the neighborhood you live in now?
-5 = Never
-4 = Rarely
-3 = Sometimes
-2 = Most of the time
-1 = All of the time
 ```{r Model 1j.5, warning=FALSE, echo=FALSE}
 model_1j.5 <- '
   # Measurement model
@@ -883,7 +940,53 @@ sem_output_1j.5 <- get_sem_results(fit_1j.5) %>%
   select(model_name, everything())
 
 sem_output_1j.5
+
+# with standard errors
+sem_output_1j.5_se <- get_sem_results_se(fit_1j.5) %>% 
+  mutate(model_name="1j.5") %>%
+  select(model_name, everything())
+
+
+# Run model on weighted data WITH FIML and robust standard errors
+fit_1j.5_weighted_fiml<- sem(model_1j.5, data = svy_data, sampling.weights = "weights_final", std.lv = TRUE, missing = "fiml.x", se="robust")
+
+sem_output_1j.5_weighted_fiml <- get_sem_results_se(fit_1j.5_weighted_fiml) %>% 
+  mutate(model_name="1j.5_weighted_fiml") %>%
+  select(model_name, everything())
+
+
+# Run model on weighted data WITHOUT FIML
+fit_1j.5_weighted <- sem(model_1j.5, data = svy_data, sampling.weights = "weights_final", std.lv = TRUE, se="robust")
+
+sem_output_1j.5_weighted <- get_sem_results_se(fit_1j.5_weighted) %>% 
+  mutate(model_name="1j.5_weighted") %>%
+  select(model_name, everything())
+
+compare_1j.5_weighted <- compare_models_weighted(sem_output_1j.5_se, sem_output_1j.5_weighted_fiml,sem_output_1j.5_weighted)
+
+
 ```
+
+```{r}
+# Create linear regression model with predicted component scores
+model_1j.5_vif <- lm(subcomponent_psychological_distress ~  component_caring_families_and_relationships +
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    component_vibrant_communities + 
+    personal_safety_re +
+    race_latinx + race_nh_asian + race_nh_black + race_nh_twoormor + race_nh_aian + 
+    race_nh_other + race_nh_nhpi + race_nh_swana +
+    cishet_lgbtqia +
+    systems_impacted +
+    sparks +
+    undocumented, data = svy_data_predicted)
+
+# Get VIF scores
+vif_1j.5 <- vif(model_1j.5_vif)
+max(vif_1j.5)
+```
+
 
 ### Model 1j.6: FINAL; subsetted by cisgender respondents only
 Analysis: Being cisgender female is associated with more psychological distress, compared to being cisgender male. Latinx becomes not statistically significant, compared to model 1j.5.
@@ -918,6 +1021,36 @@ sem_output_1j.6 <- get_sem_results(fit_1j.6) %>%
   select(model_name, everything())
 
 sem_output_1j.6
+
+# # Run model on weighted data -- NEED TO UPDATE
+# fit_1j.6_weighted <- lavaan.survey(fit_1j.6, cisgender_svy_data_weighted)
+# 
+# sem_output_1j.6_weighted <- get_sem_results(fit_1j.6_weighted) %>% 
+#   mutate(model_name="1j.6_weighted") %>%
+#   select(model_name, everything())
+# 
+# compare_1j.6_weighted <- compare_models_weighted(sem_output_1j.6, sem_output_1j.6_weighted)
+
+```
+
+```{r}
+# Create linear regression model with predicted component scores
+model_1j.6_vif <- lm(subcomponent_psychological_distress ~  component_caring_families_and_relationships +
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    component_vibrant_communities + 
+    personal_safety_re +
+    race_latinx + race_nh_asian + race_nh_black + race_nh_twoormor + race_nh_aian + 
+    race_nh_other + race_nh_nhpi + race_nh_swana +
+    cishet_lgbtqia +
+    systems_impacted +
+    sparks +
+    undocumented, data = cisgender_predicted)
+
+# Get VIF scores
+vif_1j.6 <- vif(model_1j.6_vif)
+max(vif_1j.6)
 ```
 
 #### Create postgres table for 1j.5 and 1j.6
@@ -1292,7 +1425,7 @@ sem_output_2f.1 <- get_sem_results(fit_2f.1) %>%
 sem_output_2f.1
 ```
 
-### Model 2f.2: removing spa
+### Model 2f.2: FINAL; removing spa
 
 Analysis: BIC decreased. perc_below_200_fpl is not statistically significant.
 
@@ -1324,6 +1457,36 @@ sem_output_2f.2 <- get_sem_results(fit_2f.2) %>%
   select(model_name, everything())
 
 sem_output_2f.2
+
+# # Run model on weighted data - NEED TO UPDATE BUT ALSO NOT NECESSARY TO PROCEED WITH THIS MODEL
+# fit_2f.2_weighted <- lavaan.survey(fit_2f.2, svy_data_weighted)
+# 
+# sem_output_2f.2_weighted <- get_sem_results(fit_2f.2_weighted) %>% 
+#   mutate(model_name="2f.2_weighted") %>%
+#   select(model_name, everything())
+# 
+# compare_2f.2_weighted <- compare_models_weighted(sem_output_2f.2, sem_output_2f.2_weighted)
+```
+
+```{r}
+# Create linear regression model with predicted component scores
+model_2f.2_vif <- lm(subcomponent_self_efficacy_hope ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    personal_safety_re +
+    opportunities_for_community_involvement_re + 
+    race_latinx + race_nh_asian + race_nh_black + race_nh_twoormor + race_nh_aian + 
+    race_nh_other + race_nh_nhpi + race_nh_swana +
+    cishet_lgbtqia +
+    systems_impacted +
+    unhoused +
+    suspended + 
+    perc_below_200_fpl +
+    undocumented+
+    sparks, data = svy_data_predicted)
+
+# Get VIF scores
+vif_2f.2 <- vif(model_2f.2_vif)
+max(vif_2f.2)
 ```
 
 ### Model 2f.3: removing perc_below_200_fpl
@@ -1453,6 +1616,46 @@ sem_output_2f.6 <- get_sem_results(fit_2f.6) %>%
 
 sem_output_2f.6
 
+# with standard errors
+sem_output_2f.6_se <- get_sem_results_se(fit_2f.6) %>% 
+  mutate(model_name="2f.6") %>%
+  select(model_name, everything())
+
+
+# Run model on weighted data WITH FIML and robust standard errors
+fit_2f.6_weighted_fiml<- sem(model_2f.6, data = svy_data, sampling.weights = "weights_final", std.lv = TRUE, missing = "fiml.x", se="robust")
+
+sem_output_2f.6_weighted_fiml <- get_sem_results_se(fit_2f.6_weighted_fiml) %>% 
+  mutate(model_name="2f.6_weighted_fiml") %>%
+  select(model_name, everything())
+
+# Run model on weighted data WITHOUT FIML
+fit_2f.6_weighted <- sem(model_2f.6, data = svy_data, sampling.weights = "weights_final", std.lv = TRUE, se="robust")
+
+sem_output_2f.6_weighted <- get_sem_results_se(fit_2f.6_weighted) %>% 
+  mutate(model_name="2f.6_weighted") %>%
+  select(model_name, everything())
+
+compare_2f.6_weighted <- compare_models_weighted(sem_output_2f.6_se, sem_output_2f.6_weighted_fiml,sem_output_2f.6_weighted)
+```
+
+```{r}
+# Create linear regression model with predicted component scores
+model_2f.6_vif <- lm(subcomponent_self_efficacy_hope ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    personal_safety_re +
+    opportunities_for_community_involvement_re + 
+    race_latinx + race_nh_asian + race_nh_black + race_nh_twoormor + race_nh_aian + race_nh_other + race_nh_nhpi + race_nh_swana +
+    cishet_lgbtqia +
+    unhoused +
+    suspended + 
+    perc_below_200_fpl +
+    systems_impacted+
+    sparks , data = svy_data_predicted)
+
+# Get VIF scores
+vif_2f.6 <- vif(model_2f.6_vif)
+max(vif_2f.6)
 ```
 
 ### Model 2f.8: FINAL, same as model 2f.6 but only on cisgender respondents
@@ -1487,7 +1690,42 @@ sem_output_2f.8 <- get_sem_results(fit_2f.8) %>%
   select(model_name, everything())
 
 sem_output_2f.8
+
+# # Run model on weighted data - NEED TO UPDATE
+# fit_2f.8_weighted <- lavaan.survey(fit_2f.8, cisgender_svy_data_weighted)
+# 
+# sem_output_2f.8_weighted <- get_sem_results(fit_2f.8_weighted) %>% 
+#   mutate(model_name="2f.8_weighted") %>%
+#   select(model_name, everything())
+# 
+# compare_2f.8_weighted <- compare_models_weighted(sem_output_2f.8, sem_output_2f.8_weighted)
 ```
+
+```{r}
+# Create linear regression model with predicted component scores
+model_2f.8_vif <- lm(subcomponent_self_efficacy_hope ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    personal_safety_re +
+    opportunities_for_community_involvement_re + 
+    race_latinx + race_nh_asian + race_nh_black + race_nh_twoormor + race_nh_aian + race_nh_other + race_nh_nhpi + race_nh_swana +
+    cishet_lgbtqia +
+    unhoused +
+    suspended + 
+    perc_below_200_fpl +
+    systems_impacted+
+    sparks +
+    cisgender_mf, data = cisgender_predicted)
+
+# Get VIF scores
+vif_2f.8 <- vif(model_2f.8_vif)
+max(vif_2f.8)
+```
+```{r}
+# Get proportions of undocumented by race
+undoc_table <- table(svy_data$undocumented,svy_data$race.y)
+prop.table(undoc_table,2)
+```
+
 
 #### Create postgres table for 2f.6 and 2f.8
 ```{r, include=FALSE, echo=FALSE}
@@ -1783,3 +2021,33 @@ column_comments <- c(
   
   
 ```
+
+## Create table of unweighted and weighted final model results
+```{r}
+# all_results_weighted <- as.data.frame(rbind(compare_1j.5_weighted, compare_1j.6_weighted, compare_2f.2_weighted, compare_2f.6_weighted, compare_2f.8_weighted))
+
+all_results_weighted <- as.data.frame(rbind(compare_1j.5_weighted, compare_2f.6_weighted))
+
+# Write table with metadata
+table_name <- "factor_analysis_sem_results_weighted"
+schema <- "youth_thriving"
+indicator <- "A table with the results of the structural equation modeling for the unweighted and weighted final models 1j.5 and 2f.6. For each model, the independent variables are ordered from greatest to least effect size (with the absolute value taken). "
+source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Factor Analysis and Correlations/structural_equation_modeling.Rmd "
+qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_structural_equation_modeling_2.docx"
+table_comment <- paste0(indicator, source)
+# dbWriteTable(con, Id(schema, table_name), all_results_weighted, overwrite = FALSE, row.names = FALSE)
+
+# Comment on table and columns
+column_names <- colnames(all_results_weighted) # Get column names
+column_comments <- c(
+  "The model name",
+  "The independent variable name",  
+  "The absolute value of the independent variable effect size, ranging from 0 to 1",  
+  "The independent variable effect size, without the absolute value taken"
+)
+
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
+```
+
+
