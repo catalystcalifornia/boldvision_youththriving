@@ -33,7 +33,7 @@ svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024
 
 nonresponse<- dbGetQuery(con, "SELECT * FROM youth_thriving.nonresponse_by_respondent")
 
-knitr::read_chunk('W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/EMG/boldvision_youththriving/Factor Analysis and Correlations/structural_equation_modeling.Rmd')
+knitr::read_chunk('./structural_equation_modeling.Rmd')
 
 
 ```
@@ -42,9 +42,7 @@ knitr::read_chunk('W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/EMG/b
 
 ```{r, smallsvydata, echo=FALSE}
 # getting this error each time but code seems to be running okay?
-
 # Error: attempt to use zero-length variable name
-
 ```
 ```{r, naresponse, echo=FALSE}
 
@@ -135,6 +133,9 @@ all_model_data_subset<-all_model_data%>%left_join(nonresponse%>%select(response_
 vis_miss(all_model_data_subset,cluster=TRUE,show_perc=FALSE)
 # looking back at the paper survey W:\Project\OSI\Bold Vision\Youth Thriving Survey\Data\Survey responses\Updated - 081324\BVYTS_PaperSurvey.docx
 # I think this is a case of survey fatigue, all the questions with higher nonresponse (or essentially a don't wish to answer response in this case) are in the 2nd half of the survey. Looks like a small percent of respondents selected "dont wish to answer" across matrices later on. We could look for auxiliary vars that look for patterns in missing, e.g. if respondents of certain age or race were more likely to straightline, but not sure I see an immediate pattern here. Excluding these responses would likely bias the sample more towards people that stayed more engaged in the survey
+```
+```{r}
+vis_miss(all_model_data,cluster=TRUE,show_perc=FALSE)
 
 ```
 
