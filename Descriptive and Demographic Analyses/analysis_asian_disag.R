@@ -18,11 +18,14 @@ svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
 #data dictionary
 svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 where response_type = 'mc' AND response_domain !='Demographics' AND response_domain != 'Info'")
 #race data
-race_df <- dbGetQuery(con, "SELECT response_id, nh_race, race_asian, detailed_asian, detailed_race, 
+race_df <- dbGetQuery(con, 'SELECT response_id, nh_race, race_asian, detailed_asian, detailed_race, 
                       "isSouthAsian" AS south_asian, 
                        "isSoutheastAsian" AS southeast_asian
-                         FROM youth_thriving.race_ethnicity_data where detailed_asian IS NOT NULL")
+                         FROM youth_thriving.race_ethnicity_data where detailed_asian IS NOT NULL')
 #outputs 476 response_ids that identified as some form of Asian (multiracial included)
+
+#close connections
+dbDisconnect(con)
 
 #join to have a df with the detailed asian categories and filter out any survey respondents that did not identify with this category
 svy_data <- race_df %>%
@@ -78,8 +81,8 @@ fx_subgroups_asian <- function(variable_input) {
   svy_data <- svy_data %>%
     mutate(
       subgroup_asian = case_when(
-        south_asian == "isSouthAsian" ~ "South Asian",
-        southeast_asian == "isSoutheastAsian" ~ "Southeast Asian",
+        south_asian == "1" ~ "South Asian",
+        southeast_asian == "1" ~ "Southeast Asian",
         race_asian == "1" ~ "Asian",
         TRUE ~ NA_character_
       )
@@ -97,34 +100,6 @@ fx_subgroups_asian <- function(variable_input) {
       rate_cv = rate_cv * 100,
       moe = rate_se * 1.645 * 100
     )
-  # df_southasian <- as_survey(svy_data, weights = !!sym("weights_final")) %>%
-  #   filter(!is.na(!!sym(variable_input))) %>%  # Remove NAs
-  #   group_by(south_asian, !!sym(variable_input)) %>%
-  #   summarise(count = n(), 
-  #             rate = survey_mean(vartype = c("cv", "se"), level = .90), .groups = "drop") %>%
-  #   mutate(rate = rate * 100, 
-  #          rate_cv = rate_cv * 100, 
-  #          moe = rate_se * 1.645 * 100) 
-  # 
-  # df_southeastasian <- as_survey(svy_data, weights = !!sym("weights_final")) %>%
-  #   filter(!is.na(!!sym(variable_input))) %>%  # Remove NAs
-  #   group_by(southeast_asian, !!sym(variable_input)) %>%
-  #   summarise(count = n(), 
-  #             rate = survey_mean(vartype = c("cv", "se"), level = .90), .groups = "drop") %>%
-  #   mutate(rate = rate * 100, 
-  #          rate_cv = rate_cv * 100, 
-  #          moe = rate_se * 1.645 * 100) 
-  # 
-  # df_asian <- as_survey(svy_data, weights = !!sym("weights_final")) %>%
-  #   filter(!is.na(!!sym(variable_input))) %>%  # Remove NAs
-  #   group_by(race_asian, !!sym(variable_input)) %>%
-  #   summarise(count = n(), 
-  #             rate = survey_mean(vartype = c("cv", "se"), level = .90), .groups = "drop") %>%
-  #   mutate(rate = rate * 100, 
-  #          rate_cv = rate_cv * 100, 
-  #          moe = rate_se * 1.645 * 100) 
-  # 
-  # df_asian_combined <- bind_rows(df_southasian, df_southeastasian, df_asian)
   
   df_final <- merge(x = df_asian_combined, y = dict_var, 
                     by.x = variable_input, by.y = "variable_merge_col") %>%
@@ -134,4 +109,8 @@ fx_subgroups_asian <- function(variable_input) {
   return(df_final)
 }
 
+####STEP 5: Run subgroup function for variables of interest ####
 df_co_subgroup <- fx_subgroups_asian("co")
+
+df_dl_subgroup <-fx_subgroups_asian("dl")
+
