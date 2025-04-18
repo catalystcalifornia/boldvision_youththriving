@@ -230,8 +230,8 @@ source("W:\\RDA Team\\R\\Github\\RDA Functions\\main\\RDA-Functions\\Utility_Fun
 schema <- "youth_thriving"
 indicator <- " A table that has the average imputed factor or component scores of those being used in the youth thriving model by selected demographics "
 source <- "
-Script:W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/EMG/boldvision_youththriving/Factor Analysis and Correlations/component_avg_scores.R"
-qa_filepath <- " See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_demographics_binary_data.docx "
+Script:W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/EMG/boldvision_youththriving/Factor Analysis and Correlations/factor_analysis_predicted_avg_scores.R"
+qa_filepath <- " See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_circular_plots_scores.docx "
 
 column_comments <- c(
   "the demographic group for the analysis ",
@@ -250,14 +250,14 @@ table_name <- "factor_analysis_avg_scores_race"
 demographic <- " for non-hispanic race + aian + nhpi + swana alone or in combination + bipoc "
 table_comment <- paste0(indicator, demographic, source)
 column_names <- colnames(df_final_race) # Get column names
-
+# 
 # # write table
 # dbWriteTable(con, Id(schema, table_name), df_final_race,
 #              overwrite = FALSE, row.names = FALSE)
 # 
 # # Comment on table and columns
 # add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
-
+# 
 
 ## SOGI table export ------
 df_final_sogi <- rbind(df_cis, df_lgbtia)
@@ -321,11 +321,11 @@ demographic <- " for all youth"
 table_comment <- paste0(indicator, demographic, source)
 column_names <- colnames(df_total) # Get column names
 
-# # write table
-# dbWriteTable(con, Id(schema, table_name), df_total,
-#              overwrite = FALSE, row.names = FALSE)
-# 
-# # Comment on table and columns
+# write table
+dbWriteTable(con, Id(schema, table_name), df_total,
+             overwrite = FALSE, row.names = FALSE)
+
+# Comment on table and columns
 # add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
 
 dbDisconnect(con)
