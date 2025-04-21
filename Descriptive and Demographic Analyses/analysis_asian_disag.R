@@ -66,6 +66,16 @@ df_co <- fx_detailed_asian("co")
 
 df_dl <- fx_detailed_asian("dl")
 
+qa<-svy_data%>%
+  filter(!is.na(detailed_asian) & !is.na(co))%>%
+  group_by(detailed_asian)%>%
+  mutate(total=n(), .groups = "drop")%>%
+  group_by(detailed_asian,co,total)%>%
+  summarise(count=n(),rate=count/total)
+
+svy_data 
+cy_binary = ifelse(cy==1,0,1))
+
 ####STEP 4: Create function for south asian and southeast asian with a survey question ####
 fx_subgroups_asian <- function(variable_input) {
   dict <- svy_dd %>%
@@ -113,4 +123,56 @@ fx_subgroups_asian <- function(variable_input) {
 df_co_subgroup <- fx_subgroups_asian("co")
 
 df_dl_subgroup <-fx_subgroups_asian("dl")
+
+# test recoding
+svy_data_check <- svy_data %>%
+  mutate(
+    subgroup_asian = case_when(
+      south_asian == "1" ~ "South Asian",
+      southeast_asian == "1" ~ "Southeast Asian",
+      race_asian == "1" ~ "Asian",
+      TRUE ~ NA_character_
+    )
+  )
+
+svy_data_check%>%filter(south_asian==1)%>%group_by(detailed_asian)%>%summarise(count=n())
+
+svy_data_check%>%filter(southeast_asian==1)%>%group_by(detailed_asian)%>%summarise(count=n())
+
+# test visual
+library(ggplot2)
+plot_data <- df_co %>%
+  filter(co==4)
+
+ggplot(plot_data, aes(x = detailed_asian, y = rate)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = paste0("   = ", round(count,0))), hjust = -0.1, size = 3) + 
+  coord_flip() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.2))) +  # Add space on the right
+  theme_minimal() +
+  guides(fill = "none") +
+  labs(x = NULL, y = "")
+
+plot_data <- df_co_subgroup
+
+ggplot(plot_data, aes(x = subgroup_asian, y = rate,fill=response)) +
+  geom_bar(stat = "identity") +
+  # geom_text(aes(label = paste0(response,"=", round(count,0)))) + 
+  # coord_flip() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.2))) +  # Add space on the right
+  # theme_minimal() +
+  # guides(fill = "none") +
+  labs(x = NULL, y = "")
+
+plot_data <- df_dl_subgroup
+
+ggplot(plot_data, aes(x = subgroup_asian, y = rate,fill=response)) +
+  geom_bar(stat = "identity") +
+  # geom_text(aes(label = paste0(response,"=", round(count,0)))) + 
+  # coord_flip() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.2))) +  # Add space on the right
+  # theme_minimal() +
+  # guides(fill = "none") +
+  labs(x = NULL, y = "")
+
 
