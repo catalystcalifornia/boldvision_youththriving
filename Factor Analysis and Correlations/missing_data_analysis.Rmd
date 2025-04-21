@@ -1,0 +1,141 @@
+---
+title: "Missing Data Analysis"
+author: "Catalyst California"
+date: "4-9-2025"
+output: html_document
+---
+
+```{r setup, include=FALSE, cache=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Set up
+
+options(scipen=999) # Turn off scientific notation
+library(tidyverse)
+library(survey)
+library(mice)
+library(ggplot2)
+library(naniar)
+library(RPostgres)
+library(lavaan)
+library(srvyr)
+library(psych)
+library(fastDummies)
+library(car)
+
+# Connect to postgres
+source("W:\\RDA Team\\R\\credentials_source.R")
+con <- connect_to_db("bold_vision")
+
+# Pull in the survey data and data dictionary
+raw_svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
+svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024")
+
+nonresponse<- dbGetQuery(con, "SELECT * FROM youth_thriving.nonresponse_by_respondent")
+
+knitr::read_chunk('./structural_equation_modeling.Rmd')
+
+
+```
+
+# Pull in all the codechunks we need from sem script
+
+```{r, smallsvydata, echo=FALSE}
+# getting this error each time but code seems to be running okay?
+# Error: attempt to use zero-length variable name
+```
+```{r, naresponse, echo=FALSE}
+
+```
+```{r, recode1, echo=FALSE}
+
+```
+
+```{r, recode2, echo=FALSE}
+
+```
+
+```{r, recode3, echo=FALSE}
+
+```
+
+```{r, svydata, echo=FALSE}
+
+```
+
+```{r, demo, echo=FALSE}
+
+```
+
+```{r, svydata2, echo=FALSE}
+
+```
+
+# Explore nonresponse rate
+
+```{r}
+# histogram of nonresponse
+hist(nonresponse$nonresponse_rate)
+```
+
+# Explore missing data in all the vars being tested anywhere in the models
+
+```{r}
+# create a dataframe just with all the variables being tested in the models
+all_model_data<-svy_data%>%
+  select(response_id,
+         personal_safety_re , 
+         growth_mindset , 
+         opportunities_for_community_involvement_re ,
+         race_latinx , race_nh_asian , race_nh_black , race_nh_twoormor , race_nh_aian , race_nh_other , race_nh_nhpi , race_nh_swana ,
+         cishet_lgbtqia ,
+         systems_impacted ,
+         unhoused ,
+         is_adult ,
+         spa_2 , spa_3 , spa_4 , spa_5 , spa_6 , spa_7 , spa_8 ,
+         suspended , 
+        high_poverty_area ,
+        undocumented ,
+        disconnected ,
+        sparks , 
+        arrested ,
+        dl , dk , dn,
+        dz , dy , dx , ea , eb , ec,
+        ep , eq , eo , er,
+        et , ew , ey , eu , ev , es , ex,
+        cy , cu , cw , cv , ct , cx,
+        co , cp , cn , cq)
+
+data.complete <- na.omit(all_model_data)
+nrow(data.complete)
+
+
+```
+
+## Plot Missing Data Clusters
+
+```{r}
+# Use mice package to explore patterns in missing data
+# https://gabriellajg.github.io/EPSY-579-R-Cookbook-for-SEM/lavaan-lab-12-sem-for-missing-data.html
+missingplot<-md.pattern(all_model_data)%>%as.data.frame()
+
+missingplot%>%
+  select(V60, everything())%>%
+  View
+# don't notice a lot of patterns in the missing data, in cases with a higher pattern of missing (more respondents not responding) it's only 1 question
+
+# subset the data to exclude higher missing data responses just for a simpler plot
+all_model_data_subset<-all_model_data%>%left_join(nonresponse%>%select(response_id,nonresponse_rate))%>%
+  filter(nonresponse_rate<7)%>%
+  select(-response_id)
+
+# visuable clusters in missing data
+vis_miss(all_model_data_subset,cluster=TRUE,show_perc=FALSE)
+# looking back at the paper survey W:\Project\OSI\Bold Vision\Youth Thriving Survey\Data\Survey responses\Updated - 081324\BVYTS_PaperSurvey.docx
+# I think this is a case of survey fatigue, all the questions with higher nonresponse (or essentially a don't wish to answer response in this case) are in the 2nd half of the survey. Looks like a small percent of respondents selected "dont wish to answer" across matrices later on. We could look for auxiliary vars that look for patterns in missing, e.g. if respondents of certain age or race were more likely to straightline, but not sure I see an immediate pattern here. Excluding these responses would likely bias the sample more towards people that stayed more engaged in the survey
+```
+```{r}
+vis_miss(all_model_data,cluster=TRUE,show_perc=FALSE)
+
+```
+
