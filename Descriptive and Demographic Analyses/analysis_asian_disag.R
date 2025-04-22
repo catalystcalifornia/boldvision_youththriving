@@ -66,16 +66,6 @@ df_co <- fx_detailed_asian("co")
 
 df_dl <- fx_detailed_asian("dl")
 
-qa<-svy_data%>%
-  filter(!is.na(detailed_asian) & !is.na(co))%>%
-  group_by(detailed_asian)%>%
-  mutate(total=n(), .groups = "drop")%>%
-  group_by(detailed_asian,co,total)%>%
-  summarise(count=n(),rate=count/total)
-
-svy_data 
-cy_binary = ifelse(cy==1,0,1))
-
 ####STEP 4: Create function for south asian and southeast asian with a survey question ####
 fx_subgroups_asian <- function(variable_input) {
   dict <- svy_dd %>%
@@ -139,6 +129,58 @@ svy_data_check%>%filter(south_asian==1)%>%group_by(detailed_asian)%>%summarise(c
 
 svy_data_check%>%filter(southeast_asian==1)%>%group_by(detailed_asian)%>%summarise(count=n())
 
+# svy weights check
+qa<-svy_data%>%
+  filter(!is.na(detailed_asian) & !is.na(co))%>%
+  group_by(detailed_asian,co)%>%
+  summarise(count=n(), .groups = "drop")%>%
+  group_by(detailed_asian)%>%
+  mutate(total=sum(count),
+         rate=count/total)
+
+table(svy_data$co)
+
+svy_data_qa<-svy_data %>% mutate(co_binary=ifelse(is.na(co), NA,
+                                                  ifelse(co==5, NA,
+                                                         ifelse(co<=2,0,
+                                                                ifelse(co>=3, 1,
+                                                                       NA)))))
+
+table(svy_data_qa$co_binary)
+
+qa_binary <- as_survey(svy_data_qa, weights = weights_final) %>%
+  filter(!is.na(co_binary), !is.na(detailed_asian)) %>%
+  group_by(detailed_asian, co_binary) %>%
+  summarise(
+    count = n(),
+    rate = survey_mean(vartype = c("cv", "se"), level = .90),
+    .groups = "drop"
+  )%>%
+  group_by(detailed_asian)%>%
+  mutate(total=sum(count))
+
+
+table(svy_data$dl)
+
+table(svy_data$dk) # more skewed
+
+svy_data_qa<-svy_data_qa %>% mutate(dl_binary=ifelse(is.na(dl), NA,
+                                                  ifelse(dl==5, NA,
+                                                         ifelse(dl<=2,0,
+                                                                ifelse(dl>=3, 1,
+                                                                       NA)))))
+
+qa_binary_dl <- as_survey(svy_data_qa, weights = weights_final) %>%
+  filter(!is.na(dl_binary), !is.na(detailed_asian)) %>%
+  group_by(detailed_asian, dl_binary) %>%
+  summarise(
+    count = n(),
+    rate = survey_mean(vartype = c("cv", "se"), level = .90),
+    .groups = "drop"
+  )%>%
+  group_by(detailed_asian)%>%
+  mutate(total=sum(count))
+
 # test visual
 library(ggplot2)
 plot_data <- df_co %>%
@@ -176,3 +218,27 @@ ggplot(plot_data, aes(x = subgroup_asian, y = rate,fill=response)) +
   labs(x = NULL, y = "")
 
 
+plot_data <- qa_binary %>%
+  filter(total>=9)
+
+ggplot(plot_data, aes(x = detailed_asian, y = rate, fill=as.character(co_binary))) +
+  geom_bar(stat = "identity") +
+  # geom_text(aes(label = paste0("   = ", round(count,0))), hjust = -0.1, size = 3) + 
+  # coord_flip() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.2))) +  # Add space on the right
+  # theme_minimal() +
+  # guides(fill = "none") +
+  labs(x = NULL, y = "")
+
+
+plot_data <- qa_binary_dl %>%
+  filter(total>=9)
+
+ggplot(plot_data, aes(x = detailed_asian, y = rate, fill=as.character(dl_binary))) +
+  geom_bar(stat = "identity") +
+  # geom_text(aes(label = paste0("   = ", round(count,0))), hjust = -0.1, size = 3) + 
+  # coord_flip() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.2))) +  # Add space on the right
+  # theme_minimal() +
+  # guides(fill = "none") +
+  labs(x = NULL, y = "")
