@@ -166,18 +166,22 @@ caption_theme <- element_text(hjust = 0, size = 8, colour = "black", family = fo
       scale_x_discrete(labels=x_labels) 
     
     # Define base file path
-    base_path <- paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", 
+    base_path <- paste0("./", 
                         unique(crosstab_df$component_var1), "/", 
                         var2, "_", var1, "_grouped_barchart")
+    showtext_opts(dpi=300)
+    
+    # Save in SVG
+    ggsave(plot = final_visual, filename = paste0(base_path, ".svg"),
+       device = "svg", width = 8, height = 5.5)
     
     # Save in PNG
-    showtext_opts(dpi=300)
-    ggsave(plot = final_visual, filename = paste0(base_path, ".png"), 
-           device = "png", width = 8, height = 5.5, dpi = 300)
+    # ggsave(plot = final_visual, filename = paste0(base_path, ".png"),
+    #        device = "png", width = 8, height = 5.5)
     
     # Save in PDF
-    ggsave(plot = final_visual, filename = paste0(base_path, ".pdf"),
-           device = "pdf", width = 8, height = 5.5)
+    # ggsave(plot = final_visual, filename = paste0(base_path, ".pdf"),
+    #        device = "pdf", width = 8, height = 5.5)
     
     return(final_visual)
 }
@@ -230,9 +234,9 @@ push_crosstab_table <- function(raw_crosstab, table_name){
 crosstab_df <- cross_tab_df(svy_data,"q10","cy",svy_dd)
 
 # check
-check <- crosstab_df %>%
-  group_by(q10) %>%
-  summarise(sum(rate))
+# check <- crosstab_df %>%
+#   group_by(q10) %>%
+#   summarise(sum(rate))
 
 title_text <- 'When youth have a "spark" in life, their mental health improves'
 # string_question_var2 <- "How often during the past 30 days did you feel worthless?"
