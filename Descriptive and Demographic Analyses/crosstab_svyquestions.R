@@ -32,7 +32,8 @@ cross_tab_df <- function(data, var1, var2, data_dict) {
       count = survey_total(),
       rate = survey_prop()  # Automatically ensures sum = 100%
     ) %>%
-    mutate(rate = rate * 100) %>%  # Convert to percentages
+    mutate(rate = rate * 100,
+           rate_se = rate_se * 100) %>%  # Convert to percentages
     ungroup()
   
   #prep work for adding meaning to data
@@ -77,7 +78,7 @@ cross_tab_df <- function(data, var1, var2, data_dict) {
 
 cross_dd_de <- cross_tab_df(svy_data, "dd", "de", svy_dd)
 
-View(cross_dd_de)
+# View(cross_dd_de)
 
 #### STEP 3: Close db connection ####
 dbDisconnect(con)

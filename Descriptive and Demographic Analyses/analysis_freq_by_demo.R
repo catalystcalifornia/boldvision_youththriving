@@ -22,16 +22,28 @@ svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
 #data dictionary
 svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024 where response_type = 'mc' AND response_domain !='Demographics' AND response_domain != 'Info'")
 
-#LGBTQIA data in here
-id_sogi <- dbGetQuery(con, "SELECT response_id, cishet_lgbtqia AS lgbtqia FROM youth_thriving.gender_sexuality_data")
+#LGBTQIA data in here and adding male_female too
+id_sogi <- dbGetQuery(con, "SELECT response_id, cishet_lgbtqia AS lgbtqia, cisgender_mf AS cisgender FROM youth_thriving.gender_sexuality_data")
 #BINARY demographics data
 id_binary_dem <- dbGetQuery(con, "SELECT * FROM youth_thriving.demographics_binary_data")
 #Combine so we have one table with demographics by respondent id
 id_dem <- id_binary_dem %>% left_join( id_sogi, 
                                 by='response_id')
+
+#ADDING Alone and In Combination data for races like SWANA, NHPI, AIAN
+race_aoic <- dbGetQuery(con, "SELECT response_id, race_aian as aian, race_nhpi as nhpi, race_swana as swana FROM youth_thriving.race_ethnicity_data")
+# aian, nhpi, swana alone or in combo
+# list of alone or in combo vars
+aoic_vars <- race_aoic %>% 
+  select(aian, nhpi, swana) %>%
+  names()
+
+id_aoic <- id_dem  %>% left_join( race_aoic, 
+                                  by='response_id')
+
 #combine with actual data
-svy_data <- svy_data %>% left_join( id_dem, 
-                                       by='response_id')
+svy_data <- svy_data %>% left_join( id_aoic, 
+                                    by='response_id')
 
 
 ####Step 2: Creating a function to get frequency tables by demographic variable ####
@@ -78,7 +90,7 @@ fx_freq_table  <- function(demographic_variable) {
     df_final_per_demo <- df_almost_final %>%
       relocate(!!sym(demographic_variable)) %>%
       select(all_of(demographic_variable), response, count, rate, rate_cv, moe, 
-             variable, question, sub_question, question_number, 
+             variable, question, sub_question, question_number, likert_type,
              variable_name, response_domain)
     
     combined_data_list[[i]] <- df_final_per_demo
@@ -100,50 +112,56 @@ write_survey_data_to_db <- function(df, demographic_variable) {
   table_name <- paste0("response_analysis_per_", demographic_variable)
   
   # Write data to database
-  dbWriteTable(con, c('youth_thriving', table_name), df,
-               overwrite = FALSE, row.names = FALSE)
-  
-  # Create table comment
-  table_comment <- paste0(
-    "The following is a table of response frequencies and rates for non-demographic questions grouped by",  
+  # dbWriteTable(con, DBI::Id(schema = "youth_thriving", table = table_name), df,  overwrite = FALSE, row.names = FALSE)
+
+    # Create table comment
+  indicator <- paste0(
+    "The following is a table of response frequencies and rates for non-demographic questions grouped by ",  
     demographic_variable, " status. The denominator for each stat is the total number of youth who 
-    answered the question grouped by",  demographic_variable," status. For example, looking at 
-    arrested youth, count represents how many arrested youth selected response X to a given question. 
-    Rate represents what % of arrested youth selected response X out of the total number of arrested youth 
-    who answered the question.",
-    "W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\Documentation\\QA_freqtables_binarydemo.docx",
-    " Created on ", Sys.Date()
+    answered the question grouped by ",  demographic_variable," status. For example, looking at ",
+    demographic_variable," youth, count represents how many ",  demographic_variable," youth selected response X to a given question. 
+    Rate represents what % of ", demographic_variable," youth selected response X out of the total number of ",  demographic_variable," youth 
+    who answered the question."
   )
   
-  dbSendQuery(con, paste0(
-    "COMMENT ON TABLE youth_thriving.", table_name, " IS '", table_comment, "';"
-  ))
+  source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/MK/boldvision_youththriving/Descriptive and Demographic Analyses/analysis_freq_by_demo.R "
+  qa_filepath <- "W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_freqtables_binarydemo.docx"
+  table_comment <- paste(indicator, source)
+  column_names <- colnames(df)
   
-  # Add comments to columns
-  dbSendQuery(con, paste0("
-    COMMENT ON COLUMN youth_thriving.", table_name, ".variable IS 
-      'refers to the column label or variable in the survey data';
-    COMMENT ON COLUMN youth_thriving.", table_name, ".question IS 
-      'the question that this variable refers to';
-    COMMENT ON COLUMN youth_thriving.", table_name, ".sub_question IS 
-      'the subquestion that this variable refers to';
-    COMMENT ON COLUMN youth_thriving.", table_name, ".variable_name IS 
-      'the survey SUBcomponent this variable falls under';
-    COMMENT ON COLUMN youth_thriving.", table_name, ".response_domain IS 
-      'the survey component this variable falls under';
-    COMMENT ON COLUMN youth_thriving.", table_name, ".", demographic_variable, " IS 
-      '", demographic_variable, " youth';
-    COMMENT ON COLUMN youth_thriving.", table_name, ".response IS 
-      'the response that the data is about';
-    COMMENT ON COLUMN youth_thriving.", table_name, ".count IS 
-      'the count of ", demographic_variable, " youth that selected this response';
-    COMMENT ON COLUMN youth_thriving.", table_name, ".rate IS 
-      'the weighted % of", demographic_variable, " youth who selected this response out of the total number of ", demographic_variable, " youth who answered this question';
-    COMMENT ON COLUMN youth_thriving.", table_name, ".rate_cv IS 
-      'a weighted coefficient of variation for this rate';
-    COMMENT ON COLUMN youth_thriving.", table_name, ".moe IS 
-      'a weighted margin of error for this rate';
-  "))
+  # Define the table schema and name
+  schema <- "youth_thriving"
+  
+  # Define the actual column name dynamically
+  demographic_col <- demographic_variable  # e.g., "bipoc", "lgbtqia", etc.
+  
+  # List of column comments, correctly setting the demographic column name
+  column_comments <- c(
+    "youth category" = demographic_variable,
+    "response" = "The response that the data is about",
+    "count" = paste0("The count of ", demographic_col, " youth that selected this response"),
+    "rate" = paste0("The weighted % of ", demographic_col, 
+                    " youth who selected this response out of the total number of ", 
+                    demographic_col, " youth who answered this question"),
+    "rate_cv" = "A weighted coefficient of variation for this rate",
+    "moe" = "A weighted margin of error for this rate",
+    "variable" = "Refers to the column label or variable in the survey data",
+    "question" = "The question that this variable refers to",
+    "sub_question" = "The subquestion that this variable refers to",
+    "question number",
+    "likert_type" = "Likert scale type",
+    "variable_name" = "The survey SUBcomponent this variable falls under",
+    "response_domain" = "The survey component this variable falls under"
+  )
+  
+  # Iterate through each column and send the COMMENT query individually
+  # for (col in names(column_comments)) {
+  #   query <- paste0(
+  #     "COMMENT ON COLUMN ", schema_name, ".", table_name, ".", col, " IS '", column_comments[[col]], "';"
+  #   )
+  #   dbSendQuery(con, query)
+  # }
+  add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
 }
 
 
@@ -156,17 +174,29 @@ df_merged_per_suspended <- fx_freq_table("suspended")
 df_merged_per_undocumented <- fx_freq_table("undocumented")
 df_merged_per_unhoused <- fx_freq_table("unhoused")
 df_merged_per_lgbtqia <- fx_freq_table("lgbtqia")
+df_merged_per_cisgender <- fx_freq_table("cisgender") %>%
+  mutate(cisgender = ifelse(cisgender == "cisgender", "cis woman/girl", 
+                              ifelse(cisgender == "not cisgender", "cis man/boy", NA)))
+df_merged_per_swana <- fx_freq_table("swana")
+df_merged_per_aian <- fx_freq_table("aian")
+df_merged_per_nhpi <- fx_freq_table("nhpi")
+
+
 
 #FIRST CHECK THE TABLES IN THE ENVIRONMENT AND THEN PUSH TO POSTGRES
 
-# write_survey_data_to_db(df_merged_per_bipoc, "bipoc")
-# write_survey_data_to_db(df_merged_per_disconnected, "disconnected")
-# write_survey_data_to_db(df_merged_per_systems_impacted, "systems_impacted")
-# write_survey_data_to_db(df_merged_per_arrested, "arrested")
-# write_survey_data_to_db(df_merged_per_suspended, "suspended")
-# write_survey_data_to_db(df_merged_per_undocumented, "undocumented")
-# write_survey_data_to_db(df_merged_per_unhoused, "unhoused")
-# write_survey_data_to_db(df_merged_per_lgbtqia, "lgbtqia")
+write_survey_data_to_db(df_merged_per_bipoc, "bipoc")
+write_survey_data_to_db(df_merged_per_disconnected, "disconnected")
+write_survey_data_to_db(df_merged_per_systems_impacted, "systems_impacted")
+write_survey_data_to_db(df_merged_per_arrested, "arrested")
+write_survey_data_to_db(df_merged_per_suspended, "suspended")
+write_survey_data_to_db(df_merged_per_undocumented, "undocumented")
+write_survey_data_to_db(df_merged_per_unhoused, "unhoused")
+write_survey_data_to_db(df_merged_per_lgbtqia, "lgbtqia")
+write_survey_data_to_db(df_merged_per_cisgender, "cisgender")
+write_survey_data_to_db(df_merged_per_swana, "swana")
+write_survey_data_to_db(df_merged_per_aian, "aian")
+write_survey_data_to_db(df_merged_per_nhpi, "nhpi")
 
   
 ####Step 5: CLOSE database connection! ####
