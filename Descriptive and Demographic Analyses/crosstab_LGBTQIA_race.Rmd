@@ -16,8 +16,8 @@ library(forcats)
 # Get function cross_tab_df()
 source("./crosstab_svyquestions.R")
 
-# Used to get RDA function for adding table comments
-source("W:\\RDA Team\\R\\Github\\RDA Functions\\main\\RDA-Functions\\Utility_Functions.R")
+# Used to connect to RDA database and RDA function for adding table comments
+source("W:\\RDA Team\\R\\credentials_source.R")
 
 # Connect to postgres
 con <- connect_to_db("bold_vision")
@@ -66,44 +66,33 @@ raw_counts <- race_lgbtqia_data %>%
 
 ## Crosstab table for race by lgbtqia+ and a REVISED binary psych distress question.
 ```{r}
-# Get the count column for the crosstab
-crosstab_count <- race_lgbtqia_data %>%
-  group_by(race_lgbtqia, cy_binary) %>%
-  summarise(count = n(), .groups = "drop")
 
-# Get the weighted rates for the crosstab
-crosstab_weighted <- race_lgbtqia_data %>% as_survey_design(weights = weights_final) %>%
+# Get the weighted rates and unweighted counts for the crosstab
+crosstab_race_lgbtqia_psych_worthless <- race_lgbtqia_data %>% as_survey_design(weights = weights_final) %>%
   group_by(race_lgbtqia, cy_binary) %>%
-  summarise(rate = survey_prop(vartype=c("cv","se"),level=.90)) %>% 
+  summarise(count=n(), # participant records count
+    rate = survey_prop(vartype=c("cv","se"),level=.90)) %>% 
   mutate(rate = rate * 100,
-         rate_se = rate_se * 100) %>%  # Convert to percentages
-  ungroup()
+         rate_se = rate_se * 100,
+         rate_cv=rate_cv*100) %>%  # Convert to percentages
+  ungroup()%>%
+  filter(!is.na(cy_binary))
 
-# Crosstab table for race groups by lgbtqia+ and a REVISED binary psych distress question, cy
-crosstab_race_lgbtqia_psych_worthless <- crosstab_count %>% 
-  left_join(crosstab_weighted, by=c("race_lgbtqia", "cy_binary")) %>%
-  filter(!(if_any(cy_binary,is.na)))
 ```
 
 ## Crosstab table for race by lgbtqia+ and ANOTHER binary psych distress question.
 ```{r}
-# Get the count column for the crosstab
-crosstab_count <- race_lgbtqia_data %>%
+# Get the weighted rates and unweighted counts for the crosstab
+crosstab_race_lgbtqia_psych_hopeless <- race_lgbtqia_data %>% as_survey_design(weights = weights_final) %>%
   group_by(race_lgbtqia, cu_binary) %>%
-  summarise(count = n(), .groups = "drop")
-
-# Get the weighted rates for the crosstab
-crosstab_weighted <- race_lgbtqia_data %>% as_survey_design(weights = weights_final) %>%
-  group_by(race_lgbtqia, cu_binary) %>%
-  summarise(rate = survey_prop(vartype=c("cv","se"),level=.90)) %>% # Automatically ensures sum = 100%
+  summarise(count=n(), # participant records count
+    rate = survey_prop(vartype=c("cv","se"),level=.90)) %>% # Automatically ensures sum = 100%
   mutate(rate = rate * 100,
-         rate_se = rate_se * 100) %>%  # Convert to percentages
-  ungroup()
+         rate_se = rate_se * 100,
+         rate_cv=rate_cv*100) %>%  # Convert to percentages
+  ungroup() %>%
+  filter(!is.na(cu_binary))
 
-# Crosstab table for race groups by lgbtqia+ and ANOTHER binary psych distress question, cu
-crosstab_race_lgbtqia_psych_hopeless <- crosstab_count %>% 
-  left_join(crosstab_weighted, by=c("race_lgbtqia", "cu_binary")) %>%
-  filter(!(if_any(cu_binary,is.na)))
 ```
 
 # Create survey dataframe with columns needed for analyses of lgbtqia+ by sparks and a binary  psych distress question.
@@ -135,23 +124,17 @@ raw_counts <- lgbtqia_sparks_data %>%
 
 ## Crosstab table for lgbtqia+ by sparks and a binary psych distress question.
 ```{r}
-# Get the count column for the crosstab
-crosstab_count <- lgbtqia_sparks_data %>%
+# Get the weighted rates and unweighted countsfor the crosstab
+crosstab_lgbtqia_sparks_psych_hopeless <- lgbtqia_sparks_data %>% as_survey_design(weights = weights_final) %>%
   group_by(lgbtqia_sparks, cu_binary) %>%
-  summarise(count = n(), .groups = "drop") 
-
-# Get the weighted rates for the crosstab
-crosstab_weighted <- lgbtqia_sparks_data %>% as_survey_design(weights = weights_final) %>%
-  group_by(lgbtqia_sparks, cu_binary) %>%
-  summarise(rate = survey_prop(vartype=c("cv","se"),level=.90)) %>% # Automatically ensures sum = 100%
+  summarise(count=n(), # participant records count
+    rate = survey_prop(vartype=c("cv","se"),level=.90)) %>% # Automatically ensures sum = 100%
   mutate(rate = rate * 100,
-         rate_se = rate_se * 100) %>%  # Convert to percentages
-  ungroup()
-
-# Crosstab table for lgbtqia+ by whether they have spark and binary psych distress question, cu
-crosstab_lgbtqia_sparks_psych_hopeless <- crosstab_count %>% 
-  left_join(crosstab_weighted, by=c("lgbtqia_sparks", "cu_binary")) %>%
+         rate_se = rate_se * 100,
+         rate_cv=rate_cv*100) %>%  # Convert to percentages
+  ungroup() %>%
   filter(!is.na(cu_binary))
+
 ```
 
 # Plot crosstabs
