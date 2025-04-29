@@ -24,6 +24,23 @@ race_df <- dbGetQuery(con, 'SELECT response_id, nh_race, race_asian, detailed_as
                          FROM youth_thriving.race_ethnicity_data where detailed_asian IS NOT NULL')
 #outputs 476 response_ids that identified as some form of Asian (multiracial included)
 
+# Start AV: check what the unique values of each race column are. 
+lapply(race_df[,-1], unique)
+sort(table(race_df$detailed_asian)) # Check counts of each unique value in detailed_asian
+
+# Split by semicolons, unlist, trim whitespace, and get unique values
+split_ethnicities <- strsplit(race_df$detailed_asian, ";")
+all_ethnicities <- unlist(split_ethnicities)
+all_ethnicities <- trimws(all_ethnicities)  # Remove leading/trailing whitespace
+unique_ethnicities <- unique(all_ethnicities)
+
+# Sort for better readability (optional)
+unique_ethnicities <- sort(unique_ethnicities)
+
+# Display the result
+unique_ethnicities
+# End AV: Looking at unique_ethnicities, the code in Step 2 needs to account for "Tartarian", "Uzbek", "Central Asian" = Central Asian, 
+
 #### STEP 2: Clean up your data and create a column that defines different Asian subgroups ####
 #join to have a df with the detailed asian categories and filter out any survey respondents that did not identify with this category
 svy_data <- race_df %>%
@@ -42,8 +59,10 @@ dict_var <- dict %>%
 svy_data <- svy_data %>%
   mutate(
     another_race_asian = ifelse(nh_race %in% c("nh_twoormor", "latinx"), 1, 0),
+    # AV: Need to correct spelling of Mongolian
     east_asian = ifelse(detailed_asian %in% c("Chinese", "Hmong", "Japanese", "Korean", "Monoglian", "Okinawan", "Taiwanese", "Other East Asian"), 1, 0),
     central_asian = ifelse(detailed_asian %in% c("Kazakh", "Uzbekh", "Other Central Asian"), 1, 0),
+    # AV: Need to remove another_race_asian from multiple_asian, only binary asian columns should be included. 
     multiple_asian = rowSums(across(c(south_asian, southeast_asian, another_race_asian, east_asian, central_asian))),
     subgroup_asian = case_when(
       multiple_asian >  1 ~ "Multi-Asian", # More than one Asian subgroup
@@ -52,7 +71,8 @@ svy_data <- svy_data %>%
       southeast_asian == 1 ~ "Southeast Asian",
       east_asian == 1 ~ "East Asian",
       central_asian == 1 ~ "Central Asian",
-      another_race_asian ==  1 ~ "Multiracial" , # Asian and Another Race
+      # AV: another_race_asian is included twice so one should be removed
+      another_race_asian ==  1 ~ "Multiracial" , # Asian and Another Race 
       race_asian == 1 ~ "Asian",
       TRUE ~ NA_character_
     )
@@ -84,10 +104,29 @@ fx_disagg_asian <- function(df_input, variable_input) {
   return(df_final)
 }
 
+# AV: Checked that counts are the raw counts by cross-checking with similar function without weighting
+check_fx_disagg_asian <- function(df_input, variable_input) {
+  df_asian_combined <-df_input %>%
+    filter(!is.na(!!sym(variable_input)), !is.na(subgroup_asian)) %>%
+    group_by(subgroup_asian, !!sym(variable_input)) %>%
+    summarise(
+      count = n(),
+      .groups = "drop"
+    ) 
+  
+  return(df_asian_combined)
+}
+
+check_disagg_asian_co <- check_fx_disagg_asian(svy_data, "co")
+
 ####STEP 4: Run tables on variables of interest and check if they look okay ####
 disagg_asian_co <- fx_disagg_asian(svy_data, "co")
 disagg_asian_dl <-fx_disagg_asian(svy_data, "dl")
 
+# AV: Check that rates add to 100% - they don't but see QA doc for reasoning
+check <- disagg_asian_co %>%
+  group_by(co) %>%
+  summarise(rate)
 ####STEP 5: Create function for writing data table to database ####
 
 write_survey_data_to_db <- function(df_var, variable_input) {
