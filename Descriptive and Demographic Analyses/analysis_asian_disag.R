@@ -29,22 +29,12 @@ race_df <- dbGetQuery(con, 'SELECT response_id, nh_race, race_asian, detailed_as
 svy_data <- race_df %>%
   left_join(svy_data, by = "response_id")
 
-dict <- svy_dd %>%
-  filter(variable == "co") %>%
-  pivot_longer(cols = response_1:response_12,
-               names_to = "response_numbers",
-               values_to = "response",
-               values_drop_na = TRUE)
-
-dict_var <- dict %>%
-  mutate(variable_merge_col = 1:nrow(dict))
-
 svy_data <- svy_data %>%
   mutate(
     another_race_asian = ifelse(nh_race %in% c("nh_twoormor", "latinx"), 1, 0),
-    east_asian = ifelse(detailed_asian %in% c("Chinese", "Hmong", "Japanese", "Korean", "Monoglian", "Okinawan", "Taiwanese", "Other East Asian"), 1, 0),
-    central_asian = ifelse(detailed_asian %in% c("Kazakh", "Uzbekh", "Other Central Asian"), 1, 0),
-    multiple_asian = rowSums(across(c(south_asian, southeast_asian, another_race_asian, east_asian, central_asian))),
+    east_asian = ifelse(str_detect(detailed_asian, regex("Chinese|Hmong|Japanese|Korean|Mongolian|Okinawan|Taiwanese|Other East Asian", ignore_case = FALSE)), 1, 0),
+    central_asian = ifelse(str_detect(detailed_asian, regex("Tartarian|Uzbek|Central Asian|Kazakh|Uzbekh|Other Central Asian", ignore_case = FALSE)), 1, 0), 
+    multiple_asian = rowSums(across(c(south_asian, southeast_asian, east_asian, central_asian))),
     subgroup_asian = case_when(
       multiple_asian >  1 ~ "Multi-Asian", # More than one Asian subgroup
       another_race_asian ==  1 ~ "Multiracial" , # Asian and Another Race
@@ -52,10 +42,12 @@ svy_data <- svy_data %>%
       southeast_asian == 1 ~ "Southeast Asian",
       east_asian == 1 ~ "East Asian",
       central_asian == 1 ~ "Central Asian",
-      another_race_asian ==  1 ~ "Multiracial" , # Asian and Another Race
       race_asian == 1 ~ "Asian",
       TRUE ~ NA_character_
-    )
+    ),
+    southeast_asian_aoic = southeast_asian,
+    south_asian_aoic = south_asian,
+    central_asian_aoic = central_asian
   ) %>%
   select(response_id, subgroup_asian, race_asian, southeast_asian, south_asian, east_asian, central_asian, another_race_asian, multiple_asian, everything())
 
@@ -75,6 +67,16 @@ fx_disagg_asian <- function(df_input, variable_input) {
       rate_se = rate_se * 100, 
       moe = rate_se * 1.645 * 100
     )
+  
+  dict <- svy_dd %>%
+    filter(variable == variable_input) %>%
+    pivot_longer(cols = response_1:response_12,
+                 names_to = "response_numbers",
+                 values_to = "response",
+                 values_drop_na = TRUE)
+  
+  dict_var <- dict %>%
+    mutate(variable_merge_col = 1:nrow(dict))
   
   df_final <- merge(x = df_asian_combined, y = dict_var, 
                     by.x = variable_input, by.y = "variable_merge_col") %>%
