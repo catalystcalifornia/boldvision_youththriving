@@ -30,6 +30,7 @@ con <- connect_to_db("bold_vision")
 # Pull in the survey data and data dictionary
 raw_svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
 svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024")
+
 ```
 
 ```{r smallsvydata, include=FALSE}
@@ -48,6 +49,7 @@ small_svy_dd <- svy_dd %>%
 # small_svy_data only contains the columns of likert questions needed for the factor analysis
 small_svy_data <- raw_svy_data %>%
   select(response_id, all_of(small_svy_dd$variable))
+
 ```
 
 ```{r naresponse, include=FALSE}
@@ -84,6 +86,7 @@ for (col in names(small_svy_data)) {
     }
   }
 }
+
 ```
 
 ```{r recode1, include=FALSE}
@@ -93,6 +96,7 @@ for (col in names(small_svy_data)) {
 
 small_svy_data <- small_svy_data %>%
   mutate(across(c(do, dp, dq, dr, ds, dt, du, dv), ~ ifelse(. == 3, 1, .)))
+
 ```
 
 ```{r recode2, include=FALSE}
@@ -121,6 +125,7 @@ for (col in columns_to_reverse) {
                                 NA,
                                 scale_max + 1 - small_svy_data[[col]])
 }
+
 ```
 
 ```{r recode3}
@@ -131,6 +136,7 @@ small_svy_dd <- small_svy_dd %>%
   select(-c(variable_category)) %>%
   rename(subcomponent_name = variable_name, 
          component_name = response_domain)
+
 ```
 
 ```{r svydata, include=FALSE}
@@ -146,6 +152,7 @@ matching_cols <- matching_cols[!matching_cols %in% c("response_id")]
 svy_data <- raw_svy_data %>%
   select(-all_of(matching_cols)) %>% # Drop matching columns
   left_join(small_svy_data, by = "response_id") # Re-add them from small_svy_data
+
 ```
 
 ```{r demo, include=FALSE}
@@ -166,6 +173,7 @@ race_ethnicity_df <- race_ethnicity_data %>%
 poverty_rate_data <- dbGetQuery(con, "SELECT response_id, perc_below_100_fpl, perc_below_200_fpl FROM youth_thriving.poverty_rate_data")  
 poverty_rate_df <- poverty_rate_data %>%
   mutate(high_poverty_area = ifelse(perc_below_200_fpl>=26.0,1,0))
+
 ```
 
 ```{r svydata2, include=FALSE}
@@ -346,6 +354,8 @@ compare_models_weighted <- function(unweighted_output, weighted_output_fiml, wei
     
   return(rbind(unweighted_sig_vars_ordered, weighted_fiml_sig_vars_ordered, weighted_sig_vars_ordered))
 }
+
+
 ```
 
 ## Dependent variable: subcomponent_psychological_distress
@@ -964,6 +974,36 @@ sem_output_1j.5_weighted <- get_sem_results_se(fit_1j.5_weighted) %>%
 
 compare_1j.5_weighted <- compare_models_weighted(sem_output_1j.5_se, sem_output_1j.5_weighted_fiml,sem_output_1j.5_weighted)
 
+# run without demographic variables that had higher nonresponse on the survey to test if fiml missing could be affecting results if not missing at random
+model_1j.5_reduced <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds
+  subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx
+
+  # Regression
+  subcomponent_psychological_distress ~ component_caring_families_and_relationships +
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    component_vibrant_communities + 
+    personal_safety_re +
+    race_latinx + race_nh_asian + race_nh_black + race_nh_twoormor + race_nh_aian + race_nh_other + race_nh_nhpi + race_nh_swana +
+    cishet_lgbtqia +
+    sparks 
+'
+
+# Run model on weighted data WITH FIML and robust standard errors
+fit_1j.5_reduced_weighted_fiml<- sem(model_1j.5_reduced, data = svy_data, sampling.weights = "weights_final", std.lv = TRUE, missing = "fiml.x", se="robust")
+
+sem_output_1j.5_reduced_weighted_fiml <- get_sem_results_se(fit_1j.5_reduced_weighted_fiml) %>% 
+  mutate(model_name="1j.5_reduced_weighted_fiml") %>%
+  select(model_name, everything())
+# even when dropping high missing vars, outcomes stay the same
+
 
 ```
 
@@ -1051,6 +1091,40 @@ model_1j.6_vif <- lm(subcomponent_psychological_distress ~  component_caring_fam
 # Get VIF scores
 vif_1j.6 <- vif(model_1j.6_vif)
 max(vif_1j.6)
+```
+
+### Model 1j.7: FINAL; subsetted for black respondents only
+```{r , warning=FALSE, echo=FALSE}
+model_1j.7_black <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds
+  subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx
+
+  # Regression
+  subcomponent_psychological_distress ~ component_caring_families_and_relationships +
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    component_vibrant_communities + 
+    cishet_lgbtqia +
+    systems_impacted +
+    sparks 
+'
+
+svy_data_black<-svy_data %>% filter(race_nh_black=='1')
+
+# Run model on weighted data WITH FIML and robust standard errors
+fit_1j.7_weighted_fiml_black<- sem(model_1j.7_black, data = svy_data_black, sampling.weights = "weights_final", std.lv = TRUE, missing = "fiml.x", se="robust")
+
+sem_output_1j.7_weighted_fiml_black_test_2 <- get_sem_results_se(fit_1j.7_weighted_fiml_black) %>% 
+  mutate(model_name="1j.7_weighted_fiml_black") %>%
+  select(model_name, everything())
+
+
 ```
 
 #### Create postgres table for 1j.5 and 1j.6
@@ -1637,6 +1711,35 @@ sem_output_2f.6_weighted <- get_sem_results_se(fit_2f.6_weighted) %>%
   select(model_name, everything())
 
 compare_2f.6_weighted <- compare_models_weighted(sem_output_2f.6_se, sem_output_2f.6_weighted_fiml,sem_output_2f.6_weighted)
+
+# run without demographic variables that had higher nonresponse on the survey to test if fiml missing could be affecting results if not missing at random
+model_2f.6_reduced <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_self_efficacy_hope =~ co + cp + cn + cq
+  
+  # Regression
+  subcomponent_self_efficacy_hope ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    personal_safety_re +
+    opportunities_for_community_involvement_re + 
+    race_latinx + race_nh_asian + race_nh_black + race_nh_twoormor + race_nh_aian + race_nh_other + race_nh_nhpi + race_nh_swana +
+    cishet_lgbtqia +
+    perc_below_200_fpl +
+    sparks 
+'
+
+# Run model on weighted data WITH FIML and robust standard errors
+fit_2f.6_reduced_weighted_fiml<- sem(model_2f.6_reduced, data = svy_data, sampling.weights = "weights_final", std.lv = TRUE, missing = "fiml.x", se="robust")
+
+sem_output_2f.6_reduced_weighted_fiml <- get_sem_results_se(fit_2f.6_reduced_weighted_fiml) %>% 
+  mutate(model_name="2f.6_reduced_weighted_fiml") %>%
+  select(model_name, everything())
+
+# stays mostly the same
+
+
 ```
 
 ```{r}
@@ -2044,6 +2147,35 @@ column_comments <- c(
   "The independent variable name",  
   "The absolute value of the independent variable effect size, ranging from 0 to 1",  
   "The independent variable effect size, without the absolute value taken"
+)
+
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
+```
+
+## Create table of reduced models with sensitive demographics
+```{r}
+all_results_reduced <- as.data.frame(rbind(sem_output_1j.5_reduced_weighted_fiml,sem_output_2f.6_reduced_weighted_fiml))
+
+# Write table with metadata
+table_name <- "factor_analysis_sem_results_weighted_reduced"
+schema <- "youth_thriving"
+indicator <- "A table with the results of the structural equation modeling for the weighted final models 1j.5 and 2f.6 but with sensitive demographic variables other than lgbtqia+ removed. Including model fit measures"
+source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/EMG/boldvision_youththriving/Factor Analysis and Correlations/structural_equation_modeling.Rmd "
+qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_structural_equation_modeling_2.docx"
+table_comment <- paste0(indicator, source)
+# dbWriteTable(con, Id(schema, table_name), all_results_reduced, overwrite = FALSE, row.names = FALSE)
+
+# Comment on table and columns
+column_names <- colnames(all_results_reduced) # Get column names
+column_comments <- c(
+  "The model name",
+  "dependent variable",
+  "The independent variable name",  
+  "The independent variable effect size standardized",  
+  "The independent variable effect size nonstandardized",
+  "p value",
+  "standard error of the independent variable"
 )
 
 # add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
