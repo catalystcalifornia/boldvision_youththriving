@@ -397,7 +397,7 @@ circular_plot <- function(component_input,component_folder,component_colors,lege
 component_input <- "Freedom From Structural Racism" # component being visualized for filtering and legend title
 component_folder <- "Racial Justice, Equity, And Inclusion" # name of folder in deliverables to save to
 component_colors <-c("#A79FD1","#7A6FBA","#4E3FA3","#220f8c") # color ramp for the legend
-legend_labels <- c("<- Lower","","","Higher ->") # if function doesn't work, e.g., error in get_labels might need to add another blank value
+legend_labels <- c("<- Lower","","Higher ->") # if function doesn't work, e.g., error in get_labels might need to add another blank value
 title_text <- "Average Predicted <span style ='color: #220f8c;'>Freedom From Structural Racism</span>" # replace color hex and name between <>
 subtitle_text <- paste("\nLA County youth vary in how freely they can live without experiencing", # text breaks in the subtitle after running initial visual
                        "structural racism. Undocumented, unhoused, LGBTQIA+, and systems",
@@ -427,7 +427,7 @@ circular_plot(component_input,component_folder,component_colors,legend_labels,ti
 component_input <- "Caring Families And Relationships" # component being visualized for filtering and legend title
 component_folder <- "Caring Families And Relationships" # name of folder in deliverables to save to
 component_colors <-c("#99CFB7","#66B692","#339E6E","#00864A") # color ramp for the legend
-legend_labels <- c("<- Lower","","","","Higher ->") # if function doesn't work, e.g., error in get_labels might need to add or remove another blank value
+legend_labels <- c("<- Lower","","","Higher ->") # if function doesn't work, e.g., error in get_labels might need to add or remove another blank value
 title_text <- "Average Predicted <span style ='color: #00864A;'>Caring Families and <br>Relationships</span>" # replace color hex and name between <>
 subtitle_text <- paste("\nLA County youth vary in the support they have from family, adults,",
                         "and other relationships. Unhoused, systems impacted, undocumented,",
