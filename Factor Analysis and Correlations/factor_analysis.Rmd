@@ -40,7 +40,7 @@ small_svy_dd <- svy_dd %>%
 
 # small_svy_data only contains the columns of likert questions needed for the factor analysis
 small_svy_data <- svy_data %>%
-  select(response_id, all_of(small_svy_dd$variable))
+  select(response_id, weights_final, all_of(small_svy_dd$variable))
 ```
 
 ```{r, include=FALSE, echo=FALSE}
@@ -161,13 +161,13 @@ run_cfa <- function(model_name) {
  #if(run_model_fit_measures(model_name)==TRUE) {
   
     # Fit the data to a CFA model
-    fit.cat <- cfa(model_name, data=small_svy_data, std.lv = TRUE, ordered = TRUE)
+    fit.cat <- cfa(model_name, data=small_svy_data, std.lv = TRUE, ordered = TRUE, sampling.weights="weights_final")
     # Define threshold for factor loadings
     threshold_factor_loading <- 0.6
     
     # Extract factor loadings and filter by threshold
-    loadings_summary <- parameterEstimates(fit.cat, standardized = TRUE) %>% 
-      filter(op == "=~") %>% 
+    loadings_summary <- parameterEstimates(fit.cat, standardized = TRUE) %>%
+      filter(op == "=~") %>%
       select(variable = rhs, factor_loading = est, ci.lower, ci.upper, se, p_value = pvalue) %>%
       mutate(met_threshold = abs(factor_loading) >= threshold_factor_loading) %>%
       arrange(desc(factor_loading)) # Reorder by factor_loading score in descending order
@@ -359,7 +359,7 @@ indicator <- "A table with the results of the factor analysis"
 source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Factor Analysis and Correlations/factor_analysis.Rmd "
 qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_factor_analysis.docx"
 table_comment <- paste0(indicator, source)
-# dbWriteTable(con, c(schema, table_name), all_results, overwrite = FALSE, row.names = FALSE)
+# dbWriteTable(con, Id(schema, table_name), all_results, overwrite = FALSE, row.names = FALSE)
 
 # Comment on table and columns
 column_names <- colnames(all_results) # Get column names
@@ -423,6 +423,13 @@ factor_analysis <- dbGetQuery(con, "SELECT * FROM youth_thriving.factor_analysis
 
  # Display all the model strings
  # all_models_strings$model_string
+
+# get vars with high factor loadings for each model for QA
+factor_analysis_final_vars<-factor_analysis %>%
+  group_by(model_name) %>%
+  summarise(vars=paste0(variable, collapse= " + "))
+factor_analysis_final_vars
+
 ```
 
 ```{r, include=FALSE, echo=FALSE}
@@ -430,22 +437,17 @@ component_caring_families_and_relationships_model <- 'component_caring_families_
 component_cultural_identity_model <- 'component_cultural_identity =~ dz + dy + dx + ea + eb + ec'
 component_positive_identity_and_self_worth_model <- 'component_positive_identity_and_self_worth =~ co + cp + de + dd + df + cn'
 component_racial_justice_equity_and_inclusion_model <- 'component_racial_justice_equity_and_inclusion =~ ek + el + ei + em + en + ej + eh + ef + eg + ep + et + ew + eu + eq + eo + er + es + ev + ey + ex'
-component_safety_model <- 'component_safety =~ q19'
+
+# note originally cm had a factor loading greater than .6 but after item reduction, it dropped to below .5, removed from model
 component_strong_minds_model <- 'component_strong_minds =~ cy + cu + cw + cv + ct + cx'
 component_vibrant_communities_model <- 'component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds'
-positive_identity_and_self_worth_AND_strong_minds_model_model <- 'positive_identity_and_self_worth_AND_strong_minds_model =~ cy + cu + co + cp + cw + cn + cm + cr + dd + de'
-subcomponent_connectedness_model <- 'subcomponent_connectedness =~ dk + dl'
-subcomponent_critical_action_model <- 'subcomponent_critical_action =~ dm'
+
+# tailored based on response rates to include items with highest response
 subcomponent_experiences_of_racism_and_discrimination_model <- 'subcomponent_experiences_of_racism_and_discrimination =~ ei + em + eh + eg'
 subcomponent_freedom_to_explore_the_self_model <- 'subcomponent_freedom_to_explore_the_self =~ de + dd + df'
-subcomponent_growth_mindset_model <- 'subcomponent_growth_mindset =~ cr'
-subcomponent_hope_for_the_future_model <- 'subcomponent_hope_for_the_future =~ co + cp'
 subcomponent_microaggressions_model <- 'subcomponent_microaggressions =~ ep + eq + eo + er'
-subcomponent_personal_safety_model <- 'subcomponent_personal_safety =~ q19'
 subcomponent_positive_emotions_model <- 'subcomponent_positive_emotions =~ cl + cm + ck'
 subcomponent_psychological_distress_model <- 'subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx'
-subcomponent_self_efficacy_model <- 'subcomponent_self_efficacy =~ cn'
-subcomponent_sparks_model <- 'subcomponent_sparks =~ q10'
 subcomponent_structural_racism_model <- 'subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex'
 subcomponent_self_efficacy_hope_model <- 'subcomponent_self_efficacy_hope =~ co + cp + cn + cq'
 ```
@@ -492,7 +494,7 @@ indicator <- "A table with the results of the factor analysis. In this table, fa
 source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Factor Analysis and Correlations/factor_analysis.Rmd "
 qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_item_reduction_component_imputation.docx"
 table_comment <- paste0(indicator, source)
-#dbWriteTable(con, c(schema, table_name), all_results, overwrite = TRUE, row.names = FALSE)
+# dbWriteTable(con, Id(schema, table_name), all_results, overwrite = FALSE, row.names = FALSE)
 
 # Comment on table and columns
 column_names <- colnames(all_results) # Get column names
@@ -519,7 +521,7 @@ column_comments <- c(
   "the subcomponent this variable belongs to"
 )
 
-add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
 
 #dbDisconnect(con)
 ```
@@ -528,7 +530,7 @@ add_table_comments(con, schema, table_name, indicator, source, qa_filepath, colu
 # Create a function to get the predicted factor scores
 run_predictions <- function(model_name) {
   # Fit the data to a CFA model
-  fit.cat <- cfa(model_name, data=small_svy_data, std.lv = TRUE, ordered = TRUE)
+  fit.cat <- cfa(model_name, data=small_svy_data, std.lv = TRUE, ordered = TRUE, sampling.weights = "weights_final")
 
   # Calculate overall factor scores for the model 
   # and attach the scores to the original data
@@ -567,18 +569,6 @@ predicted_results <- do.call(cbind, lapply(measurement_models, run_predictions))
 predicted_results <- subset(predicted_results, select=which(!duplicated(names(predicted_results)))) 
 ```
 
-```{r, include=FALSE, echo=FALSE}
-# Update 2/13/25: We are not going to use a summative score for subcomponent_experiences_of_racism_and_discrimination_model. Instead, we reduced the number of items in the model.
-
-# There are too many NA values for the "Experiences of Racism and Discrimination" so we are not going to use predicted factor scores for this subcomponent. Instead, we are going to compute a summative score.
-# sum_experiences <- small_svy_data %>%
-#   mutate(subcomponent_experiences_of_racism_and_discrimination_sum = rowSums(select(., c(ef, eg, eh, ei, ej, ek, el, em, en)), na.rm = TRUE)) %>%
-#   select(response_id,subcomponent_experiences_of_racism_and_discrimination_sum)
-
-# Merge subcomponent_experiences_of_racism_and_discrimination_sum with predicted_results
-# predicted_results <- predicted_results %>%
-#   left_join(sum_experiences, by="response_id")
-```
 
 ```{r, include=FALSE, echo=FALSE}
 # Write table with metadata
@@ -588,7 +578,7 @@ indicator <- "A table with the predicted factor scores of the subcomponents and 
 source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Factor Analysis and Correlations/factor_analysis.Rmd "
 qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_item_reduction_component_imputation.docx"
 table_comment <- paste0(indicator, source)
-#dbWriteTable(con, c(schema, table_name), predicted_results, overwrite = TRUE, row.names = FALSE)
+# dbWriteTable(con, Id(schema, table_name), predicted_results, overwrite = FALSE, row.names = FALSE)
 
 # Comment on table and columns
 column_names <- colnames(predicted_results) # Get column names
@@ -605,7 +595,7 @@ column_comments <- c(
   "Predicted factor scores for subcomponent experiences of racism and discrimination"
 )
 
-add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
 
 #dbDisconnect(con)
 ```
