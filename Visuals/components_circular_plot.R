@@ -282,11 +282,11 @@ p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
 showtext_opts(dpi=300)
 
 ggsave(plot=p, 
-       file="W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/Strong Minds/circular_plot_Psychological_Distress.png",
+       file="./Visuals/Strong Minds/circular_plot_Psychological_Distress.png",
        units = c("in"),  width = 8, height = 8)
 
 ggsave(plot=p, 
-       file="W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/Strong Minds/circular_plot_Psychological_Distress.pdf",
+       file="./Visuals/Strong Minds/circular_plot_Psychological_Distress.pdf",
        units = c("in"),  width = 8, height = 8)
 
 
@@ -382,11 +382,11 @@ circular_plot <- function(component_input,component_folder,component_colors,lege
   showtext_opts(dpi=300)
   
   ggsave(plot=p, 
-         file=paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/",component_folder,"/circular_plot_",component_input,".png"),
+         file=paste0("./Visuals/",component_folder,"/circular_plot_",component_input,".png"),
          units = c("in"),  width = 8, height = 8)
   
   ggsave(plot=p, 
-         file=paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/",component_folder,"/circular_plot_",component_input,".pdf"),
+         file=paste0("./Visuals/",component_folder,"/circular_plot_",component_input,".pdf"),
          units = c("in"),  width = 8, height = 8)
   
 }
