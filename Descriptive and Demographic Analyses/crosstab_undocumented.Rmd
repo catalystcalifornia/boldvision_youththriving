@@ -309,6 +309,7 @@ qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thrivin
 # First table
 table_name <- "crosstab_undocumented_community"
 indicator <- "A crosstab table for undocumented youth vs. not-undocumented youth by their level of opportunities for community involvement and outcomes in self-efficacy and hope and sparks. There are three different cross tabs in the table. Be sure to filter by var1_variable and var2_variable to get unique crosstabs that were run. Rates may not add to 100% because NAs/ don't wish to answer are excluded in final table"
+table_comment <- paste0(indicator, source)
 
 # dbWriteTable(con, Id(schema, table_name), crosstab_undocumented_community, overwrite = FALSE, row.names = FALSE)
 
@@ -316,9 +317,9 @@ indicator <- "A crosstab table for undocumented youth vs. not-undocumented youth
 column_names <- colnames(crosstab_undocumented_community) # Get column names
 column_comments <- c(
   "Variable for estimates by undocumented or not undocumented youth",
-  "Binary variable for first grouping variable--in this case opportunities for community involvement where 0 is never/sometimes and 1 is often/always",  
+  "Binary variable for first grouping variable--in this case opportunities for community involvement where 0 is never or sometimes and 1 is often or always", 
   "Binary variable for second grouping variable either hope for future, self-efficacy, or sparks questions refer to var2_variable and var2_response_label for detail",  
-  "The unweighted count of youth respondents in the combined demographic/var1/var2 category",
+  "The unweighted count of youth respondents in the combined demographic & var1 & var2 category",
   "The weighted rate of the demographic + var1 + var2 group",
   "CV of the rate",
   "Standard error of the rate",
@@ -376,67 +377,6 @@ column_comments <- c(
   "Subquestion of the grouping variable",
      "Response codes included in the binary coding of the question level grouping variable",
   "demographic grouping identifier for the crosstab either systems impacted or unhoused")
-
-# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
-
-```
-## Table crosstab_race_lgbtqia_psych_hopeless
-```{r}
-# Write table with metadata
-table_name <- "crosstab_race_lgbtqia_psych_hopeless"
-schema <- "youth_thriving"
-indicator <- "A crosstab table for race by lgbtqia+ identity and a REVISED binary psych distress question - did the respondent feel hopeless in the past 30 days at least a little of the time?"
-source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Descriptive and Demographic Analyses/crosstab_LGBTQIA_race.Rmd "
-qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_crosstab_LGBTQIA_race.docx"
-table_comment <- paste0(indicator, source)
-# dbWriteTable(con, Id(schema, table_name), crosstab_race_lgbtqia_psych_hopeless, overwrite = FALSE, row.names = FALSE)
-
-# Comment on table and columns
-column_names <- colnames(crosstab_race_lgbtqia_psych_hopeless) # Get column names
-column_comments <- c(
-  "Shows the race and gender/sexuality identity includes non-hispanic race and alone and in combo for aian, nhpi, and swana",
-  "Binary variable for psychological distress question cu, did the respondent feel hopeless in the past 30 days at least a little of the time?",  
-  "The raw, unweighted count of the grouping (race, gender/sexuality, and feelings of hopelessnesss)",  
-  "The weighted rate of the race+gender/sexuality group that experienced feelings of hopelessnesss (or not)",
-  "CV of the rate",
-  "Standard error of the rate",
-  "Variable name of the psychological distress question",
-  "The psychological distress survey question",
-  "The psychological distress survey subquestion",
-  "The component",
-  "The subcomponent"
-)
-
-# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
-
-```
-
-## Table crosstab_lgbtqia_sparks_psych_hopeless
-```{r}
-# Write table with metadata
-table_name <- "crosstab_lgbtqia_sparks_psych_hopeless"
-schema <- "youth_thriving"
-indicator <- "A crosstab table lgbtqia+ identity by whether they have sparks and a REVISED binary psych distress question - did the respondent feel hopeless in the past 30 days at least a little of the time?"
-source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Descriptive and Demographic Analyses/crosstab_LGBTQIA_race.Rmd "
-qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_crosstab_LGBTQIA_race.docx"
-table_comment <- paste0(indicator, source)
-# dbWriteTable(con, Id(schema, table_name), crosstab_lgbtqia_sparks_psych_hopeless, overwrite = FALSE, row.names = FALSE)
-
-# Comment on table and columns
-column_names <- colnames(crosstab_lgbtqia_sparks_psych_hopeless) # Get column names
-column_comments <- c(
-  "Shows the gender/sexuality identity and whether they have sparks",
-  "Binary variable for psychological distress question cu, did the respondent feel hopeless in the past 30 days at least a little of the time?",  
-  "The raw, unweighted count of the grouping (gender/sexuality, whether they have sparks, and feelings of hopelessnesss)",  
-  "The weighted rate of the gender/sexuality+sparks group that experienced feelings of hopelessnesss (or not)",
-  "CV of the rate",
-  "Standard error of the rate",
-  "Variable name of the psychological distress question",
-  "The psychological distress survey question",
-  "The psychological distress survey subquestion",
-  "The component",
-  "The subcomponent"
-)
 
 # add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
 
