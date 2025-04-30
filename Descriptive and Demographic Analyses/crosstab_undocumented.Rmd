@@ -308,7 +308,7 @@ qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thrivin
 
 # First table
 table_name <- "crosstab_undocumented_community"
-indicator <- "A crosstab table for undocumented youth vs. not-undocumented youth by their level of opportunities for community involvement and outcomes in self-efficacy and hope and sparks. There are three different cross tabs in the table. Be sure to filter by var1_variable and var2_variable to get unique crosstabs that were run. Rates may not add to 100% because NAs/ don't wish to answer are excluded in final table"
+indicator <- "A crosstab table for undocumented youth vs. not-undocumented youth by their level of opportunities for community involvement and outcomes in self-efficacy and hope and sparks. There are three different cross tabs in the table. Be sure to filter by var1_variable and var2_variable to get unique crosstabs that were run. Rates may not add to 100% because NAs/ dont wish to answer are excluded in final table"
 table_comment <- paste0(indicator, source)
 
 # dbWriteTable(con, Id(schema, table_name), crosstab_undocumented_community, overwrite = FALSE, row.names = FALSE)
@@ -338,9 +338,9 @@ column_comments <- c(
 
 # Second table
 table_name <- "demographics_undocumented_crosstabs"
-indicator <- "A crosstab table for undocumented youth vs. not-undocumented youth by other demographic variables including unhoused, systems impacted, and race. There are three different cross tabs in the table. Be sure to filter by the demographic category variable to get unique crosstabs that were run. Rates may not add to 100% because NAs/ don't wish to answer are excluded in final table for all variables but race"
+indicator <- "A crosstab table for undocumented youth vs. not-undocumented youth by other demographic variables including unhoused, systems impacted, and race. There are three different cross tabs in the table. Be sure to filter by the demographic category variable to get unique crosstabs that were run. Rates may not add to 100% because NAs/ dont wish to answer are excluded in final table for all variables but race"
 
-# dbWriteTable(con, Id(schema, table_name), crosstab_undocumented_demographics, overwrite = FALSE, row.names = FALSE)
+# dbWriteTable(con, Id(schema, table_name), demographics_undocumented_crosstabs, overwrite = FALSE, row.names = FALSE)
 
 # Comment on table and columns
 column_names <- colnames(demographics_undocumented_crosstabs) # Get column names
@@ -358,7 +358,7 @@ column_comments <- c(
 
 # Third table
 table_name <- "crosstab_undocumented_systems_community_hope"
-indicator <- "A crosstab table for undocumented youth vs. not-undocumented youth by another demographic variable (unhoused or systems impacted) and by their level of opportunities for community involvement or hope for the future. There are three different cross tabs in the table. Be sure to filter by the demographic category variable and question variable to get unique crosstabs that were run. Rates may not add to 100% because NAs/ don't wish to answer are excluded in final table"
+indicator <- "A crosstab table for undocumented youth vs. not-undocumented youth by another demographic variable (unhoused or systems impacted) and by their level of opportunities for community involvement or hope for the future. There are three different cross tabs in the table. Be sure to filter by the demographic category variable and question variable to get unique crosstabs that were run. Rates may not add to 100% because NAs/ dont wish to answer are excluded in final table"
 
 # dbWriteTable(con, Id(schema, table_name), crosstab_undocumented_systems_community_hope, overwrite = FALSE, row.names = FALSE)
 
