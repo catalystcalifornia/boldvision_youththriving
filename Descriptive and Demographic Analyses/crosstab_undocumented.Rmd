@@ -1,0 +1,383 @@
+---
+title: "Crosstab on undocumented youth by hope for future and opportunities for community involvement"
+date: "2025-04-29"
+output: html_document
+---
+# Get data
+```{r}
+library(tidyverse)
+library(srvyr)
+library(RPostgres)
+library(ggplot2)
+library(dplyr)
+library(forcats)
+
+# Used to connect to RDA database and RDA function for adding table comments
+source("W:\\RDA Team\\R\\credentials_source.R")
+
+# source function for crosstabs
+source(".\\crosstab_functions.R")
+
+# Connect to postgres
+con <- connect_to_db("bold_vision")
+
+# Pull in the survey data and data dictionary
+raw_svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
+svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024")
+
+# Pull in undocumented and race data
+undocumented_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.demographics_binary_data")
+race_ethnicity_data <- dbGetQuery(con, "SELECT response_id, nh_race, detailed_race FROM youth_thriving.race_ethnicity_data")
+
+# Merge data frames into svy_data using response_id and selecting variables of interest
+svy_data <- raw_svy_data %>% select(response_id, q10, co, dm, cn, weights_final) %>%
+  left_join(undocumented_data, by = "response_id") %>%
+  left_join(race_ethnicity_data, by = "response_id") 
+```
+
+# Recode columns for analysis
+```{r}
+# Create binary columns for co (I feel hopeful when I think about my future) and dm (There are ways for me to get involved in my community) and q10 (sparks)
+vars <- svy_dd %>% filter(variable %in% c("q10","dm","co","cn"))
+
+# check distributions
+table(svy_data$dm)
+table(svy_data$co)
+# going to group two lowest responses for greater sample sizes
+
+# recode likert data/questions
+svy_data <- svy_data %>%
+  mutate(q10_binary=ifelse(q10==4, NA, 
+                    ifelse(q10 >=2, 0,
+                           q10)),
+           dm_binary = case_when(is.na(dm) | dm == 5 ~ NA,
+                                 dm <= 2 ~ 0, 
+                                 TRUE ~ 1),
+           co_binary = case_when(is.na(co) | co == 5 ~ NA,
+                                 co <= 2 ~ 0,
+                                 TRUE ~ 1),
+                    cn_binary = case_when(is.na(cn) | cn == 5 ~ NA,
+                                 cn <= 2 ~ 0,
+                                 TRUE ~ 1),
+         )
+
+# check recoding
+table(svy_data$dm)
+table(svy_data$dm_binary)
+
+# recode demographic data for better labels of groups
+# list of binary vars it can apply to systematically
+binary_vars <- svy_data %>% 
+  select(bipoc:unhoused) %>%
+  names()
+
+# loop statement
+for (i in binary_vars) { 
+svy_data<- svy_data %>%
+  mutate(!!paste({{i}}):=
+           case_when(
+             !!sym(i)==1 ~ !!paste({{i}}),
+             !!sym(i)==0 ~ !!paste("not",{{i}}),
+             TRUE ~ NA
+           ) )
+}
+
+# check recoding
+table(svy_data$undocumented,useNA='always')
+table(undocumented_data$undocumented,useNA='always')
+
+# check counts
+raw_counts <- svy_data %>%
+  group_by(undocumented,dm_binary, co_binary) %>%
+  summarise(count = n(), .groups = "drop")%>%
+  na.omit()
+# at least 10 in each
+```
+
+# Crosstab tables for undocumented vs. documented youth - opportunities for community involvement by hope for future, self-efficacy, sparks
+```{r}
+
+# opportunities for community involvement - never/sometimes true vs often/always true
+undocumented_dm<-crosstab_two_vars(svy_data,"undocumented","dm_binary")
+undocumented_dm<-datadict_one_var(undocumented_dm,"dm_binary","Never/Sometimes True","Often/Always True","dm")
+
+# hope for future - never/sometimes true vs often/always true
+undocumented_co<-crosstab_two_vars(svy_data,"undocumented","co_binary")
+undocumented_co<-datadict_one_var(undocumented_co,"co_binary","Never/Sometimes True","Often/Always True","co")
+
+# capable of most things - never/sometimes true vs often/always true
+undocumented_cn<-crosstab_two_vars(svy_data,"undocumented","cn_binary")
+undocumented_cn<-datadict_one_var(undocumented_cn,"cn_binary","Never/Sometimes True","Often/Always True","cn")
+
+# opportunities for community involvement - never/sometimes true vs often/always true -- compared to hope for future
+undocumented_dm_co<-crosstab_three_vars(svy_data,"undocumented","dm_binary","co_binary")
+undocumented_dm_co<-datadict_two_var(undocumented_dm_co,"dm_binary","Never/Sometimes True","Often/Always True","dm",
+                                          "co_binary","Never/Sometimes True","Often/Always True","co")
+
+# opportunities for community involvement - never/sometimes true vs often/always true -- compared to capable of most things
+undocumented_dm_cn<-crosstab_three_vars(svy_data,"undocumented","dm_binary","cn_binary")
+undocumented_dm_cn<-datadict_two_var(undocumented_dm_cn,"dm_binary","Never/Sometimes True","Often/Always True","dm",
+                                          "cn_binary","Never/Sometimes True","Often/Always True","cn")
+
+# opportunities for community involvement - never/sometimes true vs often/always true -- compared t osparks
+undocumented_dm_q10<-crosstab_three_vars(svy_data,"undocumented","dm_binary","q10_binary")
+undocumented_dm_q10<-datadict_two_var(undocumented_dm_q10,"dm_binary","Never/Sometimes True","Often/Always True","dm",
+                                          "q10_binary","No/Not Sure","Yes","q10")
+
+
+
+
+```
+
+# Plot crosstabs
+
+## hope for future
+```{r}
+# Only plot groups often or always have hope for future
+plot_data <- undocumented_dm_co %>%
+  filter(co_binary==1)
+
+ggplot(plot_data, aes(fill=var1_response_label, x = undocumented, y = rate)) +
+  geom_bar(position="dodge", stat = "identity") +
+  guides(fill=guide_legend(title="Opportunities to get involved in Community"))+
+  ylab("have hope for future rate")
+
+# when undocumented youth have opportunities to get involved in the community they feel more hope for their future compared to their undocumented counterparts with fewer opportunities to get involved
+
+# export
+
+```
+## capable of most things
+```{r}
+# Only plot groups often or always feel capable of most things
+plot_data <- undocumented_dm_cn %>%
+  filter(cn_binary==1)
+
+ggplot(plot_data, aes(fill=var1_response_label, x = undocumented, y = rate)) +
+  geom_bar(position="dodge", stat = "identity") +
+  guides(fill=guide_legend(title="Opportunities to get involved in Community"))+
+  ylab("feel capable most things rate")
+
+# generally looks like undocumented youth feel high capacity in most things, less of a relationship here, but important to consider resiliency of undocumented youth in the sample
+
+
+```
+## sparks
+```{r}
+# Only plot groups that have spark
+plot_data <- undocumented_dm_q10 %>%
+  filter(q10_binary==1)
+
+ggplot(plot_data, aes(fill=var1_response_label, x = undocumented, y = rate)) +
+  geom_bar(position="dodge", stat = "identity") +
+  guides(fill=guide_legend(title="Opportunities to get involved in Community"))+
+  ylab("have a spark rate")
+
+# when undocumented youth have opportunities to get involved in the community they have a higher likelihood of having a spark compared to their undocumented counterparts with fewer opportunities to get involved
+
+# export
+
+```
+
+# Crosstab tables for undocumented vs. other demographics and opportunities for community involvement/hope for future
+```{r}
+
+# systems impacted
+undocumented_systems<-crosstab_two_vars(svy_data,"undocumented","systems_impacted")
+# large overlap between undocumented and systems impacted youth
+
+# unhoused
+undocumented_unhoused<-crosstab_two_vars(svy_data,"undocumented","unhoused")
+# large overlap between undocumented and unhoused youth
+
+# unhoused
+undocumented_race<-crosstab_two_vars(svy_data,"undocumented","nh_race")
+# undocumented youth demographics not that different but higher % identify as white
+#50.8% identitied as Latinx and 28.2% as white
+
+# unhoused vs opportunities for community involvement - never/sometimes true vs often/always true
+undocumented_unhoused_dm<-crosstab_three_vars(svy_data,"undocumented","unhoused","dm_binary")
+undocumented_unhoused_dm<-datadict_one_var(undocumented_unhoused_dm,"dm_binary","Never/Sometimes True","Often/Always True","dm")
+
+# systems vs opportunities for community involvement - never/sometimes true vs often/always true
+undocumented_systems_dm<-crosstab_three_vars(svy_data,"undocumented","systems_impacted","dm_binary")
+undocumented_systems_dm<-datadict_one_var(undocumented_systems_dm,"dm_binary","Never/Sometimes True","Often/Always True","dm")
+
+# systems vs hope for future - never/sometimes true vs often/always true
+undocumented_systems_co<-crosstab_three_vars(svy_data,"undocumented","systems_impacted","co_binary")
+undocumented_systems_co<-datadict_one_var(undocumented_systems_co,"co_binary","Never/Sometimes True","Often/Always True","co")
+
+```
+
+# Plot crosstabs
+
+## unhoused + opportunities for community involvement
+```{r}
+# Only plot groups often or always have opportunities for involvement
+plot_data <- undocumented_unhoused_dm %>%
+  filter(dm_binary==1)
+
+ggplot(plot_data, aes(fill=unhoused, x = undocumented, y = rate)) +
+  geom_bar(position="dodge", stat = "identity") +
+  guides(fill=guide_legend(title="Unhoused"))+
+  ylab("have opportunities for community involvement")
+
+# likely that youth who are undocumented and unhoused have more opportunities for community involvement because they were connected to orgs already through survey sampling
+
+# export
+
+```
+## systems impacted + community involvement
+```{r}
+# Only plot groups often or always have opportunities for involvement
+plot_data <- undocumented_systems_dm %>%
+  filter(dm_binary==1)
+
+ggplot(plot_data, aes(fill=systems_impacted, x = undocumented, y = rate)) +
+  geom_bar(position="dodge", stat = "identity") +
+  guides(fill=guide_legend(title="Systems Impacted"))+
+  ylab("have opportunities for community involvement")
+
+# undocumented_dm dataframe makes it look like undocumented youth have similar opportunities for community involvement, but controlling for systems impact seems to matter. So undocumented youth who are also systems impacted have lower opportunities for community involvement than not undocumented youth who are systems impacted
+
+# export
+
+```
+## systems impacted + hope for future
+```{r}
+# Only plot groups often or always have hope for future
+plot_data <- undocumented_systems_co %>%
+  filter(co_binary==1)
+
+ggplot(plot_data, aes(fill=systems_impacted, x = undocumented, y = rate)) +
+  geom_bar(position="dodge", stat = "identity") +
+  guides(fill=guide_legend(title="Systems Impacted"))+
+  ylab("hope for future")
+
+# SAG theory that most impacted youth can have highest hope or resiliency for their future seems to make sense. systems impacted/undocumented youth have highest hope for future
+
+# export
+
+```
+
+# Push tables to postgres
+High level assessment: undocumented youth are remarkably resilient and have a high hope for their future and self-efficacy. They are often impacted by multiple systems with a high overlap with being unhoused or systems impacted (probation, foster care, etc.). Opportunities for community involvement helps increase their hope for the future more and this is most important for undocumented and systems impacted youth who have lowest levels of opportunities for community involvement though they still have great hope for their future.
+
+## Bind tables
+```{r}
+crosstab_undocumented_community<-rbind(undocumented_dm_co %>%
+                                           rename(var1_binary=2,
+                                                  var2_binary=3), 
+                                         undocumented_dm_q10 %>%
+                                           rename(var1_binary=2,
+                                                  var2_binary=3), 
+                                         undocumented_dm_cn %>%
+                                           rename(var1_binary=2,
+                                                  var2_binary=3))
+
+demographics_undocumented_crosstabs<-rbind(undocumented_unhoused %>%
+                                           rename(var1_demo=2) %>%
+                                            mutate(demographic="unhoused"),
+                                         undocumented_race %>%
+                                            rename(var1_demo=2) %>%
+                                            mutate(demographic="race"),
+                                         undocumented_systems %>%
+                                          rename(var1_demo=2) %>%
+                                            mutate(demographic="systems impacted"))
+
+crosstab_undocumented_systems_community_hope<-rbind(undocumented_unhoused_dm %>%
+                                           rename(var1_demo=2, var2_binary=3) %>%
+                                            mutate(demographic="unhoused"),
+                                         undocumented_systems_dm %>%
+                                           rename(var1_demo=2, var2_binary=3) %>%
+                                            mutate(demographic="systems impacted"),
+                                         undocumented_systems_co %>%
+                                           rename(var1_demo=2, var2_binary=3) %>%
+                                            mutate(demographic="systems impacted"))
+
+
+```
+
+# Push tables to postgres
+```{r}
+# metadata
+schema <- "youth_thriving"
+source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/EMG/boldvision_youththriving/Descriptive and Demographic Analyses/crosstab_undocumented.Rmd and W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/EMG/boldvision_youththriving/Descriptive and Demographic Analyses/crosstab_functions.R "
+qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_crosstab_undocumented.docx"
+
+
+# First table
+table_name <- "crosstab_undocumented_community"
+indicator <- "A crosstab table for undocumented youth vs. not-undocumented youth by their level of opportunities for community involvement and outcomes in self-efficacy and hope and sparks. There are three different cross tabs in the table. Be sure to filter by var1_variable and var2_variable to get unique crosstabs that were run. Rates may not add to 100% because NAs/ dont wish to answer are excluded in final table"
+table_comment <- paste0(indicator, source)
+
+# dbWriteTable(con, Id(schema, table_name), crosstab_undocumented_community, overwrite = FALSE, row.names = FALSE)
+
+# Comment on table and columns
+column_names <- colnames(crosstab_undocumented_community) # Get column names
+column_comments <- c(
+  "Variable for estimates by undocumented or not undocumented youth",
+  "Binary variable for first grouping variable--in this case opportunities for community involvement where 0 is never or sometimes and 1 is often or always", 
+  "Binary variable for second grouping variable either hope for future, self-efficacy, or sparks questions refer to var2_variable and var2_response_label for detail",  
+  "The unweighted count of youth respondents in the combined demographic & var1 & var2 category",
+  "The weighted rate of the demographic + var1 + var2 group",
+  "CV of the rate",
+  "Standard error of the rate",
+  "Variable name of the first grouping variable",
+  "Survey question of the first grouping variable",
+  "Subquestion of the first grouping variable",
+  "Variable name of the second grouping variable",
+  "Survey question of the second grouping variable",
+  "Subquestion of the second grouping variable",
+    "Response codes included in the binary coding of the first grouping variable",
+    "Response codes included in the binary coding of the second grouping variable"
+)
+
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
+
+# Second table
+table_name <- "demographics_undocumented_crosstabs"
+indicator <- "A crosstab table for undocumented youth vs. not-undocumented youth by other demographic variables including unhoused, systems impacted, and race. There are three different cross tabs in the table. Be sure to filter by the demographic category variable to get unique crosstabs that were run. Rates may not add to 100% because NAs/ dont wish to answer are excluded in final table for all variables but race"
+
+# dbWriteTable(con, Id(schema, table_name), demographics_undocumented_crosstabs, overwrite = FALSE, row.names = FALSE)
+
+# Comment on table and columns
+column_names <- colnames(demographics_undocumented_crosstabs) # Get column names
+column_comments <- c(
+  "Variable for estimates by undocumented or not undocumented youth",
+  "Binary variable for demographic grouping variable ",  
+  "The unweighted count of youth respondents in the combined demographic category",
+  "The weighted rate of the combined demographic group",
+  "CV of the rate",
+  "Standard error of the rate",
+  "demographic grouping identifier for the crosstab either race, systems impacted or unhoused")
+
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
+
+# Third table
+table_name <- "crosstab_undocumented_systems_community_hope"
+indicator <- "A crosstab table for undocumented youth vs. not-undocumented youth by another demographic variable (unhoused or systems impacted) and by their level of opportunities for community involvement or hope for the future. There are three different cross tabs in the table. Be sure to filter by the demographic category variable and question variable to get unique crosstabs that were run. Rates may not add to 100% because NAs/ dont wish to answer are excluded in final table"
+
+# dbWriteTable(con, Id(schema, table_name), crosstab_undocumented_systems_community_hope, overwrite = FALSE, row.names = FALSE)
+
+# Comment on table and columns
+column_names <- colnames(crosstab_undocumented_systems_community_hope) # Get column names
+column_comments <- c(
+  "Variable for estimates by undocumented or not undocumented youth",
+  "Binary variable for demographic grouping variable ",  
+  "Binary variable for the question/item grouping variable",
+  "The unweighted count of youth respondents in the combined demographic/question category",
+  "The weighted rate of the combined demographic/question group",
+  "CV of the rate",
+  "Standard error of the rate",
+  "Variable name of the question grouping variable",
+  "Survey question of the grouping variable",
+  "Subquestion of the grouping variable",
+     "Response codes included in the binary coding of the question level grouping variable",
+  "demographic grouping identifier for the crosstab either systems impacted or unhoused")
+
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
+```
