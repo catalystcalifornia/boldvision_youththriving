@@ -1,0 +1,272 @@
+---
+title: "Crosstab on undocumented youth by hope for future and opportunities for community involvement"
+date: "2025-04-29"
+output: html_document
+---
+# Get data
+```{r}
+library(tidyverse)
+library(srvyr)
+library(RPostgres)
+library(ggplot2)
+library(dplyr)
+library(forcats)
+
+# Used to connect to RDA database and RDA function for adding table comments
+source("W:\\RDA Team\\R\\credentials_source.R")
+
+# Connect to postgres
+con <- connect_to_db("bold_vision")
+
+# Pull in the survey data and data dictionary
+raw_svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
+svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024")
+
+# Pull in undocumented and race data
+undocumented_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.demographics_binary_data")
+race_ethnicity_data <- dbGetQuery(con, "SELECT response_id, nh_race, detailed_race FROM youth_thriving.race_ethnicity_data")
+
+# Merge data frames into svy_data using response_id and selecting variables of interest
+svy_data <- raw_svy_data %>% select(response_id, q10, co, dm, weights_final) %>%
+  left_join(undocumented_data, by = "response_id") %>%
+  left_join(race_ethnicity_data, by = "response_id") 
+```
+
+# Recode columns for analysis
+```{r}
+# Create binary columns for co (I feel hopeful when I think about my future) and dm (There are ways for me to get involved in my community) and q10 (sparks)
+vars <- svy_dd %>% filter(variable %in% c("q10","dm","co"))
+
+# check distributions
+table(svy_data$dm)
+table(svy_data$co)
+# going to group two lowest responses for greater sample sizes
+
+svy_data <- svy_data %>%
+  mutate(q10=ifelse(q10==4, NA, q10),
+           dm_binary = case_when(is.na(dm) | dm == 5 ~ NA,
+                                 dm <= 2 ~ 0, 
+                                 TRUE ~ 1),
+           co_binary = case_when(is.na(co) | co == 5 ~ NA,
+                                 co <= 2 ~ 0,
+                                 TRUE ~ 1))
+# check recoding
+table(svy_data$dm)
+table(svy_data$dm_binary)
+
+# check counts
+raw_counts <- svy_data %>%
+  group_by(undocumented,dm_binary, co_binary) %>%
+  summarise(count = n(), .groups = "drop")%>%
+  na.omit()
+# at least 10 in each
+
+# Get the weighted rates and unweighted counts for the crosstab for alone and in combination groups
+crosstab_two_vars <- function(df,var1, var2){
+  df %>% as_survey_design(weights = weights_final) %>%
+    filter(!is.na(!!sym(var1)))%>%
+  group_by(!!sym(var1), !!sym(var2)) %>%
+  summarise(count=n(), # participant records count
+    rate = survey_prop(vartype=c("cv","se"),level=.90)) %>% 
+  mutate(rate = rate * 100,
+         rate_se = rate_se * 100,
+         rate_cv=rate_cv*100) %>%  # Convert to percentages
+  ungroup()%>%
+  filter(!is.na(!!sym(var2)))
+}
+
+# Get the weighted rates and unweighted counts for the crosstab for alone and in combination groups
+crosstab_three_vars <- function(df, var1,var2, var3){
+  df %>% as_survey_design(weights = weights_final) %>%
+    filter(!is.na(!!sym(var1)) & !is.na(!!sym(var2)) )%>%
+  group_by(!!sym(var1), !!sym(var2),!!sym(var3)) %>%
+  summarise(count=n(), # participant records count
+    rate = survey_prop(vartype=c("cv","se"),level=.90)) %>% 
+  mutate(rate = rate * 100,
+         rate_se = rate_se * 100,
+         rate_cv=rate_cv*100) %>%  # Convert to percentages
+  ungroup()%>%
+  filter(!is.na(!!sym(var3)))
+}
+
+```
+
+## Crosstab tables for undocumented vs. documented youth - opportunities for community involvement
+```{r}
+
+# opportunities for community involvement - never/sometimes true vs often/always true
+undocumented_dm<-crosstab_two_vars(svy_data,"undocumented","dm_binary")
+
+# opportunities for community involvement - never/sometimes true vs often/always true -- compared to hope for future
+undocumented_dm_co<-crosstab_three_vars(svy_data,"undocumented","dm_binary","co_binary")
+
+# opportunities for community involvement - never/sometimes true vs often/always true -- compared tosparks
+undocumented_dm_q10<-crosstab_three_vars(svy_data,"undocumented","dm_binary","q10")
+
+```
+
+
+## Crosstab tables for undocumented vs. documented youth - sparks
+```{r}
+
+# sparks - yes/no/unsure
+undocumented_q10<-crosstab_two_vars(svy_data,"undocumented","q10")
+
+# sparks -- compared to hope for future never/sometimes true vs often/always true
+undocumented_q10_co<-crosstab_three_vars(svy_data,"undocumented","q10","co_binary")
+
+# sparks -- compared to opportunities for community involvement never/sometimes true vs often/always true
+undocumented_q10_dm<-crosstab_three_vars(svy_data,"undocumented","q10","dm_binary")
+
+```
+
+## Crosstab tables for undocumented vs. other demographics
+```{r}
+
+# systems impacted
+undocumented_systems<-crosstab_two_vars(svy_data,"undocumented","systems_impacted")
+
+# unhoused
+undocumented_unhoused<-crosstab_two_vars(svy_data,"undocumented","unhoused")
+
+# unhoused vs opportunities for community involvement - never/sometimes true vs often/always true
+undocumented_unhoused_dm<-crosstab_three_vars(svy_data,"undocumented","unhoused","dm_binary")
+
+# unhoused vs opportunities for community involvement - never/sometimes true vs often/always true
+undocumented_systems_dm<-crosstab_three_vars(svy_data,"undocumented","systems_impacted","dm_binary")
+
+```
+
+# Plot crosstabs
+
+## Plot for race by lgbtqia+ and a REVISED binary psych distress question.
+```{r}
+# Only plot groups often or always have hope for future
+plot_data <- undocumented_dm_co %>%
+  filter(co_binary==1)
+
+ggplot(plot_data, aes(fill=as.character(dm_binary), x = undocumented, y = rate)) +
+  geom_bar(position="dodge", stat = "identity")
+
+```
+
+
+# Add dictionary data to crosstabs
+```{r}
+# Join data dictionary to crosstab  
+
+# Dictionary data for psych distress question on feelings of worthlessness
+dict_var <- svy_dd %>%
+  filter(variable == "cy") %>%
+  select(variable, question, sub_question, response_domain, variable_name)
+
+# Add dictionary data to crosstab
+crosstab_race_lgbtqia_psych_worthless <- crosstab_race_lgbtqia_psych_worthless %>%
+  mutate(dict_var)
+
+# Dictionary data for psych distress question on feelings of hopelessness
+dict_var <- svy_dd %>%
+  filter(variable == "cu") %>%
+  select(variable, question, sub_question, response_domain, variable_name)
+
+# Add dictionary data to crosstabs
+crosstab_race_lgbtqia_psych_hopeless <- crosstab_race_lgbtqia_psych_hopeless %>%
+  mutate(dict_var)
+
+crosstab_lgbtqia_sparks_psych_hopeless <- crosstab_lgbtqia_sparks_psych_hopeless %>%
+  mutate(dict_var)
+```
+
+# Push tables to postgres
+
+## Table crosstab_race_lgbtqia_psych_worthless
+```{r}
+# Write table with metadata
+table_name <- "crosstab_race_lgbtqia_psych_worthless"
+schema <- "youth_thriving"
+indicator <- "A crosstab table for race by lgbtqia+ identity and a REVISED binary psych distress question - did the respondent feel worthless in the past 30 days at least a little of the time?"
+source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Descriptive and Demographic Analyses/crosstab_LGBTQIA_race.Rmd "
+qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_crosstab_LGBTQIA_race.docx"
+table_comment <- paste0(indicator, source)
+# dbWriteTable(con, Id(schema, table_name), crosstab_race_lgbtqia_psych_worthless, overwrite = FALSE, row.names = FALSE)
+
+# Comment on table and columns
+column_names <- colnames(crosstab_race_lgbtqia_psych_worthless) # Get column names
+column_comments <- c(
+  "Shows the race and gender/sexuality identity includes non-hispanic race and alone and in combo for aian, nhpi, and swana",
+  "Binary variable for psychological distress question cy, did the respondent feel worthless in the past 30 days at least a little of the time?",  
+  "The raw, unweighted count of the grouping (race, gender/sexuality, and feelings of worthlessnesss)",  
+  "The weighted rate of the race+gender/sexuality group that experienced feelings of worthlessness (or not)",
+  "CV of the rate",
+  "Standard error of the rate",
+  "Variable name of the psychological distress question",
+  "The psychological distress survey question",
+  "The psychological distress survey subquestion",
+  "The component",
+  "The subcomponent"
+)
+
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
+```
+## Table crosstab_race_lgbtqia_psych_hopeless
+```{r}
+# Write table with metadata
+table_name <- "crosstab_race_lgbtqia_psych_hopeless"
+schema <- "youth_thriving"
+indicator <- "A crosstab table for race by lgbtqia+ identity and a REVISED binary psych distress question - did the respondent feel hopeless in the past 30 days at least a little of the time?"
+source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Descriptive and Demographic Analyses/crosstab_LGBTQIA_race.Rmd "
+qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_crosstab_LGBTQIA_race.docx"
+table_comment <- paste0(indicator, source)
+# dbWriteTable(con, Id(schema, table_name), crosstab_race_lgbtqia_psych_hopeless, overwrite = FALSE, row.names = FALSE)
+
+# Comment on table and columns
+column_names <- colnames(crosstab_race_lgbtqia_psych_hopeless) # Get column names
+column_comments <- c(
+  "Shows the race and gender/sexuality identity includes non-hispanic race and alone and in combo for aian, nhpi, and swana",
+  "Binary variable for psychological distress question cu, did the respondent feel hopeless in the past 30 days at least a little of the time?",  
+  "The raw, unweighted count of the grouping (race, gender/sexuality, and feelings of hopelessnesss)",  
+  "The weighted rate of the race+gender/sexuality group that experienced feelings of hopelessnesss (or not)",
+  "CV of the rate",
+  "Standard error of the rate",
+  "Variable name of the psychological distress question",
+  "The psychological distress survey question",
+  "The psychological distress survey subquestion",
+  "The component",
+  "The subcomponent"
+)
+
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
+```
+
+## Table crosstab_lgbtqia_sparks_psych_hopeless
+```{r}
+# Write table with metadata
+table_name <- "crosstab_lgbtqia_sparks_psych_hopeless"
+schema <- "youth_thriving"
+indicator <- "A crosstab table lgbtqia+ identity by whether they have sparks and a REVISED binary psych distress question - did the respondent feel hopeless in the past 30 days at least a little of the time?"
+source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Descriptive and Demographic Analyses/crosstab_LGBTQIA_race.Rmd "
+qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_crosstab_LGBTQIA_race.docx"
+table_comment <- paste0(indicator, source)
+# dbWriteTable(con, Id(schema, table_name), crosstab_lgbtqia_sparks_psych_hopeless, overwrite = FALSE, row.names = FALSE)
+
+# Comment on table and columns
+column_names <- colnames(crosstab_lgbtqia_sparks_psych_hopeless) # Get column names
+column_comments <- c(
+  "Shows the gender/sexuality identity and whether they have sparks",
+  "Binary variable for psychological distress question cu, did the respondent feel hopeless in the past 30 days at least a little of the time?",  
+  "The raw, unweighted count of the grouping (gender/sexuality, whether they have sparks, and feelings of hopelessnesss)",  
+  "The weighted rate of the gender/sexuality+sparks group that experienced feelings of hopelessnesss (or not)",
+  "CV of the rate",
+  "Standard error of the rate",
+  "Variable name of the psychological distress question",
+  "The psychological distress survey question",
+  "The psychological distress survey subquestion",
+  "The component",
+  "The subcomponent"
+)
+
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
+```
