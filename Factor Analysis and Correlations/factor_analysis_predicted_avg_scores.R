@@ -2,6 +2,7 @@
 
 # Step 0: Setting up work space ------
 library(dplyr)
+library(RPostgres)
 library(RPostgreSQL)
 library(tidyr)
 library(tidyverse)
@@ -223,12 +224,10 @@ df_age<-avg_scores(df=svy_df,demo_var="age_minor_adult")
 
 
 # Step 7: Export to postgres -----------------
-# functions to help export
-source("W:\\RDA Team\\R\\Github\\RDA Functions\\main\\RDA-Functions\\Utility_Functions.R")
 
 # overall metadata for each table
 schema <- "youth_thriving"
-indicator <- " A table that has the average imputed factor or component scores of those being used in the youth thriving model by selected demographics "
+indicator_base <- " A table that has the average imputed factor or component scores of those being used in the youth thriving model by selected demographics: "
 source <- "
 Script:W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/EMG/boldvision_youththriving/Factor Analysis and Correlations/factor_analysis_predicted_avg_scores.R"
 qa_filepath <- " See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_circular_plots_scores.docx "
@@ -248,7 +247,7 @@ df_final_race <- rbind(df_race, df_aian, df_nhpi, df_swana, df_bipoc)
 
 table_name <- "factor_analysis_avg_scores_race"
 demographic <- " for non-hispanic race + aian + nhpi + swana alone or in combination + bipoc "
-table_comment <- paste0(indicator, demographic, source)
+indicator <- paste0(indicator_base, demographic)
 column_names <- colnames(df_final_race) # Get column names
 # 
 # # write table
@@ -264,7 +263,7 @@ df_final_sogi <- rbind(df_cis, df_lgbtia)
 
 table_name <- "factor_analysis_avg_scores_sogi"
 demographic <- " for gender and sexuality data including cisgender male/female and lgbtqia+ "
-table_comment <- paste0(indicator, demographic, source)
+indicator <- paste0(indicator_base, demographic)
 column_names <- colnames(df_final_sogi) # Get column names
 
 # # write table
@@ -277,7 +276,7 @@ column_names <- colnames(df_final_sogi) # Get column names
 ## Age table export ------
 table_name <- "factor_analysis_avg_scores_age"
 demographic <- " for age minor or adult "
-table_comment <- paste0(indicator, demographic, source)
+indicator <- paste0(indicator_base, demographic)
 column_names <- colnames(df_age) # Get column names
 
 # # write table
@@ -290,7 +289,7 @@ column_names <- colnames(df_age) # Get column names
 ## SPA table export ------
 table_name <- "factor_analysis_avg_scores_spa"
 demographic <- " for service planning area "
-table_comment <- paste0(indicator, demographic, source)
+indicator <- paste0(indicator_base, demographic)
 column_names <- colnames(df_spa) # Get column names
 # 
 # # write table
@@ -305,7 +304,7 @@ df_final_sys <- rbind(df_arrested, df_disconnected, df_suspended, df_undocumente
 
 table_name <- "factor_analysis_avg_scores_systems_involved"
 demographic <- " for systems involved indicators, e.g., ever arrested, disconnected frome ducation/school, ever suspended, undocumented, or unhoused "
-table_comment <- paste0(indicator, demographic, source)
+indicator <- paste0(indicator_base, demographic)
 column_names <- colnames(df_final_sys) # Get column names
 
 # # write table
@@ -318,12 +317,12 @@ column_names <- colnames(df_final_sys) # Get column names
 ## All youth table export ------
 table_name <- "factor_analysis_avg_scores_total"
 demographic <- " for all youth"
-table_comment <- paste0(indicator, demographic, source)
+indicator <- paste0(indicator_base, demographic)
 column_names <- colnames(df_total) # Get column names
 
 # write table
-dbWriteTable(con, Id(schema, table_name), df_total,
-             overwrite = FALSE, row.names = FALSE)
+# dbWriteTable(con, Id(schema, table_name), df_total,
+#              overwrite = FALSE, row.names = FALSE)
 
 # Comment on table and columns
 # add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
