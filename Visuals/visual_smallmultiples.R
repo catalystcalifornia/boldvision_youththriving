@@ -22,37 +22,9 @@ library(flextable)
 library(ggchicklet)
 library(GGRidge)
 
-##Colors
-gray <- "#D6D7D6"
-pink <- "#F75EC1"
-dark_pink <- "#EF4A66"
-orange <- "#F57E20"
-yellow <- "#FFBF00"
-light_green <- "#00A75A"
-dark_green <- "#00864A"
-blue  <- "#2A12B2"
-light_blue <- "#465adc"
 
-
-## FONTS 
-font_add(family = "Manifold CF", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Manifold/Fonts/manifoldcf-heavy.otf")
-font_add(family = "HelveticaNeueLTStdMdCn", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Helvetica Neue LT Std/HelveticaNeueLTStd-MdCn.otf")
-font_add(family = "HelveticaNeueLTStdHvCn", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Helvetica Neue LT Std/HelveticaNeueLTStd-HvCn.otf")
-font_add(family = "HelveticaNeueLTStdMdCnO", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Helvetica Neue LT Std/HelveticaNeueLTStd-MdCnO.otf")
-font_add(family = "Manifold Regular", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Manifold/Fonts/manifoldcf-regular.otf")
-
-# font_import()
-loadfonts(device = "win")
-windowsFonts()
-showtext_auto()
-
-# define fonts in chart
-font_title <- "HelveticaNeueLTStdHvCn"
-font_subtitle <- "HelveticaNeueLTStdMdCn"
-font_caption <- "Manifold Regular"
-font_bar_label <- "Manifold Regular"
-font_axis_label <- "Manifold Regular"
-
+#Load BV styling, colors and fonts
+source('Visuals\\BV_styling.R')
 
 source("W:\\RDA Team\\R\\credentials_source.R")
 con <- connect_to_db("bold_vision")
