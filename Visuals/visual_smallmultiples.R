@@ -146,11 +146,6 @@ tables <- c("response_analysis_per_race",
             "response_analysis_per_nhpi",
             "response_analysis_per_aian")
 
-# Running function
-df_ex <- fx_create_df(con, tables, "Vibrant Communities", "ds", "tot_freq_vibrant_community") 
-
-# View(df_ex) #check example table, does everything look like it is working okay? 
-
 #define factor levels in order we want them
 #NOTE THAT Don't Wish to Answer, Not Sure, and Does Not Apply to Me ARE OMMITTED IN THIS STEP
 true_factors<-c("Never true","Sometimes true","Often true","Always true")
@@ -226,18 +221,18 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
   
   ggsave(plot = df_visual, 
          file = paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", 
-                       unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.svg"),
+                       unique(df$response_domain), "/", unique(df$variable), "_smallmultiplesv2.svg"),
          units = "in", width = 8, height = 10)
   ggsave(plot = df_visual, 
          file = paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", 
-                       unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.pdf"),
+                       unique(df$response_domain), "/", unique(df$variable), "_smallmultiplesv2.pdf"),
          units = "in", width = 8, height = 10)
 
   showtext_opts(dpi=300)
   
   ggsave(plot = df_visual, 
          file = paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", 
-                       unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.png"),
+                       unique(df$response_domain), "/", unique(df$variable), "_smallmultiplesv2.png"),
          units = "in", width = 8, height = 10)
   
   return(df_visual)
@@ -246,44 +241,14 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
 
 
 ####Step 5: Run function to create visual ####
-fx_vis_smallmultiples(df = df_ex,
-                      title_text = 'Unhoused youth are least likely to report access to Libraries',
-                      subtitle_text = '',
-                      likert_factors = yes_factors, graph_orderby = "Yes")
+
+# df_ex <- fx_create_df(con, tables, "Vibrant Communities", "ds", "tot_freq_vibrant_community") 
+# fx_vis_smallmultiples(df = df_ex,
+#                       title_text = 'Unhoused youth are least likely to report access to Libraries',
+#                       subtitle_text = '',
+#                       likert_factors = yes_factors, graph_orderby = "Yes")
 #See example here: W:\Project\OSI\Bold Vision\Youth Thriving Survey\Deliverables\Vibrant Communities 
 
 ###Step 6: Close database connection ####
-dbDisconnect(con)
+# dbDisconnect(con)
 
-####Notes Saved to fix function for input of likert type if time ####
-
-
-# #define factor levels in order we want them 
-# #NOTE THAT Don't Wish to Answer, Not Sure, and Does Not Apply to Me ARE OMMITTED IN THIS STEP
-# true_factors<-c("Never true","Sometimes true","Often true","Always true") 
-# time_factors<-c("None of the time","A little of the time","Some of the time","Most of the time","All of the time")
-# time_factors_reverse<-c("All of the time", "Most of the time", "Some of the time", "A little of the time", "None of the time") #reverse so a greater number means a good outcome and a smaller number means a bad outcome
-# yes_factors<-c("No", "Yes")
-# yes_factors_reverse <- c("Yes", "No") #reverse so a greater number means a good outcome and a smaller number means a bad outcome
-# count_factors<-c("None","One","Two","Three or more")
-# freq_factors<-c("Never","Rarely","Sometimes","Most of the time","All of the time")
-# freq_factors_reverse<-c("All of the time", "Most of the time","Sometimes", "Rarely","Never") #reverse so a greater number means a good outcome and a smaller number means a bad outcome
-# 
-# df_final <- df_almost_final %>%
-#   mutate(
-#     factor_levels = if_else(likert_type == 'true_scale', list(true_factors),
-#                             if_else(likert_type == 'count_scale', list(count_factors),
-#                                     if_else(likert_type == 'freq_scale', list(freq_factors),
-#                                             if_else(likert_type == 'freq_scale_rev', list(freq_factors_reverse),
-#                                                     if_else(likert_type == 'yes_scale', list(yes_factors),
-#                                                             if_else(likert_type == 'yes_scale_rev', list(yes_factors_reverse),
-#                                                                     if_else(likert_type == 'time_scale', list(time_factors),
-#                                                                             if_else(likert_type == 'time_scale_rev', list(time_factors_reverse),
-#                                                                                     list(character(0))))))))))) %>%
-#   rowwise() %>%  
-#   mutate(
-#     response = factor(response, levels = unlist(factor_levels)),  # Ensure `factor_levels` is unlisted
-#     factor_score = as.numeric(response)  # Convert to numeric for scoring
-#   ) %>%
-#   ungroup() %>%  
-#   filter(!is.na(response))  # Remove rows where response is NA

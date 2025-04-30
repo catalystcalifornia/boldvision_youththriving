@@ -1,29 +1,28 @@
 # Code for running visuals for rates by question and rates by question and race
 
 # source script
-source('Visuals\\visual_functions.R')
-source('Visuals\\visual_smallmultiples.R')
-# source('W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/EMG/boldvision_youththriving/Visuals/visual_smallmultiples.R') # only use this line with local folder when testing changes
+source('.\\Visuals\\visual_functions.R')
+source('.\\Visuals\\visual_smallmultiples.R')
 
-#### Visualizing for Youth Council Presentation 03/08/25 ####
+#### Visualizing for Report ####
 #dl
 df_dl <- fx_create_df(con, tables, "Caring Families And Relationships", "dl", "tot_freq_caring_families") 
 View(df_dl)
-fx_vis_smallmultiples(df = df_dl, title_text = 'Caring individuals youth can rely on are essential to youth wellbeing, but fewer NHPI, undocumented, and SWANA youth feel they always have someone to go to with a problem',
-                      subtitle_text = 'When you have a problem, is it true that you have someone to go to?',
+fx_vis_smallmultiples(df = df_dl, title_text = 'Caring individuals youth can rely on are essential to youth wellbeing, but fewer undocumented, SWANA, and Multiracial youth feel they always have someone to go to with a problem',
+                      subtitle_text = 'When I have a problem, I have someone who will be there for me', 
                       likert_factors = true_factors, graph_orderby = "Always true")
 
 #q10
 df_q10 <- fx_create_df(con, tables, "Positive Identity And Self-Worth", "q10", "tot_freq_positive_identity") 
 View(df_q10)
-fx_vis_smallmultiples(df = df_q10, title_text = 'Having a spark in life supports emotional health and hope for the future, but LGBTQIA youth are least likely to believe they have a spark',
+fx_vis_smallmultiples(df = df_q10, title_text = 'Having a spark in life supports emotional health and hope for the future, but LGBTQIA and NHPI youth are least likely to believe they have a spark',
                       subtitle_text = "When people are really happy, energized, and passionate about their talents, interests, or hobbies, we say they have a “spark” in their life.... Do you have this kind of spark in your life?",
                      likert_factors = yes_factors_reverse, graph_orderby = "Yes")
 
 #eo
 df_eo <- fx_create_df(con, tables, "Racial Justice, Equity, And Inclusion", "eo", "tot_freq_racial_justice") 
 View(df_eo)
-fx_vis_smallmultiples(df = df_eo, title_text = 'Undocumented, SWANA, NHPI, and Black youth are most likely to experience distressing and racialized interactions'
+fx_vis_smallmultiples(df = df_eo, title_text = 'Undocumented, SWANA, and Black youth are most likely to experience distressing and racialized interactions'
                       ,subtitle_text = "In the past 12 months, how often have you dealt with being told hurtful or offensive jokes/comments about your race?",
                       likert_factors = freq_factors_reverse, graph_orderby = "Never")
                       
@@ -31,21 +30,21 @@ fx_vis_smallmultiples(df = df_eo, title_text = 'Undocumented, SWANA, NHPI, and B
 df_et <- fx_create_df(con, tables, "Racial Justice, Equity, And Inclusion", "et", "tot_freq_racial_justice") 
 View(df_et)
 fx_vis_smallmultiples(df = df_et, title_text = 'Over half of undocumented, unhoused, and LGBTQIA youth report poor quality health services get in the way of their best life at least some of the time'
-                      , subtitle_text = "How often does poor quality health services affect living your best life?",
+                      , subtitle_text = "How often does poor quality health services get in the way of your living your best life?",
                       likert_factors = freq_factors_reverse, graph_orderby = "Never")
 
 #co
 df_co <- fx_create_df(con, tables, "Positive Identity And Self-Worth", "co", "tot_freq_positive_identity") 
 View(df_co)
 fx_vis_smallmultiples(df = df_co, title_text = 'All youth should feel hopeful about their future, but Asian and LGTBQIA+ youth are least likely to feel hopeful all the time'
-                      , subtitle_text = "Is it true you feel hopeful when you think about your future?",
+                      , subtitle_text = "I feel hopeful when I think about my future",
                       likert_factors = true_factors, graph_orderby = "Always true")
 
 #dz
 df_dz <- fx_create_df(con, tables, "Cultural Identity", "dz", "tot_freq_cultural_identity") 
 View(df_dz)
-fx_vis_smallmultiples(df = df_dz, title_text = 'More than half of SWANA, NHPI, AIAN, and female youth most often reported that their culture helps them feel good about who they are'
-                      , subtitle_text = "Is it true your culture helps you feel good about who you are?",
+fx_vis_smallmultiples(df = df_dz, title_text = 'More than half of SWANA, AIAN, and female youth most often reported that their culture helps them feel good about who they are'
+                      , subtitle_text = "My culture helps me feel good about who I am",
                       likert_factors = true_factors, graph_orderby = "Always true")
 
 #cy
@@ -58,8 +57,8 @@ fx_vis_smallmultiples(df = df_cy, title_text = 'LGBTQIA youth are least likely t
 #dm
 df_dm <- fx_create_df(con, tables, "Positive Identity And Self-Worth", "dm", "tot_freq_positive_identity") 
 View(df_dm)
-fx_vis_smallmultiples(df = df_dm, title_text = 'More than two thirds of undocumented, unhoused, and systems impacted youth are least likely to find opportunities to connect and engage with their community'
-                      , subtitle_text = "Is it true there are ways for you to get involved with your community?",
+fx_vis_smallmultiples(df = df_dm, title_text = 'Undocumented, unhoused, and systems impacted youth are least likely to have opportunities to connect and engage with their community'
+                      , subtitle_text = "How true is it that there are ways for you to get involved with your community?",
                       likert_factors = true_factors, graph_orderby = "Always true")
 
 
