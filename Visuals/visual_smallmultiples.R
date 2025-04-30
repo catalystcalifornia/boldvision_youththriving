@@ -250,5 +250,5 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
 #See example here: W:\Project\OSI\Bold Vision\Youth Thriving Survey\Deliverables\Vibrant Communities 
 
 ###Step 6: Close database connection ####
-dbDisconnect(con)
+# dbDisconnect(con)
 

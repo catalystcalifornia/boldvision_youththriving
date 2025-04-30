@@ -1,15 +1,14 @@
 # Code for running visuals for rates by question and rates by question and race
 
 # source script
-source('Visuals\\visual_functions.R')
-source('Visuals\\visual_smallmultiples.R')
-# source('W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/EMG/boldvision_youththriving/Visuals/visual_smallmultiples.R') # only use this line with local folder when testing changes
+source('.\\Visuals\\visual_functions.R')
+source('.\\Visuals\\visual_smallmultiples.R')
 
-#### Visualizing for Youth Council Presentation 03/08/25 ####
+#### Visualizing for Report ####
 #dl
 df_dl <- fx_create_df(con, tables, "Caring Families And Relationships", "dl", "tot_freq_caring_families") 
 View(df_dl)
-fx_vis_smallmultiples(df = df_dl, title_text = 'Caring individuals youth can rely on are essential to youth wellbeing, but fewer NHPI, undocumented, and SWANA youth feel they always have someone to go to with a problem',
+fx_vis_smallmultiples(df = df_dl, title_text = 'Caring individuals youth can rely on are essential to youth wellbeing, but fewer undocumented, SWANA, and Multiracial youth feel they always have someone to go to with a problem',
                       subtitle_text = 'When I have a problem, I have someone who will be there for me', 
                       likert_factors = true_factors, graph_orderby = "Always true")
 
@@ -58,7 +57,7 @@ fx_vis_smallmultiples(df = df_cy, title_text = 'LGBTQIA youth are least likely t
 #dm
 df_dm <- fx_create_df(con, tables, "Positive Identity And Self-Worth", "dm", "tot_freq_positive_identity") 
 View(df_dm)
-fx_vis_smallmultiples(df = df_dm, title_text = 'More than two thirds of undocumented, unhoused, and systems impacted youth are least likely to find opportunities to connect and engage with their community'
+fx_vis_smallmultiples(df = df_dm, title_text = 'Undocumented, unhoused, and systems impacted youth are least likely to have opportunities to connect and engage with their community'
                       , subtitle_text = "How true is it that there are ways for you to get involved with your community?",
                       likert_factors = true_factors, graph_orderby = "Always true")
 
