@@ -213,7 +213,7 @@ undocumented_systems_co<-datadict_one_var(undocumented_systems_co,"co_binary","N
 
 ## unhoused + opportunities for community involvement
 ```{r}
-# Only plot groups often or always have hope for future
+# Only plot groups often or always have opportunities for involvement
 plot_data <- undocumented_unhoused_dm %>%
   filter(dm_binary==1)
 
@@ -229,7 +229,7 @@ ggplot(plot_data, aes(fill=unhoused, x = undocumented, y = rate)) +
 ```
 ## systems impacted + community involvement
 ```{r}
-# Only plot groups often or always have hope for future
+# Only plot groups often or always have opportunities for involvement
 plot_data <- undocumented_systems_dm %>%
   filter(dm_binary==1)
 
