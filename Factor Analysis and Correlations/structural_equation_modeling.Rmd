@@ -1093,39 +1093,7 @@ vif_1j.6 <- vif(model_1j.6_vif)
 max(vif_1j.6)
 ```
 
-### Model 1j.7: FINAL; subsetted for black respondents only
-```{r , warning=FALSE, echo=FALSE}
-model_1j.7_black <- '
-  # Measurement model
-  component_caring_families_and_relationships =~ dl + dk + dn
-  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
-  subcomponent_microaggressions =~ ep + eq + eo + er
-  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
-  component_vibrant_communities =~ dq + du + dp + dr + dv + dt + do + ds
-  subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx
 
-  # Regression
-  subcomponent_psychological_distress ~ component_caring_families_and_relationships +
-    component_cultural_identity + 
-    subcomponent_microaggressions + 
-    subcomponent_structural_racism + 
-    component_vibrant_communities + 
-    cishet_lgbtqia +
-    systems_impacted +
-    sparks 
-'
-
-svy_data_black<-svy_data %>% filter(race_nh_black=='1')
-
-# Run model on weighted data WITH FIML and robust standard errors
-fit_1j.7_weighted_fiml_black<- sem(model_1j.7_black, data = svy_data_black, sampling.weights = "weights_final", std.lv = TRUE, missing = "fiml.x", se="robust")
-
-sem_output_1j.7_weighted_fiml_black_test_2 <- get_sem_results_se(fit_1j.7_weighted_fiml_black) %>% 
-  mutate(model_name="1j.7_weighted_fiml_black") %>%
-  select(model_name, everything())
-
-
-```
 
 #### Create postgres table for 1j.5 and 1j.6
 ```{r, include=FALSE, echo=FALSE}
@@ -2181,5 +2149,256 @@ column_comments <- c(
 # add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
 
 ```
+# Modeling for Black Youth
+
+## Model 1: subsetted for black respondents only
+```{r , warning=FALSE, echo=FALSE}
+svy_data_black<-svy_data %>% filter(race_nh_black=='1')
+
+# test correlations between some vars
+cor.test(svy_data$systems_impacted,svy_data$arrested,method="spearman",use = "complete.obs")
+cor.test(svy_data$systems_impacted,svy_data$suspended,method="spearman",use = "complete.obs")
+# stick to systems impacted
+
+model_1_black <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx
+  subcomponent_experiences_of_racism_and_discrimination =~ ei + em + eh + eg
+  subcomponent_self_efficacy_hope =~ co + cp + cn + cq
+  
+  # Regression
+  subcomponent_psychological_distress ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    subcomponent_experiences_of_racism_and_discrimination + 
+    personal_safety_re + 
+    growth_mindset + 
+    opportunities_for_community_involvement_re +
+    cishet_lgbtqia +
+    systems_impacted +
+    high_poverty_area +
+    sparks + 
+    subcomponent_self_efficacy_hope
+'
+
+# Run model on weighted data WITH FIML and robust standard errors
+fit_1_weighted_fiml_black<- sem(model_1_black, data = svy_data_black, sampling.weights = "weights_final", std.lv = TRUE, missing = "fiml.x", se="robust")
+
+sem_output_1_weighted_fiml_black_test <- get_sem_results_se(fit_1_weighted_fiml_black) %>% 
+  mutate(model_name="1_weighted_fiml_black") %>%
+  select(model_name, everything())
+
+model_1a_black <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx
+  subcomponent_experiences_of_racism_and_discrimination =~ ei + em + eh + eg
+
+  # Regression
+  subcomponent_psychological_distress ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    subcomponent_experiences_of_racism_and_discrimination + 
+    cishet_lgbtqia +
+    systems_impacted +
+    sparks 
+'
+
+# Run model on weighted data WITH FIML and robust standard errors
+fit_1a_weighted_fiml_black<- sem(model_1a_black, data = svy_data_black, sampling.weights = "weights_final", std.lv = TRUE, missing = "fiml.x", se="robust")
+
+sem_output_1a_weighted_fiml_black_test <- get_sem_results_se(fit_1a_weighted_fiml_black) %>% 
+  mutate(model_name="1a_weighted_fiml_black") %>%
+  select(model_name, everything())
+
+# Create new columns, which will be the SEM variables
+svy_data_black <- svy_data_black %>%
+  mutate(
+      # recode cisgender mf, transgender, nonconforming column
+      cis_mf_tnc = ifelse(cis_mf_trans_gnc == "cisgender female", "cis_female", 
+                        ifelse(cis_mf_trans_gnc == "cisgender male", "cis_male",
+                               ifelse(cis_mf_trans_gnc %in% c("gender nonconforming","transgender"), "trans_nonconf", NA))))
+      
+table(svy_data_black$cis_mf_trans_gnc)
+table(svy_data_black$cis_mf_tnc)
+
+svy_data_black<-svy_data_black%>%
+  dummy_cols(
+    select_columns = c("cis_mf_tnc"), ignore_na=TRUE)
+
+model_1b_black <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx
+  subcomponent_experiences_of_racism_and_discrimination =~ ei + em + eh + eg
+
+  # Regression
+  subcomponent_psychological_distress ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    subcomponent_experiences_of_racism_and_discrimination + 
+    cis_mf_tnc_cis_male + cis_mf_tnc_trans_nonconf +
+    systems_impacted +
+    sparks 
+'
+
+# Run model on weighted data WITH FIML and robust standard errors
+fit_1b_weighted_fiml_black<- sem(model_1b_black, data = svy_data_black, sampling.weights = "weights_final", std.lv = TRUE, missing = "fiml.x", se="robust")
+
+sem_output_1b_weighted_fiml_black_test <- get_sem_results_se(fit_1b_weighted_fiml_black) %>% 
+  mutate(model_name="1b_weighted_fiml_black") %>%
+  select(model_name, everything())
+
+# focus on model 1a results for crosstabs--caring families and relationships, cultural identity, and systems impacted and psych distress and moderating effects of structural racism
+
+factor_analysis_sem_black_youth_psych<-rbind(sem_output_1b_weighted_fiml_black_test,
+                                       sem_output_1a_weighted_fiml_black_test,
+                                       sem_output_1_weighted_fiml_black_test)
+```
+
+## Model 2: for black youth only
+```{r}
+model_2_black <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  subcomponent_psychological_distress =~ cy + cu + cw + cv + ct + cx
+  subcomponent_experiences_of_racism_and_discrimination =~ ei + em + eh + eg
+  subcomponent_self_efficacy_hope =~ co + cp + cn + cq
+  
+  # Regression
+  subcomponent_self_efficacy_hope ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    subcomponent_experiences_of_racism_and_discrimination + 
+    personal_safety_re + 
+    growth_mindset + 
+    opportunities_for_community_involvement_re +
+    cishet_lgbtqia +
+    systems_impacted +
+    high_poverty_area +
+    sparks + 
+    subcomponent_psychological_distress
+'
+
+# Run model on weighted data WITH FIML and robust standard errors
+fit_2_weighted_fiml_black<- sem(model_2_black, data = svy_data_black, sampling.weights = "weights_final", std.lv = TRUE, missing = "fiml.x", se="robust")
+
+sem_output_2_weighted_fiml_black_test <- get_sem_results_se(fit_2_weighted_fiml_black) %>% 
+  mutate(model_name="2_weighted_fiml_black") %>%
+  select(model_name, everything())
+
+model_2a_black <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  subcomponent_self_efficacy_hope =~ co + cp + cn + cq
+  
+  # Regression
+  subcomponent_self_efficacy_hope ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    personal_safety_re + 
+    growth_mindset + 
+    cishet_lgbtqia +
+    systems_impacted +
+    sparks 
+'
+
+# Run model on weighted data WITH FIML and robust standard errors
+fit_2a_weighted_fiml_black<- sem(model_2a_black, data = svy_data_black, sampling.weights = "weights_final", std.lv = TRUE, missing = "fiml.x", se="robust")
+
+sem_output_2a_weighted_fiml_black_test <- get_sem_results_se(fit_2a_weighted_fiml_black) %>% 
+  mutate(model_name="2a_weighted_fiml_black") %>%
+  select(model_name, everything())
+
+model_2b_black <- '
+  # Measurement model
+  component_caring_families_and_relationships =~ dl + dk + dn
+  component_cultural_identity =~ dz + dy + dx + ea + eb + ec
+  subcomponent_microaggressions =~ ep + eq + eo + er
+  subcomponent_structural_racism =~ et + ew + ey + eu + ev + es + ex
+  subcomponent_self_efficacy_hope =~ co + cp + cn + cq
+  
+  # Regression
+  subcomponent_self_efficacy_hope ~ component_caring_families_and_relationships + 
+    component_cultural_identity + 
+    subcomponent_microaggressions + 
+    subcomponent_structural_racism + 
+    personal_safety_re + 
+    growth_mindset + 
+    cishet_lgbtqia +
+    sparks 
+'
+
+# Run model on weighted data WITH FIML and robust standard errors
+fit_2b_weighted_fiml_black<- sem(model_2b_black, data = svy_data_black, sampling.weights = "weights_final", std.lv = TRUE, missing = "fiml.x", se="robust")
+
+sem_output_2b_weighted_fiml_black_test <- get_sem_results_se(fit_2b_weighted_fiml_black) %>% 
+  mutate(model_name="2b_weighted_fiml_black") %>%
+  select(model_name, everything())
+
+# stick with model 2a - caring families, cultural identity matter most, growth mindset matters for black youth
 
 
+factor_analysis_sem_black_youth_hope<-rbind(sem_output_2b_weighted_fiml_black_test,
+                                       sem_output_2a_weighted_fiml_black_test,
+                                       sem_output_2_weighted_fiml_black_test)
+
+```
+
+## Export to postgres
+
+```{r}
+
+finaldf_black_youth<-rbind(factor_analysis_sem_black_youth_hope,factor_analysis_sem_black_youth_psych) %>%
+  mutate(cfi=as.numeric(cfi),
+         tli=as.numeric(tli),
+         rmsea=as.numeric(rmsea),
+         srmr=as.numeric(srmr))%>%
+  as.data.frame()
+
+# Write table with metadata
+table_name <- "factor_analysis_sem_results_black_youth"
+schema <- "youth_thriving"
+indicator <- "A table with the results of the structural equation modeling subsetted for black youth to drill down on crosstabs to run. Model 1a and 2a will inform crosstabs"
+source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/EMG/boldvision_youththriving/Factor Analysis and Correlations/structural_equation_modeling.Rmd "
+qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_structural_equation_modeling_2.docx"
+table_comment <- paste0(indicator, source)
+
+dbWriteTable(con, Id(schema, table_name), finaldf_black_youth, overwrite = FALSE, row.names = FALSE)
+
+# Comment on table and columns
+column_names <- colnames(finaldf_black_youth) # Get column names
+column_comments <- c(
+  "The model name",
+  "dependent variable",
+  "The independent variable name",  
+  "The independent variable effect size standardized",  
+  "The independent variable effect size nonstandardized",
+  "p value",
+  "standard error of the independent variable"
+)
+
+add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
+```
