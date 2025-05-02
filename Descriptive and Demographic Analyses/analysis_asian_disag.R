@@ -36,8 +36,8 @@ svy_data <- svy_data %>%
     central_asian = ifelse(str_detect(detailed_asian, regex("Tartarian|Uzbek|Central Asian|Kazakh|Uzbekh|Other Central Asian", ignore_case = FALSE)), 1, 0), 
     multiple_asian = rowSums(across(c(south_asian, southeast_asian, east_asian, central_asian))),
     subgroup_asian = case_when(
-      multiple_asian >  1 ~ "Multi-Asian", # More than one Asian subgroup
       another_race_asian ==  1 ~ "Multiracial" , # Asian and Another Race
+      multiple_asian >  1 ~ "Multi-Asian", # More than one Asian subgroup
       south_asian == 1 ~ "South Asian",
       southeast_asian == 1 ~ "Southeast Asian",
       east_asian == 1 ~ "East Asian",
@@ -50,6 +50,14 @@ svy_data <- svy_data %>%
     central_asian_aoic = central_asian
   ) %>%
   select(response_id, subgroup_asian, race_asian, southeast_asian, south_asian, east_asian, central_asian, another_race_asian, multiple_asian, southeast_asian_aoic, south_asian_aoic, central_asian_aoic, everything())
+
+qa<-svy_data%>%group_by(nh_race,subgroup_asian,detailed_asian)%>%summarise(count=n())
+
+qa_2<-svy_data%>%group_by(detailed_asian,southeast_asian_aoic)%>%summarise(count=n())
+
+qa_3<-svy_data%>%group_by(detailed_asian,south_asian_aoic)%>%summarise(count=n())
+
+qa_4<-svy_data%>%group_by(detailed_asian,central_asian_aoic)%>%summarise(count=n())
 
 ####STEP 3: Create a function for Asian subgroups ####
 fx_disagg_asian <- function(df_input, variable_input,
