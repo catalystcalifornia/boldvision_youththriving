@@ -255,7 +255,7 @@ dbWriteTable(con, DBI::Id(schema = "youth_thriving", table = table_name), df_var
 
 # Create table comment
 indicator <- paste0(
-  "The following is a table of the rate by disaggregates Asian subgroups for the following variable of interest: ",  
+  "The following is a table of the rate by disaggregates Asian subgroups (alone categories including Asian + another race, youth with two or more regional Asian identities, and alone or in combination categories for groups with lower sample sizes) for the following variable of interest: ",  
   variable_input
 )
 
@@ -269,7 +269,7 @@ schema <- "youth_thriving"
 
 # List of column comments, correctly setting the demographic column name
 column_comments <- c(
-  "subgroup_asian" = "Asian subgroup",
+  "subgroup_asian" = "Asian subgroup includes alone and alone and in combo categories for select groups",
   "response_group" = "The response that the data is about",
   "count" = " count of youth that selected this response",
   "rate" = " rate of youth that selected this response",
