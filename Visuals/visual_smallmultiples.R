@@ -192,19 +192,19 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
      panel.spacing.y = unit(4, "lines"))  # Increase spacing between facet rows 
   
   ggsave(plot = df_visual, 
-         file = paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", 
-                       unique(df$response_domain), "/", unique(df$variable), "_smallmultiplesv2.svg"),
+         file = paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/MK/boldvision_youththriving/Visuals/", 
+                       unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.svg"),
          units = "in", width = 8, height = 10)
   ggsave(plot = df_visual, 
-         file = paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", 
-                       unique(df$response_domain), "/", unique(df$variable), "_smallmultiplesv2.pdf"),
+         file = paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/MK/boldvision_youththriving/Visuals/", 
+                       unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.pdf"),
          units = "in", width = 8, height = 10)
 
   showtext_opts(dpi=300)
   
   ggsave(plot = df_visual, 
-         file = paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", 
-                       unique(df$response_domain), "/", unique(df$variable), "_smallmultiplesv2.png"),
+         file = paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/MK/boldvision_youththriving/Visuals/", 
+                       unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.png"),
          units = "in", width = 8, height = 10)
   
   return(df_visual)
