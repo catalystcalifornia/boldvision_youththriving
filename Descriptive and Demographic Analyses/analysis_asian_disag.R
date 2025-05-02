@@ -49,46 +49,82 @@ svy_data <- svy_data %>%
     south_asian_aoic = south_asian,
     central_asian_aoic = central_asian
   ) %>%
-  select(response_id, subgroup_asian, race_asian, southeast_asian, south_asian, east_asian, central_asian, another_race_asian, multiple_asian, everything())
+  select(response_id, subgroup_asian, race_asian, southeast_asian, south_asian, east_asian, central_asian, another_race_asian, multiple_asian, southeast_asian_aoic, south_asian_aoic, central_asian_aoic, everything())
 
 ####STEP 3: Create a function for Asian subgroups ####
-fx_disagg_asian <- function(df_input, variable_input) {
-  df_asian_combined <- as_survey(df_input, weights = !!sym("weights_final")) %>%
+fx_disagg_asian <- function(df_input, variable_input,
+                            low_input_a, low_input_b, low_rename,
+                            high_input_a, high_input_b, high_rename) {
+  
+  # Filter for the variable of interest
+  df <- df_input %>%
+    # filter(.data[["variable"]] == variable_input) %>%
+    as_survey(weights = weights_final) %>%
     filter(!is.na(!!sym(variable_input)), !is.na(subgroup_asian)) %>%
     group_by(subgroup_asian, !!sym(variable_input)) %>%
     summarise(
       count = n(),
-      rate = survey_mean(vartype = c("cv", "se"), level = .90),
+      rate = survey_mean(vartype = c("cv", "se"), level = 0.90),
       .groups = "drop"
     ) %>%
     mutate(
       rate = rate * 100,
       rate_cv = rate_cv * 100,
-      rate_se = rate_se * 100, 
-      moe = rate_se * 1.645 * 100
+      rate_se = rate_se * 100,
+      moe = rate_se * 1.645
     )
   
+  # Load response dictionary for this variable
   dict <- svy_dd %>%
     filter(variable == variable_input) %>%
     pivot_longer(cols = response_1:response_12,
-                 names_to = "response_numbers",
+                 names_to = "response_number",
                  values_to = "response",
-                 values_drop_na = TRUE)
+                 values_drop_na = TRUE) 
   
-  dict_var <- dict %>%
-    mutate(variable_merge_col = 1:nrow(dict))
+  dict <- dict %>%
+    mutate(variable_merge_col = 1:nrow(dict)) # for merging later
   
-  df_final <- merge(x = df_asian_combined, y = dict_var, 
-                    by.x = variable_input, by.y = "variable_merge_col") %>%
-    relocate(response) %>%
-    select(-notes)
+  # Merge dictionary
+  df_merge <- df %>%
+    left_join(dict, by = setNames("variable_merge_col", variable_input)) %>%  
+    relocate(response)
   
-  return(df_final)
+  # Combine response groups
+  df_combined_responses <- df_merge %>%
+    mutate(response_group = case_when(
+      response %in% c(low_input_a, low_input_b) ~ low_rename,
+      response %in% c(high_input_a, high_input_b) ~ high_rename,
+      TRUE ~ NA_character_
+    )) %>%
+    filter(!is.na(response_group)) %>%
+    group_by(subgroup_asian, response_group) %>%
+    summarise(
+      count = sum(count, na.rm = TRUE),
+      rate = sum(rate * count, na.rm = TRUE) / sum(count, na.rm = TRUE),
+      rate_cv = rate_cv * 100,
+      rate_se = rate_se * 100,
+      moe = rate_se * 1.645,
+      variable = first(variable),
+      question = first(question),
+      sub_question = first(sub_question),
+      question_number = first(question_number),
+      likert_type = first(likert_type),
+      variable_name = first(variable_name),
+      response_domain = first(response_domain),
+      .groups = 'drop'
+    )
+  
+  return(df_combined_responses)
 }
 
+
 ####STEP 4: Run tables on variables of interest and check if they look okay ####
-disagg_asian_co <- fx_disagg_asian(svy_data, "co")
-disagg_asian_dl <-fx_disagg_asian(svy_data, "dl")
+
+disagg_asian_co <- fx_disagg_asian(svy_data, "co", "Never true", "Sometimes true", "Sometimes/Never True", "Often true", "Always true", "Often/Always True")
+
+disagg_asian_dl <- fx_disagg_asian(svy_data, "dl", "Never true", "Sometimes true", "Sometimes/Never True", "Often true", "Always true", "Often/Always True")
+
 
 ####STEP 5: Create function for writing data table to database ####
 
@@ -115,7 +151,7 @@ schema <- "youth_thriving"
 # List of column comments, correctly setting the demographic column name
 column_comments <- c(
   "subgroup_asian" = "Asian subgroup",
-  "response" = "The response that the data is about",
+  "response_group" = "The response that the data is about",
   "count" = " count of youth that selected this response",
   "rate" = " rate of youth that selected this response",
   "rate_cv" = "A weighted coefficient of variation for this rate",
@@ -123,7 +159,6 @@ column_comments <- c(
   "variable" = "Refers to the column label or variable in the survey data",
   "question" = "The question that this variable refers to",
   "sub_question" = "The subquestion that this variable refers to",
-  "question number",
   "likert_type" = "Likert scale type",
   "variable_name" = "The survey SUBcomponent this variable falls under",
   "response_domain" = "The survey component this variable falls under"
