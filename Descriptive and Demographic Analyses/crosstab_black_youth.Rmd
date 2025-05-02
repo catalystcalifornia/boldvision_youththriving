@@ -399,7 +399,7 @@ crosstab_black_structural_inequities_single<-rbind(crosstab_black_youth_structur
 
 crosstab_black_structural_inequities_double<-rbind(crosstab_threeways_hope, crosstab_threeways_psych)
 
-crosstab_black_systems
+crosstab_black_systems_impacted<-crosstab_black_systems
 
 # Push tables to postgres
 # metadata
@@ -418,11 +418,39 @@ table_comment <- paste0(indicator, source)
 # Comment on table and columns
 column_names <- colnames(crosstab_black_structural_inequities_single) # Get column names
 column_comments <- c(
-  "Variable for estimates by undocumented or not undocumented youth",
-  "Binary variable for first grouping variable--in this case opportunities for community involvement where 0 is never or sometimes and 1 is often or always",
-  "Binary variable for second grouping variable either hope for future, self-efficacy, or sparks questions refer to var2_variable and var2_response_label for detail",
-  "The unweighted count of youth respondents in the combined demographic & var1 & var2 category",
-  "The weighted rate of the demographic + var1 + var2 group",
+  "Binary variable for first grouping variable see var1_variable and var1_response_label for details - denominator for calcs",
+  "Binary variable for second grouping variable see var2_variable and var2_response_label for details - numerator for calcs",
+  "The unweighted count of youth respondents in the combined var1 & var2 category (universe is black alone youth)",
+  "The weighted rate of the var1 + var2 group",
+  "CV of the rate",
+  "Standard error of the rate",
+  "Variable name of the first grouping variable",
+  "Survey question of the first grouping variable",
+  "Subquestion of the first grouping variable",
+  "Variable name of the second grouping variable",
+  "Survey question of the second grouping variable",
+  "Subquestion of the second grouping variable",
+    "Response codes included in the binary coding of the first grouping variable",
+    "Response codes included in the binary coding of the second grouping variable"
+)
+
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
+# Second table
+table_name <- "crosstab_black_structural_inequities_double"
+indicator <- "A crosstab table for black youth alone by whether or not they experienced structural inequities - not enough affordable housing -- and then their levels of people they can turn to when they need to or cultural identity by hope for future or feelings of worthlessness. In other words the table looks at for black youth, how did their feelings of worthless or hope for the future vary by whether they had people to turn to or cultural identity AND by whether they had experienced structural inequities. There are multiple different cross tabs in the table. Be sure to filter by var1_variable and var2_variable to get unique crosstabs that were run. Rates may not add to 100% because NAs/ dont wish to answer are excluded in final table"
+table_comment <- paste0(indicator, source)
+
+# dbWriteTable(con, Id(schema, table_name), crosstab_black_structural_inequities_double, overwrite = FALSE, row.names = FALSE)
+
+# Comment on table and columns
+column_names <- colnames(crosstab_black_structural_inequities_double) # Get column names
+column_comments <- c(
+  "binary variable for whether black youth experienceed structural inequities 0=Never, 1=Rarely to All of the time",
+  "Binary variable for first grouping variable see var1_variable and var1_response_label for details - denominator for calcs",
+  "Binary variable for second grouping variable see var2_variable and var2_response_label for details - numerator for calcs",
+  "The unweighted count of youth respondents in the combined var1 & var2 category (universe is black alone youth)",
+  "The weighted rate of the var1 + var2 group",
   "CV of the rate",
   "Standard error of the rate",
   "Variable name of the first grouping variable",
@@ -438,48 +466,29 @@ column_comments <- c(
 # add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
 
 
-# Second table
-table_name <- "demographics_undocumented_crosstabs"
-indicator <- "A crosstab table for undocumented youth vs. not-undocumented youth by other demographic variables including unhoused, systems impacted, and race. There are three different cross tabs in the table. Be sure to filter by the demographic category variable to get unique crosstabs that were run. Rates may not add to 100% because NAs/ dont wish to answer are excluded in final table for all variables but race"
-
-# dbWriteTable(con, Id(schema, table_name), demographics_undocumented_crosstabs, overwrite = FALSE, row.names = FALSE)
-
-# Comment on table and columns
-column_names <- colnames(demographics_undocumented_crosstabs) # Get column names
-column_comments <- c(
-  "Variable for estimates by undocumented or not undocumented youth",
-  "Binary variable for demographic grouping variable ",
-  "The unweighted count of youth respondents in the combined demographic category",
-  "The weighted rate of the combined demographic group",
-  "CV of the rate",
-  "Standard error of the rate",
-  "demographic grouping identifier for the crosstab either race, systems impacted or unhoused")
-
-# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
-
-
 # Third table
-table_name <- "crosstab_undocumented_systems_community_hope"
-indicator <- "A crosstab table for undocumented youth vs. not-undocumented youth by another demographic variable (unhoused or systems impacted) and by their level of opportunities for community involvement or hope for the future. There are three different cross tabs in the table. Be sure to filter by the demographic category variable and question variable to get unique crosstabs that were run. Rates may not add to 100% because NAs/ dont wish to answer are excluded in final table"
+table_name <- "crosstab_black_systems_impacted"
+indicator <- "A crosstab table for black youth vs. not blacked youth by whether they were systems impacted and how they experienced structural inequities, hope for future, or worthlessness. In other words, out of every systems impacted/racial grouping category what % of youth felt structural inequities (lack of affordable housing), hope for future, worthless. There are three different cross tabs in the table. Be sure to filter by the variable to get unique crosstabs that were run. Rates may not add to 100% because NAs/ dont wish to answer are excluded in final table for all variables but race"
 
-# dbWriteTable(con, Id(schema, table_name), crosstab_undocumented_systems_community_hope, overwrite = FALSE, row.names = FALSE)
+# dbWriteTable(con, Id(schema, table_name), crosstab_black_systems_impacted, overwrite = FALSE, row.names = FALSE)
 
 # Comment on table and columns
-column_names <- colnames(crosstab_undocumented_systems_community_hope) # Get column names
+column_names <- colnames(crosstab_black_systems_impacted) # Get column names
 column_comments <- c(
-  "Variable for estimates by undocumented or not undocumented youth",
-  "Binary variable for demographic grouping variable ",
-  "Binary variable for the question/item grouping variable",
-  "The unweighted count of youth respondents in the combined demographic/question category",
-  "The weighted rate of the combined demographic/question group",
+  "Race grouping summary--either black alone, black in combo, or not black youth",
+  "Whether youth are systems impacted or not systems impacted in racial grouping",
+  "Binary variable for the grouping variable/item of interest - see variable and response_label for details",
+  "The unweighted count of youth respondents in the combined demographic/variable category",
+  "The weighted rate of the combined demographic/variable group",
   "CV of the rate",
   "Standard error of the rate",
-  "Variable name of the question grouping variable",
-  "Survey question of the grouping variable",
-  "Subquestion of the grouping variable",
-     "Response codes included in the binary coding of the question level grouping variable",
-  "demographic grouping identifier for the crosstab either systems impacted or unhoused")
+  "The main grouping variable that estimates are for (numerator variable out of the systems impacted/racial group",
+  "The question for the variable",
+  "the subquestion for the variable",
+  "the combined response label")
 
 # add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
+dbDisconnect(con)
 
 ```
