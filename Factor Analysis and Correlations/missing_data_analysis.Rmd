@@ -44,9 +44,11 @@ knitr::read_chunk('./structural_equation_modeling.Rmd')
 # getting this error each time but code seems to be running okay?
 # Error: attempt to use zero-length variable name
 ```
+
 ```{r, naresponse, echo=FALSE}
 
 ```
+
 ```{r, recode1, echo=FALSE}
 
 ```

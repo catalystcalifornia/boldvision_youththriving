@@ -1,0 +1,494 @@
+---
+title: "Crosstab about black youth racial equity and inclusion"
+date: "2025-04-29"
+output: html_document
+---
+# Get data
+```{r}
+
+library(tidyverse)
+library(srvyr)
+library(RPostgres)
+library(ggplot2)
+library(dplyr)
+library(forcats)
+library(tidyr)
+
+# Used to connect to RDA database and RDA function for adding table comments
+source("W:\\RDA Team\\R\\credentials_source.R")
+
+# source function for crosstabs
+source(".\\crosstab_functions.R")
+
+# Connect to postgres
+con <- connect_to_db("bold_vision")
+
+# Pull in the survey data and data dictionary
+raw_svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
+svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024")
+
+# Pull in undocumented and race data
+systems_impacted_data <- dbGetQuery(con, "SELECT response_id, systems_impacted FROM youth_thriving.demographics_binary_data")
+race_ethnicity_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.race_ethnicity_data")
+
+# Merge data frames into svy_data using response_id and selecting variables of interest, filter for black youth
+svy_data <- raw_svy_data %>% 
+  left_join(systems_impacted_data, by = "response_id") %>%
+  left_join(race_ethnicity_data %>% select(response_id,nh_race,race_black,detailed_race), by = "response_id") 
+
+```
+
+
+# Recode columns for analysis
+```{r}
+# Create a race column reflective of black identities
+check<-svy_data%>%filter(race_black==1)%>%
+  mutate(total=n())%>%
+           group_by(race_black,detailed_race,total)%>%summarise(count=n())
+# 83% identified as black alone
+
+# create new race column if needed
+svy_data<-svy_data%>%
+  mutate(black_aoic=case_when(
+    nh_race=="nh_black" ~ "black_alone",
+    race_black=="1" ~ "black in combo",
+    race_black=="0" ~ "another race"
+  ),
+  systems_impacted=case_when( # easier reading for systems impacted column
+    systems_impacted=="1" ~ "systems impacted",
+    systems_impacted=="0" ~ "not systems impacted",
+    is.na(systems_impacted) ~ NA
+  ))
+
+table(svy_data$black_aoic) # checks out
+
+# Create binary columns for vars I want to analyze
+## Psych distress - cy - worthless
+## Caring Families and Relationships - dl - i have someone to go to with a problem
+
+## Structural Racism -- ew -- not enough housing 
+
+## Self-Efficacy and Hope -- co -- i feel hopeful about my future
+## Cultural identity - dz -- culture makes me feel good
+
+# check frequency distributions
+vars<-svy_data %>% select(cy,dl,ew,co,dz) %>% names()
+
+svy_data_subset <- svy_data %>% filter(black_aoic=='black_alone') %>% select(cy,dl,ew,co,dz) 
+
+lapply(svy_data_subset, function(vars) hist(vars))
+
+vars_dd <- svy_dd %>% filter(variable %in% vars) %>% select(variable,question,sub_question,response_domain, response_1:response_7)
+
+```
+
+
+```{r}
+# going to group two lowest responses for greater sample sizes for dl, co, and dz
+## Psych distress - cy - worthless none of the time vs. at least a little
+## Caring Families and Relationships - dl - i have someone to go to with a problem -- never/sometimes vs. often/always
+
+## Structural Racism -- ew -- not enough housing -- never vs. at least rarely
+
+## Self-Efficacy and Hope -- co -- i feel hopeful about my future -- never/sometimes vs. often/always
+## Cultural identity - dz -- culture makes me feel good -- never/sometimes vs. often/always
+
+
+# recode likert data/questions
+svy_data <- svy_data %>%
+  mutate(cy_binary=case_when(is.na(cy) | cy == 6 ~ NA,
+                                 cy == 1 ~ 0, 
+                                 TRUE ~ 1),
+           ew_binary = case_when(is.na(ew) | ew >= 6 ~ NA,
+                                 ew == 1 ~ 0, 
+                                 TRUE ~ 1),
+           dl_binary = case_when(is.na(dl) | dl == 5 ~ NA,
+                                dl <= 2 ~ 0,
+                                 TRUE ~ 1),
+           dz_binary = case_when(is.na(dz) | dz == 5 ~ NA,
+                                dz <= 2 ~ 0,
+                                 TRUE ~ 1),
+           co_binary = case_when(is.na(co) | co == 5 ~ NA,
+                                co <= 2 ~ 0,
+                                 TRUE ~ 1),
+         )
+
+# check recoding
+table(svy_data$dl)
+table(svy_data$dl_binary)
+
+table(svy_data$ew)
+table(svy_data$ew_binary)
+
+# check counts
+raw_counts <- svy_data %>%
+  group_by(black_aoic,dz_binary, ew_binary) %>%
+  summarise(count = n(), .groups = "drop")%>%
+  na.omit()
+
+# check counts
+raw_counts <- svy_data %>%
+  group_by(black_aoic,dl_binary, ew_binary) %>%
+  summarise(count = n(), .groups = "drop")%>%
+  na.omit()
+
+```
+
+# Crosstab tables for black youth - structural racism by caring families and relationships by psych distress
+```{r}
+
+# experience of struggling with housing by black youth category
+black_ew<-crosstab_two_vars(svy_data,"black_aoic","ew_binary")
+black_ew
+# black in combo and black alone youth experience similar rates
+
+black_cy<-crosstab_two_vars(svy_data,"black_aoic","cy_binary")
+black_cy
+# slightly higher psych distress for black with another race though overlapping ci
+
+black_ew_cy<-crosstab_three_vars(svy_data,"black_aoic","ew_binary","cy_binary") 
+# slightly higher psych distress for black with another race though overlapping ci
+
+# running just for black alone youth but will note for report importance of multiracial black youth and their needs
+svy_data_subset <- svy_data %>% filter(black_aoic=='black_alone')
+
+# experience of struggling with housing by psych distress and family support
+black_ew_cy<-crosstab_two_vars(svy_data_subset,"ew_binary","cy_binary")
+black_ew_dl_cy<-crosstab_three_vars(svy_data_subset,"ew_binary","dl_binary","cy_binary") 
+black_ew_dl<-crosstab_two_vars(svy_data_subset,"ew_binary","dl_binary")
+# keep importance of caring families and relationships
+
+# add data dictionary
+black_ew_cy<-datadict_two_var(black_ew_cy,"ew_binary","Never","Rarely to All of the Time","ew",
+                                          "cy_binary","Never","A Little to Always","cy")
+
+black_ew_dl_cy<-datadict_two_var(black_ew_dl_cy,"dl_binary","Never/Sometimes True","Often/Always True","dl",
+                                          "cy_binary","Never","A Little to Always","cy")
+
+black_ew_dl<-datadict_two_var(black_ew_dl,"ew_binary","Never","Rarely to All of the Time","ew",
+                                          "dl_binary","Never/Sometimes True","Often/Always True","dl")
+
+crosstab_black_youth_structural<-rbind(black_ew_cy %>%
+                                           rename(var2_binary=2), 
+                                         black_ew_dl %>%
+                                           rename(var2_binary=2))
+
+crosstab_threeways_psych <- black_ew_dl_cy %>%
+                                           rename(var1_binary=2,
+                                                  var2_binary=3)
+
+```
+
+# Plot crosstabs
+
+## structural racism by worthless
+```{r}
+# Plot data filter
+plot_data <- black_ew_cy %>%
+  filter(cy_binary==1)
+
+ggplot(plot_data, aes(fill=var2_response_label, x = var1_response_label, y = rate)) +
+  geom_bar(position="dodge", stat = "identity") +
+  guides(fill=guide_legend(title="Worthless"))+
+  ylab("worthless")+
+  xlab("unaffordable housing")
+
+# when black youth experience structural inequalities like not enough housing, they are more likely to feel worthless
+
+# export
+
+```
+
+## structural racism by caring families
+```{r}
+# Plot data filter
+plot_data <- black_ew_dl %>%
+  filter(dl_binary==1)
+
+ggplot(plot_data, aes(fill=var2_response_label, x = var1_response_label, y = rate)) +
+  geom_bar(position="dodge", stat = "identity") +
+  guides(fill=guide_legend(title="Caring families"))+
+  ylab("Caring families")+
+  xlab("unaffordable housing")
+
+# when black youth experience structural inequalities, they are also likely to have caring families/relationships--can they turn to someone if social networks are stressed?
+
+# export
+
+```
+
+## structural racism by caring families and psych distress
+```{r}
+# Plot data filter
+plot_data <- black_ew_dl_cy %>%
+  filter(ew_binary==1)%>%
+  filter(cy_binary==1)
+
+ggplot(plot_data, aes(fill=var2_response_label, x = var1_response_label, y = rate)) +
+  geom_bar(position="dodge", stat = "identity") +
+  guides(fill=guide_legend(title="Worthless"))+
+  ylab("worthless")+
+  xlab("caring families")
+
+# when black youth experience structural inequalities and they have caring families and relationships their level of psychological distress goes down -- importance of black families and support--how do we support black families and address structural inequalities?
+
+# export
+
+```
+
+
+# Crosstab tables for black youth - systems impact
+```{r}
+
+# black by systems impact
+black_systems<-crosstab_two_vars(svy_data,"black_aoic","systems_impacted")
+black_systems
+# black youth much more likely to be systems impacted
+
+black_systems_ew<-crosstab_three_vars(svy_data,"black_aoic","systems_impacted","ew_binary")
+# and black systems impacted youth are more likely to experience structural racism
+
+black_systems_cy<-crosstab_three_vars(svy_data,"black_aoic","systems_impacted","cy_binary")
+# about half experience psychological distress similar to other youth
+
+black_systems_co<-crosstab_three_vars(svy_data,"black_aoic","systems_impacted","co_binary")
+# but still about 80% of black systems impacted youth feel hopeful about their future
+
+# add data dictionary
+black_systems_ew<-datadict_one_var(black_systems_ew,"ew_binary","Never","Rarely to All of the Time","ew")
+
+black_systems_cy<-datadict_one_var(black_systems_cy,"cy_binary","Never","A Little to Always","cy")
+
+black_systems_co<-datadict_one_var(black_systems_co,"co_binary","Never/Sometimes True","Often/Always True","co")
+
+crosstab_black_systems<-rbind(black_systems_ew %>%
+                                           rename(var1=3),
+                                         black_systems_cy %>%
+                                           rename(var1=3),
+                                         black_systems_co %>%
+                                           rename(var1=3))
+
+```
+
+# Crosstab tables for black youth - structural racism by self efficacy and hope
+```{r}
+
+black_co<-crosstab_two_vars(svy_data,"black_aoic","co_binary")
+black_co
+# much higher hope for their future
+
+black_ew_co<-crosstab_three_vars(svy_data,"black_aoic","ew_binary","co_binary") 
+black_ew_co
+# even when they experience structural inequities they experience higher hope for their future
+
+# running just for black alone youth but will note for report importance of multiracial black youth and their needs
+svy_data_subset <- svy_data %>% filter(black_aoic=='black_alone')
+
+blackalone_ew_co<-crosstab_two_vars(svy_data_subset,"ew_binary","co_binary")
+
+# experience of struggling with housing by hope for future and family support
+black_ew_dl_co<-crosstab_three_vars(svy_data_subset,"ew_binary","dl_binary","co_binary") 
+# when they experience structural racism and have caring families, hope for future goes up
+
+black_ew_dz_co<-crosstab_three_vars(svy_data_subset,"ew_binary","dz_binary","co_binary") 
+# when they experience structural racism and have strength in cultural identity, hope for future goes up
+
+black_ew_dz<-crosstab_two_vars(svy_data_subset,"ew_binary","dz_binary")
+# stronger cultural identity when they don't experience structural racism--how can we reverse structural inequalities and protect cultural identity of black youth to support their hope
+
+# add data dictionary
+blackalone_ew_co<-datadict_two_var(blackalone_ew_co,"ew_binary","Never","Rarely to All of the Time","ew",
+                                          "co_binary","Never/Sometimes True","Often/Always True","co")
+
+black_ew_dl_co<-datadict_two_var(black_ew_dl_co,"dl_binary","Never/Sometimes True","Often/Always True","dl",
+                                          "co_binary","Never/Sometimes True","Often/Always True","co")
+
+black_ew_dz_co<-datadict_two_var(black_ew_dz_co,"dz_binary","Never/Sometimes True","Often/Always True","dz",
+                                          "co_binary","Never/Sometimes True","Often/Always True","co")
+
+black_ew_dz<-datadict_two_var(black_ew_dz,"ew_binary","Never","Rarely to All of the Time","ew",
+                                          "dz_binary","Never/Sometimes True","Often/Always True","dz")
+
+
+crosstab_black_youth_structural_part2<-rbind(blackalone_ew_co %>%
+                                           rename(var2_binary=2), 
+                                         black_ew_dz %>%
+                                           rename(var2_binary=2))
+
+crosstab_threeways_hope <- rbind(black_ew_dl_co %>%
+                                           rename(var1_binary=2,
+                                                  var2_binary=3), 
+                                         black_ew_dz_co %>%
+                                           rename(var1_binary=2,
+                                                  var2_binary=3))
+
+```
+
+# Plot crosstabs
+
+## structural racism by hope
+```{r}
+# Plot data filter
+plot_data <- blackalone_ew_co %>%
+  filter(co_binary==1)
+
+ggplot(plot_data, aes(fill=var2_response_label, x = var1_response_label, y = rate)) +
+  geom_bar(position="dodge", stat = "identity") +
+  guides(fill=guide_legend(title="hope"))+
+  ylab("hope")+
+  xlab("unaffordable housing")
+
+# black youth are hopeful about their futures
+
+# export
+
+```
+
+## structural racism by cultural identity
+```{r}
+# Plot data filter
+plot_data <- black_ew_dz %>%
+  filter(dz_binary==1)
+
+ggplot(plot_data, aes(fill=var2_response_label, x = var1_response_label, y = rate)) +
+  geom_bar(position="dodge", stat = "identity") +
+  guides(fill=guide_legend(title="Cultural identity"))+
+  ylab("Cultural identity")+
+  xlab("unaffordable housing")
+
+# when black youth experience structural inequalities, cultural identity is slightly lower
+
+# export
+
+```
+
+## structural racism by cultural identity and hope
+```{r}
+# Plot data filter
+plot_data <- black_ew_dz_co %>%
+  filter(ew_binary==1)%>%
+  filter(co_binary==1)
+
+ggplot(plot_data, aes(fill=var2_response_label, x = var1_response_label, y = rate)) +
+  geom_bar(position="dodge", stat = "identity") +
+  guides(fill=guide_legend(title="Hope"))+
+  ylab("Hope")+
+  xlab("cultural identity")
+
+# when black youth experience structural inequalities and they have strength in their cultural identity, their hope for future goes up (compared to black youth with structural inequalities and less strength in cultural identity)-- importance of supporting black culture
+
+# export
+
+```
+
+
+# Push tables to postgres
+Black alone vs. Black in combination with another race youth experience similar rates of lack of affordable housing. Black in combination youth may experience higher rates of psychological distress both with or without housing affordability inequalities compared to Black alone youth. When Black alone youth experience structural inequalities like not enough housing, they are more likely to feel worthless (nearly 50% vs. about 25%). Black youth experiencing not enough affordable housing are also less likely to have someone to turn to when they have a problem. This is problematic given that having people you can turn to is protective against psychological distress. Psychological distress goes up when Black youth having issues with affordable housing and only never or sometimes have someone to turn to.
+
+Black alone youth are more likely to be systems impacted -- 25% of black youth alone compared to 12% of non-Black youth. Even when controlling for systems impact, Black youth who are systems impacted are more likely to experience issues like lack of affordable housing compared to their non-Black systems imapcted counterparts. However, Black systems impacted youth are remarkably resilient--their psychological distress rates is similar to that of other youth and their hope for their future is greater than that of other systems impacted youth.
+
+Black youth generally have much higher hope for the future (81% often or always compared to 71% often or always for non-Black youth). Even when they experience structural inequities, they hope remains higher (82.9% compared to 69.4% for non-Black youth with structural inequities). Caring families and cultural identity contribute to this hope--when Black youth experience structural inequities like lack of affordable housing, when they have caring relationships and strong cultural identity, their hope for the future goes up. 
+
+But structural inequities matter for Black communities and cultural identity---youth experiencing structural inequities have lower levels of caring relationships and lower cultural identity. What can systems leaders do to reverse structural inequities and invest in Black families and culture?
+
+```{r}
+## Bind tables
+# three levels to export
+crosstab_black_structural_inequities_single<-rbind(crosstab_black_youth_structural,crosstab_black_youth_structural_part2)%>%
+  rename(var1_binary=ew_binary)
+
+crosstab_black_structural_inequities_double<-rbind(crosstab_threeways_hope, crosstab_threeways_psych)
+
+crosstab_black_systems_impacted<-crosstab_black_systems
+
+# Push tables to postgres
+# metadata
+schema <- "youth_thriving"
+source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/EMG/boldvision_youththriving/Descriptive and Demographic Analyses/crosstab_black_youth.Rmd "
+qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_crosstab_black_youth.docx"
+
+
+# First table
+table_name <- "crosstab_black_structural_inequities_single"
+indicator <- "A crosstab table for black youth alone by their experience of structural inequities - not enough affordable housing -- and their level of people they can turn to when they need to, cultural identity, hope for future, or feelings of worthlessness. There are multiple different cross tabs in the table. Be sure to filter by var2_variable to get unique crosstabs that were run. Rates may not add to 100% because NAs/ dont wish to answer are excluded in final table"
+table_comment <- paste0(indicator, source)
+
+# dbWriteTable(con, Id(schema, table_name), crosstab_black_structural_inequities_single, overwrite = FALSE, row.names = FALSE)
+
+# Comment on table and columns
+column_names <- colnames(crosstab_black_structural_inequities_single) # Get column names
+column_comments <- c(
+  "Binary variable for first grouping variable see var1_variable and var1_response_label for details - denominator for calcs",
+  "Binary variable for second grouping variable see var2_variable and var2_response_label for details - numerator for calcs",
+  "The unweighted count of youth respondents in the combined var1 & var2 category (universe is black alone youth)",
+  "The weighted rate of the var1 + var2 group",
+  "CV of the rate",
+  "Standard error of the rate",
+  "Variable name of the first grouping variable",
+  "Survey question of the first grouping variable",
+  "Subquestion of the first grouping variable",
+  "Variable name of the second grouping variable",
+  "Survey question of the second grouping variable",
+  "Subquestion of the second grouping variable",
+    "Response codes included in the binary coding of the first grouping variable",
+    "Response codes included in the binary coding of the second grouping variable"
+)
+
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
+# Second table
+table_name <- "crosstab_black_structural_inequities_double"
+indicator <- "A crosstab table for black youth alone by whether or not they experienced structural inequities - not enough affordable housing -- and then their levels of people they can turn to when they need to or cultural identity by hope for future or feelings of worthlessness. In other words the table looks at for black youth, how did their feelings of worthless or hope for the future vary by whether they had people to turn to or cultural identity AND by whether they had experienced structural inequities. There are multiple different cross tabs in the table. Be sure to filter by var1_variable and var2_variable to get unique crosstabs that were run. Rates may not add to 100% because NAs/ dont wish to answer are excluded in final table"
+table_comment <- paste0(indicator, source)
+
+# dbWriteTable(con, Id(schema, table_name), crosstab_black_structural_inequities_double, overwrite = FALSE, row.names = FALSE)
+
+# Comment on table and columns
+column_names <- colnames(crosstab_black_structural_inequities_double) # Get column names
+column_comments <- c(
+  "binary variable for whether black youth experienceed structural inequities 0=Never, 1=Rarely to All of the time",
+  "Binary variable for first grouping variable see var1_variable and var1_response_label for details - denominator for calcs",
+  "Binary variable for second grouping variable see var2_variable and var2_response_label for details - numerator for calcs",
+  "The unweighted count of youth respondents in the combined var1 & var2 category (universe is black alone youth)",
+  "The weighted rate of the var1 + var2 group",
+  "CV of the rate",
+  "Standard error of the rate",
+  "Variable name of the first grouping variable",
+  "Survey question of the first grouping variable",
+  "Subquestion of the first grouping variable",
+  "Variable name of the second grouping variable",
+  "Survey question of the second grouping variable",
+  "Subquestion of the second grouping variable",
+    "Response codes included in the binary coding of the first grouping variable",
+    "Response codes included in the binary coding of the second grouping variable"
+)
+
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
+
+# Third table
+table_name <- "crosstab_black_systems_impacted"
+indicator <- "A crosstab table for black youth vs. not blacked youth by whether they were systems impacted and how they experienced structural inequities, hope for future, or worthlessness. In other words, out of every systems impacted/racial grouping category what % of youth felt structural inequities (lack of affordable housing), hope for future, worthless. There are three different cross tabs in the table. Be sure to filter by the variable to get unique crosstabs that were run. Rates may not add to 100% because NAs/ dont wish to answer are excluded in final table for all variables but race"
+
+# dbWriteTable(con, Id(schema, table_name), crosstab_black_systems_impacted, overwrite = FALSE, row.names = FALSE)
+
+# Comment on table and columns
+column_names <- colnames(crosstab_black_systems_impacted) # Get column names
+column_comments <- c(
+  "Race grouping summary--either black alone, black in combo, or not black youth",
+  "Whether youth are systems impacted or not systems impacted in racial grouping",
+  "Binary variable for the grouping variable/item of interest - see variable and response_label for details",
+  "The unweighted count of youth respondents in the combined demographic/variable category",
+  "The weighted rate of the combined demographic/variable group",
+  "CV of the rate",
+  "Standard error of the rate",
+  "The main grouping variable that estimates are for (numerator variable out of the systems impacted/racial group",
+  "The question for the variable",
+  "the subquestion for the variable",
+  "the combined response label")
+
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
+dbDisconnect(con)
+
+```
