@@ -1,0 +1,79 @@
+---
+title: "Crosstabs on Caring families/psychological distress and Sparks/hope for future"
+author: "Alicia Vo"
+date: "2025-05-13"
+output: html_document
+---
+
+# Get data
+```{r}
+library(tidyverse)
+library(srvyr)
+library(RPostgres)
+
+# Get function cross_tab_df()
+source("./crosstab_svyquestions.R")
+
+# Used to connect to RDA database and RDA function for adding table comments
+source("W:\\RDA Team\\R\\credentials_source.R")
+
+# Connect to postgres
+con <- connect_to_db("bold_vision")
+
+# Pull in the survey data and data dictionary
+raw_svy_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
+svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024")
+```
+# Function push_crosstab_table()
+```{r}
+push_crosstab_table <- function(raw_crosstab, table_name){
+  # Write table with metadata
+  schema <- "youth_thriving"
+  indicator <- paste("A crosstab table of", paste(names(raw_crosstab)[1:2], collapse = " and "))
+  source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Descriptive and Demographic Analyses/crosstabs_caring_psych_sparks_hope.Rmd "
+  qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_crosstabs_caring_psych_sparks_hope.docx"
+  table_comment <- paste(indicator, source)
+  dbWriteTable(con, 
+             Id(schema = schema, table = table_name), 
+             raw_crosstab)
+  
+  # Comment on table and columns
+  column_names <- colnames(raw_crosstab) # Get column names
+  column_comments <- c(
+    "First survey question",
+    "Second survey question",
+    "Count of respondents whose responses match the first two columns in this table",
+    "Standard error of the count",
+    "Rate of respondents whose responses match the first two columns in this table",
+    "Standard error of the rate",
+    "Numeric code for the first variable",
+    "Response for the first variable",
+    "Main question text for the first variable",
+    "Sub-question text for the first variable",
+    "Component category for the first variable",
+    "Subcomponent category for the first variable",
+    "Numeric code for the second variable",
+    "Response for the second variable",
+    "Main question text for the second variable",
+    "Sub-question text for the second variable",
+    "Component category for the second variable",
+    "Subcomponent category for the second variable")
+  add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+}
+```
+
+# Crosstab on Caring families/psychological distress 
+```{r}
+# Function parameters: var1 = Caring families/dl, var2 = Psych distress/cy
+crosstab_caring_psych <- cross_tab_df(raw_svy_data, "dl", "cy",  svy_dd)
+push_crosstab_table(crosstab_caring_psych, "crosstab_caring_psych")
+```
+
+# Crosstab on Sparks/hope for future
+```{r}
+# Function parameters: var1 = Sparks/q10, var2 = Hope for the future/co
+crosstab_sparks_hope <- cross_tab_df(raw_svy_data, "q10", "co",  svy_dd)
+push_crosstab_table(crosstab_sparks_hope, "crosstab_sparks_hope")
+```
+
+
