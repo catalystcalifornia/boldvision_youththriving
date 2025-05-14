@@ -35,7 +35,7 @@ push_crosstab_table <- function(raw_crosstab, table_name){
   table_comment <- paste(indicator, source)
   dbWriteTable(con, 
              Id(schema = schema, table = table_name), 
-             raw_crosstab)
+             raw_crosstab, overwrite=TRUE)
   
   # Comment on table and columns
   column_names <- colnames(raw_crosstab) # Get column names
@@ -64,16 +64,16 @@ push_crosstab_table <- function(raw_crosstab, table_name){
 
 # Crosstab on Caring families/psychological distress 
 ```{r}
-# Function parameters: var1 = Caring families/dl, var2 = Psych distress/cy
-crosstab_caring_psych <- cross_tab_df(raw_svy_data, "dl", "cy",  svy_dd)
-push_crosstab_table(crosstab_caring_psych, "crosstab_caring_psych")
+# Function parameters: var2 = Caring families/dl, var1 = Psych distress/cy
+crosstab_caring_psych <- cross_tab_df(raw_svy_data, "cy", "dl",  svy_dd)
+# push_crosstab_table(crosstab_caring_psych, "crosstab_caring_psych")
 ```
 
 # Crosstab on Sparks/hope for future
 ```{r}
-# Function parameters: var1 = Sparks/q10, var2 = Hope for the future/co
-crosstab_sparks_hope <- cross_tab_df(raw_svy_data, "q10", "co",  svy_dd)
-push_crosstab_table(crosstab_sparks_hope, "crosstab_sparks_hope")
+# Function parameters: var2 = Sparks/q10, var1 = Hope for the future/co
+crosstab_sparks_hope <- cross_tab_df(raw_svy_data, "co", "q10",  svy_dd)
+# push_crosstab_table(crosstab_sparks_hope, "crosstab_sparks_hope")
 ```
 
 
