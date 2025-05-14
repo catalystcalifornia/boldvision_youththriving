@@ -26,16 +26,16 @@ svy_dd <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024
 ```
 # Function push_crosstab_table()
 ```{r}
-push_crosstab_table <- function(raw_crosstab, table_name){
+push_crosstab_table <- function(raw_crosstab, table_name, table_comment){
   # Write table with metadata
   schema <- "youth_thriving"
-  indicator <- paste("A crosstab table of", paste(names(raw_crosstab)[1:2], collapse = " and "))
+  indicator <- paste("A crosstab table of variables", paste(names(raw_crosstab)[1:2], collapse = " and "), table_comment)
   source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Descriptive and Demographic Analyses/crosstabs_caring_psych_sparks_hope.Rmd "
   qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_crosstabs_caring_psych_sparks_hope.docx"
   table_comment <- paste(indicator, source)
-  dbWriteTable(con, 
-             Id(schema = schema, table = table_name), 
-             raw_crosstab, overwrite=TRUE)
+  # dbWriteTable(con, 
+             # Id(schema = schema, table = table_name), 
+             # raw_crosstab, overwrite=FALSE)
   
   # Comment on table and columns
   column_names <- colnames(raw_crosstab) # Get column names
@@ -66,14 +66,14 @@ push_crosstab_table <- function(raw_crosstab, table_name){
 ```{r}
 # Function parameters: var2 = Caring families/dl, var1 = Psych distress/cy
 crosstab_caring_psych <- cross_tab_df(raw_svy_data, "cy", "dl",  svy_dd)
-# push_crosstab_table(crosstab_caring_psych, "crosstab_caring_psych")
+# push_crosstab_table(crosstab_caring_psych, "crosstab_caring_psych", "showing psychological distress (i.e. feelings of worthlessness) by caring families and relationships (i.e. when I have a problem, I have someone who will be there for me)")
 ```
 
 # Crosstab on Sparks/hope for future
 ```{r}
 # Function parameters: var2 = Sparks/q10, var1 = Hope for the future/co
 crosstab_sparks_hope <- cross_tab_df(raw_svy_data, "co", "q10",  svy_dd)
-# push_crosstab_table(crosstab_sparks_hope, "crosstab_sparks_hope")
+push_crosstab_table(crosstab_sparks_hope, "crosstab_sparks_hope", "showing hope for the future by whether or not the respondent has a spark")
 ```
 
 
