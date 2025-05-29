@@ -31,13 +31,13 @@ showtext_auto()
 font_title <- "HelveticaNeueLTStdHvCn"
 font_subtitle <- "HelveticaNeueLTStdMdCn"
 font_caption <- "Manifold Regular"
-font_bar_label <- "Manifold Regular"
+font_bar_label <- "Manifold CF"
 font_axis_label <- "Manifold Regular"
 
 
 ## FONT SIZES 
 bar_label_fs <- 2.6
-lengend_text_fs <- 14
+legend_text_fs <- 14
 legend_title_fs <- 12
 caption_fs <- 11
 title_fs <- 18
