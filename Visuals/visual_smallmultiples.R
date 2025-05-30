@@ -159,6 +159,7 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
   geom_bar(stat = "identity") +  # Use identity to plot actual counts
   # Define custom BV colors 
   scale_fill_manual(values = insert_gradient) + 
+  scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
   facet_wrap(~ youth_label, scales = "free_x", nrow = 2, strip.position = "bottom") +  # Create small multiples
   #bar labels
   geom_text(data = df,
@@ -166,8 +167,7 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
             size = 2.75,
             family=font_bar_label,
             stat="identity", colour = "black",
-            fontface = "bold", 
-            vjust = .3) +  #move bar labels above
+            vjust = -0.1) +  #move bar labels above
   theme_minimal() +
   labs(title = paste(str_wrap(title_text, whitespace_only = TRUE, width = 70), collapse = "\n"),
        subtitle = paste(str_wrap(paste0("Survey Question: ", subtitle_text), whitespace_only = TRUE, width = 85), collapse = "\n"),
@@ -176,7 +176,14 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
        fill = "",  # Legend title
        caption= paste(str_wrap(paste0(
          " Data Source: Catalyst California calculations of Bold Vision Youth Thriving Survey, 2024.",
-         " Note: AIAN=American Indian & Alaska Native; BIPOC=Black, Indigenous, People of Color; LGBTQIA+=Lesbian, Gay, Bisexual, Transgender, Queer, Intersex, Asexual, & Gender Nonconforming; NHPI: Native Hawaiian & Pacific Islander; SWANA=Southwest Asian & North African; Systems Impacted=Youth at any point in foster care, juvenile hall/probation camp jail/prison, group home/residential program, or lived with legal guardians.
+         " Note: AIAN= American Indian & Alaska Native, alone or in combination; 
+         BIPOC= Black, Indigenous, People of Color; 
+         LGBTQIA+= Lesbian, Gay, Bisexual, Transgender, Queer, Intersex, Asexual, & Gender Nonconforming; 
+         NHPI= Native Hawaiian & Pacific Islander, alone or in combination; 
+         SWANA= Southwest Asian & North African, alone or in combination; 
+         Systems Impacted= Youth any any point in foster care, juvenile hall, probation camp, jail, prison, group home/residential program, or lived with relatives responsible for them legally;
+         Immigrant= Youth in the U.S. under Temporary Protected, Asylum, Refugee, DACA, or Non-Citizenship Status;
+         Unhoused= Youth who in the past year lived in a shelter/emergency housing, transitional housing, motel/hotel, a garage/car/trailer, park/other public space, or temporarily in the home of friends or family;
          *CV(coefficient of variance) is greater than 40%. Groups with less than 5 responses are ommitted."),
                                whitespace_only = TRUE, width = 115), collapse = "\n")) +
   theme(legend.position = "bottom",  # Show legend on the top/bottom
@@ -204,18 +211,18 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
   ggsave(plot = df_visual, 
          file = paste0("./Visuals/", 
                        unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.svg"),
-         units = "in", width = 8, height = 8)
+         units = "in", width = 7.5, height = 8)
   ggsave(plot = df_visual, 
          file = paste0("./Visuals/",
                        unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.pdf"),
-         units = "in", width = 8, height = 8)
+         units = "in", width = 7.5, height = 8)
 
   showtext_opts(dpi=300)
   
   ggsave(plot = df_visual, 
          file = paste0("./Visuals/",
                        unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.png"),
-         units = "in", width = 8, height = 8)
+         units = "in", width = 7.5, height = 8)
   
   return(df_visual)
 

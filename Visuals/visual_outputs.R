@@ -9,7 +9,7 @@ source('.\\Visuals\\BV_styling.R')
 #dl
 df_dl <- fx_create_df(con, tables, "Caring Families And Relationships", "dl", "tot_freq_caring_families") 
 #View(df_dl)
-fx_vis_smallmultiples(df = df_dl, title_text = 'Caring individuals youth can rely on are essential to youth wellbeing, but fewer undocumented, SWANA, and Multiracial youth feel they always have someone to go to with a problem',
+fx_vis_smallmultiples(df = df_dl, title_text = 'Caring individuals youth can rely on are essential to youth wellbeing, but fewer immigrant, SWANA, and Multiracial youth feel they always have someone to go to with a problem',
                       subtitle_text = 'When I have a problem, I have someone who will be there for me', 
                       likert_factors = true_factors, graph_orderby = "Always true",
                       insert_gradient = green_gradient)
@@ -19,23 +19,23 @@ df_q10 <- fx_create_df(con, tables, "Positive Identity And Self-Worth", "q10", "
 #View(df_q10)
 fx_vis_smallmultiples(df = df_q10, title_text = 'Having a spark in life supports emotional health and hope for the future, but LGBTQIA and NHPI youth are least likely to believe they have a spark',
                       subtitle_text = "When people are really happy, energized, and passionate about their talents, interests, or hobbies, we say they have a “spark” in their life.... Do you have this kind of spark in your life?",
-                     likert_factors = yes_factors_reverse, graph_orderby = "Yes",
+                     likert_factors = yes_factors, graph_orderby = "Yes",
                      insert_gradient = dark_pink_gradient)
 
 #eo
 df_eo <- fx_create_df(con, tables, "Racial Justice, Equity, And Inclusion", "eo", "tot_freq_racial_justice") 
 #View(df_eo)
-fx_vis_smallmultiples(df = df_eo, title_text = 'Undocumented, SWANA, and Black youth are most likely to experience distressing and racialized interactions'
+fx_vis_smallmultiples(df = df_eo, title_text = 'Immigrant, SWANA, and Black youth are most likely to experience distressing and racialized interactions'
                       ,subtitle_text = "In the past 12 months, how often have you dealt with being told hurtful or offensive jokes/comments about your race?",
-                      likert_factors = freq_factors_reverse, graph_orderby = "Never",
+                      likert_factors = freq_factors, graph_orderby = "Never",
                       insert_gradient = blue_gradient)
                       
 #et
 df_et <- fx_create_df(con, tables, "Racial Justice, Equity, And Inclusion", "et", "tot_freq_racial_justice") 
 #View(df_et)
-fx_vis_smallmultiples(df = df_et, title_text = 'Over half of undocumented, unhoused, and LGBTQIA youth report poor quality health services get in the way of their best life at least some of the time'
+fx_vis_smallmultiples(df = df_et, title_text = 'Over half of immigrant, unhoused, and LGBTQIA youth report poor quality health services get in the way of their best life at least some of the time'
                       , subtitle_text = "How often does poor quality health services get in the way of your living your best life?",
-                      likert_factors = freq_factors_reverse, graph_orderby = "Never",
+                      likert_factors = freq_factors, graph_orderby = "Never",
                       insert_gradient = blue_gradient)
 
 #co
@@ -65,7 +65,7 @@ fx_vis_smallmultiples(df = df_cy, title_text = 'LGBTQIA youth are least likely t
 #dm
 df_dm <- fx_create_df(con, tables, "Positive Identity And Self-Worth", "dm", "tot_freq_positive_identity") 
 #View(df_dm)
-fx_vis_smallmultiples(df = df_dm, title_text = 'Undocumented, unhoused, and systems impacted youth are least likely to have opportunities to connect and engage with their community'
+fx_vis_smallmultiples(df = df_dm, title_text = 'Immigrant, unhoused, and systems impacted youth are least likely to have opportunities to connect and engage with their community'
                       , subtitle_text = "How true is it that there are ways for you to get involved with your community?",
                       likert_factors = true_factors, graph_orderby = "Always true",
                       insert_gradient = dark_pink_gradient)
