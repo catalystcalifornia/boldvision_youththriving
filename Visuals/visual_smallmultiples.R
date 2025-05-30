@@ -25,7 +25,6 @@ library(GGRidge)
 
 #Load BV styling, colors and fonts
 source('Visuals\\BV_styling.R')
-
 source("W:\\RDA Team\\R\\credentials_source.R")
 con <- connect_to_db("bold_vision")
 
@@ -136,7 +135,7 @@ freq_factors_reverse<-c("All of the time", "Most of the time","Sometimes", "Rare
 
 ####STEP 4: Create a function to produce small multiple visuals from the df just produced####
 
-fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors, graph_orderby
+fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors, graph_orderby, insert_gradient
                                   ) {
   
   #order the individual graphs by descending order of desired response 
@@ -159,7 +158,7 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
                               )) +
   geom_bar(stat = "identity") +  # Use identity to plot actual counts
   # Define custom BV colors 
-  scale_fill_manual(values = c(yellow, pink, dark_pink, orange, "#FFA55C")) + 
+  scale_fill_manual(values = insert_gradient) + 
   facet_wrap(~ youth_label, scales = "free_x", nrow = 2, strip.position = "bottom") +  # Create small multiples
   #bar labels
   geom_text(data = df,

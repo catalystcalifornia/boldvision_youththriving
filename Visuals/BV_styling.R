@@ -44,3 +44,13 @@ title_fs <- 18
 subtitle_fs <- 15
 
 
+#COLOR SPECTRUMS BASED ON SECTIONS OF REPORT
+pink_gradient <- c("#FDE1F3", "#FCAEDC", "#F979CA", "#F757BB", "#F75EC1") #use for Positive Mental Health 
+dark_pink_gradient <- c("#FDD8DD", "#F9A3AF", "#F66F85", "#F14968", "#EF4A66") #use for Positive Identity and Hope  
+green_gradient <- c("#C4F0DC", "#7CDDBA", "#33C898", "#00A769", "#00864A") #use for Supportive Social Connections 
+blue_gradient <- c("#D9D5FA", "#A7A0F4", "#756AEA", "#4435DE", "#2A12B2") #use for Equity, Opportunity, and Inclusion
+
+
+
+
+
