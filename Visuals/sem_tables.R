@@ -186,7 +186,7 @@ table <- ggplot(df, aes(y = y_pos)) + # rows with double spacing
   #     "negative" = light_blue
   #   )
   # ) + 
-  scale_color_gradient2(low = "#FDE1F3", high = "#F75EC1") + # color gradient for as coefficient goes from weaker to stronger effect (based on absolute value)
+  scale_color_gradient2(low = "#FDD8DD", high = "#EF4A66") + # color gradient for as coefficient goes from weaker to stronger effect (based on absolute value)
   scale_x_continuous(limits = c(0.8, 1.5), expand = c(0, 0), breaks = NULL) + # x limits
   scale_y_continuous(
     breaks = df$y_pos,
@@ -195,7 +195,7 @@ table <- ggplot(df, aes(y = y_pos)) + # rows with double spacing
   ) +
   labs(
     title = "Self-Efficacy And Hope Predictors", 
-    subtitle = "Ordered from <span style ='color: #F75EC1;'>greatest</span> to <span style ='color: #FFD7EE;'>lowest </span>effect",
+    subtitle = "Ordered from <span style ='color: #EF4A66;'>greatest</span> to <span style ='color: #FDD8DD;'>lowest </span>effect",
     caption = paste("up arrow means an increase in self-efficacy and hope",
                     "down arrow means a decrease in self-efficacy and hope",
                     "All effects are statistically significant at the p<0.05 level",
