@@ -34,6 +34,10 @@ dict_demo <- dict %>% filter(response_domain %in% c("Demographics","Info"))
 # omit numerical_age, omit original ZIP Code q20, and response_id
 dict_demo <- dict_demo %>% filter(!variable %in% c('numerical_age','q20', 'response_id'))
 var_select <- dict_demo$variable
+system_var <- dict_demo %>% filter(variable_name %in% c("System Involvement", "Unhoused")) %>%
+  select(variable)
+nhpi_var <- dict_demo %>% filter(variable_name == "Race NHPI Subgroup") %>%
+  select(variable)
 
 
 # Create a combined frequency table
@@ -58,6 +62,15 @@ under_5_vars <- freq_df %>%
 
 print(under_5_vars)
 
+# look at variables with <=10
+under_10_vars <- freq_df %>% 
+  filter(Frequency<=10) %>% 
+  group_by(Variable) %>% 
+  summarise(num_values=n()) %>%
+  left_join(dict_demo %>% select(variable, question,sub_question,response_1), by=c("Variable"="variable"))
+
+print(under_10_vars)
+
 # What to not include always #
 # Omit ZIP Code counts <=5 (zipcode_clean_respondent) -- make NA
 # Omit specified Other (ba) or Asian (bh) Race write-ins -- generalize to Other
@@ -72,6 +85,18 @@ print(under_5_vars)
 # Omit value of 5 from immigration (q27) -- make NA
 # Omit don't wish to answer from unhoused status value 4 from (q28) -- make NA
 # Numerical age
+
+systems_freq <- freq_df %>% filter(Variable %in% system_var$variable) %>% 
+  filter(Frequency<=10) %>% 
+  group_by(Variable) %>% 
+  summarise(num_values=n()) %>%
+  left_join(dict_demo %>% select(variable, question,sub_question), by=c("Variable"="variable"))
+
+nhpi_freq <- freq_df %>% filter(Variable %in% nhpi_var$variable) %>% 
+  filter(Frequency<=10) %>% 
+  group_by(Variable) %>% 
+  summarise(num_values=n()) %>%
+  left_join(dict_demo %>% select(variable, question,sub_question), by=c("Variable"="variable"))
 
 
 # By special request #
@@ -110,6 +135,15 @@ under_5_vars_race <- freq_df_race %>%
   left_join(dict_demo %>% select(variable, question,sub_question,response_1), by=c("Variable"="variable"))
 
 print(under_5_vars_race)
+
+# look at variables with <=10
+under_10_vars_race <- freq_df_race %>% 
+  filter(Frequency<=10) %>% 
+  group_by(Variable) %>% 
+  summarise(num_values=n()) %>%
+  left_join(dict_demo %>% select(variable, question,sub_question,response_1), by=c("Variable"="variable"))
+
+print(under_10_vars_race)
 
 # Omit ba_clean, ba_original, recode ba to just include 1/0 for Other
 # race_dwta recode as NA
@@ -150,6 +184,15 @@ under_5_vars_sogi <- freq_df_sogi %>%
   left_join(dict_demo %>% select(variable, question,sub_question,response_1), by=c("Variable"="variable"))
 
 print(under_5_vars_sogi)
+
+# look at variables with <=10
+under_10_vars_sogi <- freq_df_sogi %>% 
+  filter(Frequency<=10) %>% 
+  group_by(Variable) %>% 
+  summarise(num_values=n()) %>%
+  left_join(dict_demo %>% select(variable, question,sub_question,response_1), by=c("Variable"="variable"))
+
+print(under_10_vars_sogi)
 
 # Omit detailed_gender and detailed_sexuality
 
