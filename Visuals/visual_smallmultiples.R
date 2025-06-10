@@ -94,7 +94,7 @@ fx_create_df <- function(con, tables, response_domain, variable, response_domain
     filter(count > 5) %>%  # threshold to leave out any data has a count of 5 or less
     mutate(youth_label = case_when(
       str_count(youth_label, " ") == 0 & nchar(youth_label) > 8 ~ str_replace(youth_label, "(.{4,5})", "\\1-\n"),  # Insert break for long single words
-      TRUE ~ str_wrap(youth_label, width = 8.5)),
+      TRUE ~ str_wrap(youth_label, width = 8.25)),
         youth_label =  
                  case_when(
                    str_detect(youth, "undocumented") ~ "Immigrant",
@@ -169,29 +169,40 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
             stat="identity", colour = "black",
             vjust = -0.1) +  #move bar labels above
   theme_minimal() +
-  labs(title = paste(str_wrap(title_text, whitespace_only = TRUE, width = 70), collapse = "\n"),
-       subtitle = paste(str_wrap(paste0("Survey Question: ", subtitle_text), whitespace_only = TRUE, width = 85), collapse = "\n"),
-       x = "",  #"paste(str_wrap("Youth Thriving Survey Responses", whitespace_only = TRUE, width = 95), collapse = "\n")",
+  labs(title = paste(str_wrap(title_text, whitespace_only = TRUE, width = 65), collapse = "\n"),
+       subtitle = paste(str_wrap(paste0("Survey Question: ", subtitle_text), whitespace_only = TRUE, width = 80), collapse = "\n"),
+       x = "",  
        y = "",
        fill = "",  # Legend title
        caption= paste(str_wrap(paste0(
          " Data Source: Catalyst California calculations of Bold Vision Youth Thriving Survey, 2024.",
-         " Note: AIAN= American Indian & Alaska Native, alone or in combination; 
-         BIPOC= Black, Indigenous, People of Color; 
-         LGBTQIA+= Lesbian, Gay, Bisexual, Transgender, Queer, Intersex, Asexual, & Gender Nonconforming; 
-         NHPI= Native Hawaiian & Pacific Islander, alone or in combination; 
-         SWANA= Southwest Asian & North African, alone or in combination; 
-         Systems Impacted= Youth any any point in foster care, juvenile hall, probation camp, jail, prison, group home/residential program, or lived with relatives responsible for them legally;
-         Immigrant= Youth in the U.S. under Temporary Protected, Asylum, Refugee, DACA, or Non-Citizenship Status;
-         Unhoused= Youth who in the past year lived in a shelter/emergency housing, transitional housing, motel/hotel, a garage/car/trailer, park/other public space, or temporarily in the home of friends or family;
-         *CV(coefficient of variance) is greater than 40%. Groups with less than 5 responses are ommitted."),
-                               whitespace_only = TRUE, width = 115), collapse = "\n")) +
+         " *Estimates are unreliable. 
+         AIAN= American Idian and Alaskan Native; 
+         NHPI= Native Hawaiian & Pacific Islander;
+         SWANA= Southwest Asian & North African;
+         For more information on each group's definition, 
+         please refer to the 2025 Bold Vision Youth Thriving report.
+         "),
+  
+         #OPTION 1 
+         # " *Estimates are unreliable. To learn more about how each youth category is defined, please refer to the methodology section of 2025 Bold Vision Youth Thriving Survey report."),
+        #CURRENT CAPTION
+          # " Note: AIAN= American Indian & Alaska Native, alone or in combination; 
+         # BIPOC= Black, Indigenous, People of Color; 
+         # LGBTQIA+= Lesbian, Gay, Bisexual, Transgender, Queer, Intersex, Asexual, & Gender Nonconforming; 
+         # NHPI= Native Hawaiian & Pacific Islander, alone or in combination; 
+         # SWANA= Southwest Asian & North African, alone or in combination; 
+         # Systems Impacted= Youth any any point in foster care, juvenile hall, probation camp, jail, prison, group home/residential program, or lived with relatives responsible for them legally;
+         # Immigrant= Youth in the U.S. under Temporary Protected, Asylum, Refugee, DACA, or Non-Citizenship Status;
+         # Unhoused= Youth who in the past year lived in a shelter/emergency housing, transitional housing, motel/hotel, a garage/car/trailer, park/other public space, or temporarily in the home of friends or family;
+         # *CV(coefficient of variance) is greater than 40%. Groups with less than 5 responses are omitted."),
+                               whitespace_only = TRUE, width = 110), collapse = "\n")) +
   theme(legend.position = "bottom",  # Show legend on the top/bottom
      # remove axis text
      axis.text.x = element_blank(), 
      axis.text.y = element_blank(),
      # define style for legend
-     legend.text = element_text(size = 14, colour = "black", family = font_subtitle, 
+     legend.text = element_text(size = 12, colour = "black", family = font_subtitle, 
                                 # face = "bold",
                                 margin = margin(t = 5)),
      legend.title = element_text(size = 12, colour = "black", family = font_axis_label, face = "plain", margin = margin(t = 5)),
