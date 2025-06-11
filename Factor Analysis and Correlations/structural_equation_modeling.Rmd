@@ -2425,19 +2425,25 @@ all_results_weighted <- as.data.frame(rbind(sem_output_1j.5_weighted_fiml, sem_o
 # Write table with metadata
 table_name <- "factor_analysis_sem_results_methodology"
 schema <- "youth_thriving"
-indicator <- "A table with the results of the structural equation modeling for the final models 1j.5, 1j.6, 2f.6, and 2f.8. All models are run with weights, full information maximum likelihood (FIML), and robust standard errors. For each model, the independent variables are ordered from greatest to least effect size (with the absolute value taken). Models 1j.5 and 2f.6 were ran on all respondents, while models 1j.6 and 2f.8 were only ran on cisgender respondents."
+indicator <- "A table with the results of the structural equation modeling for the final models 1j.5, 1j.6, 2f.6, and 2f.8. These results are used to create regression tables in the Report Methodology. All models are run with weights, full information maximum likelihood (FIML), and robust standard errors. For each model, the independent variables are ordered from greatest to least effect size, with the absolute value taken. Models 1j.5 and 2f.6 were ran on all respondents, while models 1j.6 and 2f.8 were only ran on cisgender respondents."
 source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Factor Analysis and Correlations/structural_equation_modeling.Rmd "
-qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_structural_equation_modeling_2.docx"
+qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_structural_equation_modeling_3.docx"
 table_comment <- paste0(indicator, source)
-# dbWriteTable(con, Id(schema, table_name), all_results_weighted, overwrite = FALSE, row.names = FALSE)
+# dbWriteTable(con, Id(schema, table_name), all_results_weighted, overwrite = TRUE, row.names = FALSE)
 
 # Comment on table and columns
 column_names <- colnames(all_results_weighted) # Get column names
 column_comments <- c(
   "The model name",
+  "The dependent variable name",  
   "The independent variable name",  
-  "The absolute value of the independent variable effect size, ranging from 0 to 1",  
-  "The independent variable effect size, without the absolute value taken"
+  "The independent variable effect size",
+  "True/False on whether the effect is statistically significant at the p<0.05 level",
+  "The p value",
+  "The standard error",
+  "Model fit measure BIC",
+  "Model fit measure AIC",
+  "Model fit measure R-squared"
 )
 
 # add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
