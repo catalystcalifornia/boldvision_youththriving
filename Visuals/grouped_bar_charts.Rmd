@@ -24,7 +24,6 @@ library(showtext)
 library(scales)
 library(kableExtra)
 library(flextable)
-# library(ggchicklet)
 ```
 
 #### Step 2: Setting Bold Vision Style Guide
@@ -92,7 +91,6 @@ get_grouped_bar_chart <- function(crosstab_df,title_text,string_question_var1,st
         mutate(response_var1 = reorder(response_var1, var1_number))
     # Wrap the x-axis labels at a reasonable width 
     x_labels <- str_wrap(unique(crosstab_df$response_var1), width = 20)
-    # x_labels <- str_wrap(paste(unique(crosstab_df$response_var1),string_question_var1), width = 20)
     
     # Set the legend title
     # string_question_var2 <- str_wrap(string_question_var2, width = 15)
