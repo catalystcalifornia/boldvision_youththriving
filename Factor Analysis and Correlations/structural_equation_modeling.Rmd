@@ -324,8 +324,9 @@ get_sem_results_se <- function(fitted_model){
   mutate(p_is_significant = ifelse(round(pvalue,2)<0.05,TRUE,FALSE)) %>%
   mutate(across(everything())) %>%  
   bind_cols(get_fit_measures(fitted_model)) %>%  
-  select(c(lhs,rhs,std.all,std.lv,p_is_significant,pvalue,se,bic,aic,r_squared,fit_measures_met,cfi,tli,rmsea,srmr)) %>%
-  arrange(desc(std.all)) # Rearrange the dataframe so that std.all values are in descending order
+  # select(c(lhs,rhs,std.all,std.lv,p_is_significant,pvalue,se,bic,aic,r_squared,fit_measures_met,cfi,tli,rmsea,srmr)) %>%
+    select(c(lhs,rhs,std.all,p_is_significant,pvalue,se,bic,aic,r_squared)) %>%
+  arrange(desc(abs(std.all))) # Rearrange the dataframe so that std.all values are in descending order
   return(sem_output)
 }
 
@@ -1071,6 +1072,12 @@ sem_output_1j.6
 # 
 # compare_1j.6_weighted <- compare_models_weighted(sem_output_1j.6, sem_output_1j.6_weighted)
 
+# Run model on weighted data WITH FIML and robust standard errors
+fit_1j.6_weighted_fiml<- sem(model_1j.6, data = cisgender_svy_data, sampling.weights = "weights_final", std.lv = TRUE, missing = "fiml.x", se="robust")
+
+sem_output_1j.6_weighted_fiml <- get_sem_results_se(fit_1j.6_weighted_fiml) %>% 
+  mutate(model_name="1j.6_weighted_fiml") %>%
+  select(model_name, everything())
 ```
 
 ```{r}
@@ -1770,6 +1777,13 @@ sem_output_2f.8
 #   select(model_name, everything())
 # 
 # compare_2f.8_weighted <- compare_models_weighted(sem_output_2f.8, sem_output_2f.8_weighted)
+
+# Run model on weighted data WITH FIML and robust standard errors
+fit_2f.8_weighted_fiml<- sem(model_2f.8, data = cisgender_svy_data, sampling.weights = "weights_final", std.lv = TRUE, missing = "fiml.x", se="robust")
+
+sem_output_2f.8_weighted_fiml <- get_sem_results_se(fit_2f.8_weighted_fiml) %>% 
+  mutate(model_name="2f.8_weighted_fiml") %>%
+  select(model_name, everything())
 ```
 
 ```{r}
@@ -2400,5 +2414,32 @@ column_comments <- c(
 )
 
 add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+
+```
+
+
+# Create table of weighted, FIML final model results for all respondents and only cisgender respondents
+```{r}
+all_results_weighted <- as.data.frame(rbind(sem_output_1j.5_weighted_fiml, sem_output_1j.6_weighted_fiml, sem_output_2f.6_weighted_fiml, sem_output_2f.8_weighted_fiml))
+
+# Write table with metadata
+table_name <- "factor_analysis_sem_results_methodology"
+schema <- "youth_thriving"
+indicator <- "A table with the results of the structural equation modeling for the final models 1j.5, 1j.6, 2f.6, and 2f.8. All models are run with weights, full information maximum likelihood (FIML), and robust standard errors. For each model, the independent variables are ordered from greatest to least effect size (with the absolute value taken). Models 1j.5 and 2f.6 were ran on all respondents, while models 1j.6 and 2f.8 were only ran on cisgender respondents."
+source <- "Script: W:/Project/OSI/Bold Vision/Youth Thriving Survey/GitHub/AV/boldvision_youththriving/Factor Analysis and Correlations/structural_equation_modeling.Rmd "
+qa_filepath <- "See QA doc for details: W:/Project/OSI/Bold Vision/Youth Thriving Survey/Documentation/QA_structural_equation_modeling_2.docx"
+table_comment <- paste0(indicator, source)
+# dbWriteTable(con, Id(schema, table_name), all_results_weighted, overwrite = FALSE, row.names = FALSE)
+
+# Comment on table and columns
+column_names <- colnames(all_results_weighted) # Get column names
+column_comments <- c(
+  "The model name",
+  "The independent variable name",  
+  "The absolute value of the independent variable effect size, ranging from 0 to 1",  
+  "The independent variable effect size, without the absolute value taken"
+)
+
+# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
 
 ```
