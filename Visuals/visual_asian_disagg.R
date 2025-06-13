@@ -26,6 +26,7 @@ con <- connect_to_db("bold_vision")
 
 df <- dbGetQuery(con, "SELECT * FROM youth_thriving.asian_disagg_co WHERE subgroup_asian NOT IN (
   'Central Asian Alone',
+  'Central Asian Aoic',
   'East Asian Aoic',
   'South Asian Alone',
   'Southeast Asian Alone') ")
@@ -33,33 +34,35 @@ df <- dbGetQuery(con, "SELECT * FROM youth_thriving.asian_disagg_co WHERE subgro
 
 #### Step 4: Run Visual ####
 df_visual <- ggplot(df, aes(x = subgroup_asian, y = rate, fill = response_group )) + 
-  geom_bar(stat = "identity", position = "dodge") + 
+  geom_bar(stat = "identity", width = 0.8, position = "dodge") + 
   # bar labels
   geom_text(data = df,
             aes(label = paste0(round(rate, digits = 1), "%")),
-            size = 4,
+            size = 2.75,
             stat="identity", colour = "black",
             position = position_dodge(width = 1), 
-            vjust = 1.25 ,
-            # hjust= 1.15,
-            fontface = "bold", 
+            vjust = -0.1 ,
             family=font_bar_label) +  
-  labs(title = paste(str_wrap("title_text", whitespace_only = TRUE, width = 57), collapse = "\n"),
-       x = paste(str_wrap("x_axis_text", whitespace_only = TRUE, width = 65), collapse = "\n"),
+  labs(title = paste(str_wrap("East Asian youth are least likely to feel hopeful about their future among all Asian youth", whitespace_only = TRUE, width = 70), collapse = "\n"),
+       x = "",
        y = "",
+       fill = "Survey Question: I feel hopeful about my future",
        caption= paste(str_wrap(paste0("Data Source: Bold Vision Youth Thriving Survey, 2024."),
                                whitespace_only = TRUE, width = 120), collapse = "\n")) +
   #theme/aesthetics
-  theme(legend.position = "bottom",  # Show legend on the top/bottom
+  theme(legend.position = "top",  # Show legend on the top/bottom
         # remove axis text
-        axis.text.x = element_blank(), 
-        # axis.text.y = element_blank(),
+        # axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank(),
+        axis.ticks.y = element_blank(),
+         axis.text.y = element_blank(),
         # define style for legend
-        legend.text = element_text(size = 14, colour = "black", family = font_subtitle, 
+        legend.text = element_text(size = 12, colour = "black", family = font_subtitle, 
                                    # face = "bold",
                                    margin = margin(t = 5)),
-        legend.title = element_text(size = 12, colour = "black", family = font_axis_label, face = "plain", margin = margin(t = 5)),
-        # strip.text=element_text(size=12, family=font_axis_label),
+        legend.title = element_text(size = 12, colour = "black", family = font_subtitle, 
+                                    # face = "bold",
+                                    margin = margin(t = 5)),
         # define style for title and caption
         plot.caption = element_text(hjust = 0.0, size = 11, colour = "black", family = font_caption, face = "plain"),
         plot.title = element_text(hjust = 0.0, size = 18, colour = "black", family = font_title),
@@ -75,6 +78,6 @@ df_visual <- ggplot(df, aes(x = subgroup_asian, y = rate, fill = response_group 
 print(df_visual)
 
 ggsave(plot=df_visual, 
-       file=paste0("W:/Project/OSI/Bold Vision/Youth Thriving Survey/Deliverables/", unique(df_filter$domain), "/",
-                   unique(df_filter$variable),"_freq_single_barchart", ".svg"),
-       units = c("in"),  width = 8, height = 5.5)
+       file=paste0("./Visuals/", "/Positive Identity and Self-Worth/",
+                   "asian_disagg_co", ".pdf"),
+       device = "pdf", units = c("in"),  width = 7.5, height = 5)
