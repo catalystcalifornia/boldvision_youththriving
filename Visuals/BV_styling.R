@@ -35,8 +35,8 @@ font_bar_label <- "Manifold Regular"
 font_axis_label <- "Manifold Regular"
 
 
-## FONT SIZES 
-bar_label_fs <- 2.6
+## FONT SIZES (use as reference or directly)
+bar_label_fs <- 2.75
 legend_text_fs <- 12
 legend_title_fs <- 12
 caption_fs <- 11
@@ -51,4 +51,10 @@ dark_pink_gradient <- c("#FDD8DD", "#F9A3AF", "#F66F85", "#F14968", "#EF4A66") #
 green_gradient <- c("#C4F0DC", "#7CDDBA", "#33C898", "#00A769", "#00864A") #use for Supportive Social Connections 
 blue_gradient <- c("#D9D5FA", "#A7A0F4", "#756AEA", "#4435DE", "#2A12B2") #use for Equity, Opportunity, and Inclusion
 
-
+diverging_bv_gradient <- c(
+  "#2A12B2",   # deep blue
+  "#465ADC",   # light blue
+  "#FFBF00",   # yellow (center)
+  "#F75EC1",   # bright pink
+  "#EF4A66"    # dark pink
+)
