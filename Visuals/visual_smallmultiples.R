@@ -176,7 +176,7 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
        subtitle = paste(str_wrap(paste0("Survey Question: ", subtitle_text), whitespace_only = TRUE, width = 80), collapse = "\n"),
        x = "",  
        y = "",
-       fill = "",  # Legend title
+       fill = "",  
        caption= paste(str_wrap(paste0(
          " Data Source: Catalyst California calculations of Bold Vision Youth Thriving Survey, 2024.",
          " *Estimates are unreliable. Some estimates are omitted when based on fewer than 5 respondents.
