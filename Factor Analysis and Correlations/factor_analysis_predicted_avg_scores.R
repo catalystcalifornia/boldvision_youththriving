@@ -66,8 +66,27 @@ svy_df <- svy_df %>%
 table(svy_df$bipoc,useNA='always')
 table(svy_df_orig$bipoc,useNA='always')
 
+# Step 2A: Reverse the predicted scores for components that had a reverse scoring and had predicted scores ----
+reverse_scales <- svy_dd %>% 
+  filter(grepl("rev",likert_type)) %>% 
+  select(question,response_domain,variable_name,response_1:response_8) %>%
+  distinct()
+print(reverse_scales$variable_name)
+# only psyc distress, microaggressions, structural racism, experiences of racism have imputed scores - reverse these
 
-# Step 2: Create function to calculate average component scores by youth demographics ----
+# multiply those that were reversed in the factor analysis by -1
+imputed_scores_orig <- imputed_scores
+
+imputed_scores <- imputed_scores %>%
+  mutate(across(.cols=c("subcomponent_psychological_distress","subcomponent_microaggressions","subcomponent_structural_racism","subcomponent_experiences_of_racism_and_discrimination"),
+                .fns=function(x) x*-1))
+
+head(imputed_scores)
+
+head(imputed_scores_orig)
+# looks good
+
+# Step 2B: Create function to calculate average component scores by youth demographics ----
 # component names
 avg_scores<-function (df,demo_var) {
   
@@ -256,7 +275,7 @@ column_names <- colnames(df_final_race) # Get column names
 # 
 # # Comment on table and columns
 # add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
-# 
+
 
 ## SOGI table export ------
 df_final_sogi <- rbind(df_cis, df_lgbtia)
@@ -307,12 +326,12 @@ demographic <- " for systems involved indicators, e.g., ever arrested, disconnec
 indicator <- paste0(indicator_base, demographic)
 column_names <- colnames(df_final_sys) # Get column names
 
-# # write table
-# dbWriteTable(con, Id(schema, table_name), df_final_sys,
-#              overwrite = FALSE, row.names = FALSE)
-# 
-# # Comment on table and columns
-# add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
+# write table
+dbWriteTable(con, Id(schema, table_name), df_final_sys,
+             overwrite = FALSE, row.names = FALSE)
+
+# Comment on table and columns
+add_table_comments(con, schema, table_name, indicator, source, qa_filepath, column_names, column_comments)
 
 ## All youth table export ------
 table_name <- "factor_analysis_avg_scores_total"
