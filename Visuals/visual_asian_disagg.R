@@ -28,8 +28,18 @@ df <- dbGetQuery(con, "SELECT * FROM youth_thriving.asian_disagg_co WHERE subgro
   'Central Asian Alone',
   'Central Asian Aoic',
   'East Asian Aoic',
-  'South Asian Alone',
-  'Southeast Asian Alone') ")
+  'South Asian Aoic',
+  'Southeast Asian Aoic') ") %>%
+  mutate(subgroup_asian = gsub(" Alone", "", subgroup_asian))  #taking away alone
+  
+  order_levels <- df %>%
+  filter(response_group == "Often/Always True") %>%
+  arrange(desc(rate)) %>%  # ordering
+  pull(subgroup_asian)
+
+df <- df %>%
+  mutate(subgroup_asian = factor(subgroup_asian, levels = order_levels))
+
 
 
 #### Step 4: Run Visual ####
@@ -43,13 +53,15 @@ df_visual <- ggplot(df, aes(x = subgroup_asian, y = rate, fill = response_group 
             position = position_dodge(width = 1), 
             vjust = -0.1 ,
             family=font_bar_label) +  
-  labs(title = paste(str_wrap("East Asian youth are least likely to feel hopeful about their future among all Asian youth", whitespace_only = TRUE, width = 70), collapse = "\n"),
-       x = "",
+  labs(title = paste(str_wrap("Multi-Asian and East Asian youth are least likely to feel hopeful about their future among all Asian youth", whitespace_only = TRUE, width = 55), collapse = "\n"),
+      subtitle = paste("Survey Question: I feel hopeful about my future"),
+        x = "",
        y = "",
-       fill = "Survey Question: I feel hopeful about my future",
-       caption= paste(str_wrap(paste0("Data Source: Bold Vision Youth Thriving Survey, 2024."),
+       fill = "",
+       caption= paste(str_wrap(paste0("Data Source: Catalyst California calculations of Bold Vision Youth Thriving Survey, 2024."),
                                whitespace_only = TRUE, width = 120), collapse = "\n")) +
   #theme/aesthetics
+  theme_minimal() +
   theme(legend.position = "top",  # Show legend on the top/bottom
         # remove axis text
         # axis.text.x = element_blank(), 
@@ -72,12 +84,13 @@ df_visual <- ggplot(df, aes(x = subgroup_asian, y = rate, fill = response_group 
         panel.grid.minor = element_blank(),
         panel.grid.major = element_blank(),
         #space between facts/small multiple rows
-        panel.spacing.y = unit(4, "lines")) + # Increase spacing between facet rows 
-  scale_fill_manual(values = c(pink, orange)) 
+        panel.spacing.y = unit(4, "lines")) + # Increase spacing between 
+  scale_fill_manual(values = c(pink, orange)) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) #adding padding to avoid labels getting cut off 
 
-print(df_visual)
+# print(df_visual)
 
 ggsave(plot=df_visual, 
        file=paste0("./Visuals/", "/Positive Identity and Self-Worth/",
                    "asian_disagg_co", ".pdf"),
-       device = "pdf", units = c("in"),  width = 7.5, height = 5)
+       device = "pdf", units = c("in"),  width = 6, height = 3.5)
