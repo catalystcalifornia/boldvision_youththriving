@@ -94,7 +94,7 @@ fx_create_df <- function(con, tables, response_domain, variable, response_domain
     filter(count > 5) %>%  # threshold to leave out any data has a count of 5 or less
     mutate(youth_label = case_when(
       str_count(youth_label, " ") == 0 & nchar(youth_label) > 8 ~ str_replace(youth_label, "(.{4,5})", "\\1-\n"),  # Insert break for long single words
-      TRUE ~ str_wrap(youth_label, width = 8.5)),
+      TRUE ~ str_wrap(youth_label, width = 8.25)),
         youth_label =  
                  case_when(
                    str_detect(youth, "undocumented") ~ "Immigrant",
@@ -127,7 +127,7 @@ tables <- c("response_analysis_per_race",
 true_factors<-c("Never true","Sometimes true","Often true","Always true")
 time_factors<-c("None of the time","A little of the time","Some of the time","Most of the time","All of the time")
 time_factors_reverse<-c("All of the time", "Most of the time", "Some of the time", "A little of the time", "None of the time") #reverse so a greater number means a good outcome and a smaller number means a bad outcome
-yes_factors<-c("No", "Yes")
+yes_factors<-c("No", "Not sure", "Yes")
 yes_factors_reverse <- c("Yes", "No", "Not sure") #reverse so a greater number means a good outcome and a smaller number means a bad outcome
 count_factors<-c("None","One","Two","Three or more")
 freq_factors<-c("Never","Rarely","Sometimes","Most of the time","All of the time")
@@ -144,11 +144,12 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
     mutate(max_order = rate[response == graph_orderby]) %>%
     ungroup() %>%
     mutate(
-    youth_label = reorder(youth_label, -max_order),# Negative sign for descending order
-    label = case_when(
-      rate_cv > 40 ~ paste0(round(rate, 0), "%*"),
-      TRUE ~ paste0(round(rate, 0), "%")) ) # threshold for CV
-  
+      youth_label = reorder(youth_label, -max_order), # Negative sign for descending order
+      label = case_when(
+        rate_cv > 40 ~ paste0(round(rate, 0), "%*"),
+        TRUE ~ paste0(round(rate, 0), "%")
+      ))
+
   #now order response category in associated factor level
   df$response <- factor(df$response, levels = likert_factors)
   
@@ -156,42 +157,42 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
   df_visual <- ggplot(df, aes(x = response, y = rate
                               , fill = response
                               )) +
-  geom_bar(stat = "identity") +  # Use identity to plot actual counts
+  geom_bar(stat = "identity", width = 0.8) +  
   # Define custom BV colors 
   scale_fill_manual(values = insert_gradient) + 
   scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
   facet_wrap(~ youth_label, scales = "free_x", nrow = 2, strip.position = "bottom") +  # Create small multiples
   #bar labels
   geom_text(data = df,
+              # subset(df, show_label),
             aes(label = label),
             size = 2.75,
             family=font_bar_label,
             stat="identity", colour = "black",
-            vjust = -0.1) +  #move bar labels above
+            vjust = -0.1, #move bar labels above
+            check_overlap = TRUE) +  #take away overlapping labels
   theme_minimal() +
-  labs(title = paste(str_wrap(title_text, whitespace_only = TRUE, width = 70), collapse = "\n"),
-       subtitle = paste(str_wrap(paste0("Survey Question: ", subtitle_text), whitespace_only = TRUE, width = 85), collapse = "\n"),
-       x = "",  #"paste(str_wrap("Youth Thriving Survey Responses", whitespace_only = TRUE, width = 95), collapse = "\n")",
+  labs(title = paste(str_wrap(title_text, whitespace_only = TRUE, width = 65), collapse = "\n"),
+       subtitle = paste(str_wrap(paste0("Survey Question: ", subtitle_text), whitespace_only = TRUE, width = 80), collapse = "\n"),
+       x = "",  
        y = "",
-       fill = "",  # Legend title
+       fill = "",  
        caption= paste(str_wrap(paste0(
          " Data Source: Catalyst California calculations of Bold Vision Youth Thriving Survey, 2024.",
-         " Note: AIAN= American Indian & Alaska Native, alone or in combination; 
-         BIPOC= Black, Indigenous, People of Color; 
-         LGBTQIA+= Lesbian, Gay, Bisexual, Transgender, Queer, Intersex, Asexual, & Gender Nonconforming; 
-         NHPI= Native Hawaiian & Pacific Islander, alone or in combination; 
-         SWANA= Southwest Asian & North African, alone or in combination; 
-         Systems Impacted= Youth any any point in foster care, juvenile hall, probation camp, jail, prison, group home/residential program, or lived with relatives responsible for them legally;
-         Immigrant= Youth in the U.S. under Temporary Protected, Asylum, Refugee, DACA, or Non-Citizenship Status;
-         Unhoused= Youth who in the past year lived in a shelter/emergency housing, transitional housing, motel/hotel, a garage/car/trailer, park/other public space, or temporarily in the home of friends or family;
-         *CV(coefficient of variance) is greater than 40%. Groups with less than 5 responses are ommitted."),
-                               whitespace_only = TRUE, width = 115), collapse = "\n")) +
+         " *Estimates are unreliable. Some estimates are omitted when based on fewer than 5 respondents.
+         AIAN= American Idian and Alaskan Native; 
+         NHPI= Native Hawaiian & Pacific Islander;
+         SWANA= Southwest Asian & North African;
+         For more information on each group's definition, 
+         please refer to the 2025 Bold Vision Youth Thriving report.
+         "),
+         whitespace_only = TRUE, width = 110), collapse = "\n")) +
   theme(legend.position = "bottom",  # Show legend on the top/bottom
      # remove axis text
      axis.text.x = element_blank(), 
      axis.text.y = element_blank(),
      # define style for legend
-     legend.text = element_text(size = 14, colour = "black", family = font_subtitle, 
+     legend.text = element_text(size = 12, colour = "black", family = font_subtitle, 
                                 # face = "bold",
                                 margin = margin(t = 5)),
      legend.title = element_text(size = 12, colour = "black", family = font_axis_label, face = "plain", margin = margin(t = 5)),
@@ -211,18 +212,18 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
   ggsave(plot = df_visual, 
          file = paste0("./Visuals/", 
                        unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.svg"),
-         units = "in", width = 7.5, height = 8)
+         units = "in", width = 7.5, height = 10)
   ggsave(plot = df_visual, 
          file = paste0("./Visuals/",
                        unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.pdf"),
-         units = "in", width = 7.5, height = 8)
+         units = "in", width = 7.5, height = 10)
 
   showtext_opts(dpi=300)
   
   ggsave(plot = df_visual, 
          file = paste0("./Visuals/",
                        unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.png"),
-         units = "in", width = 7.5, height = 8)
+         units = "in", width = 7.5, height = 10)
   
   return(df_visual)
 

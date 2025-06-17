@@ -20,7 +20,7 @@ df_q10 <- fx_create_df(con, tables, "Positive Identity And Self-Worth", "q10", "
 fx_vis_smallmultiples(df = df_q10, title_text = 'Having a spark in life supports emotional health and hope for the future, but LGBTQIA and NHPI youth are least likely to believe they have a spark',
                       subtitle_text = "When people are really happy, energized, and passionate about their talents, interests, or hobbies, we say they have a “spark” in their life.... Do you have this kind of spark in your life?",
                      likert_factors = yes_factors, graph_orderby = "Yes",
-                     insert_gradient = dark_pink_gradient)
+                     insert_gradient = orange_gradient)
 
 #eo
 df_eo <- fx_create_df(con, tables, "Racial Justice, Equity, And Inclusion", "eo", "tot_freq_racial_justice") 
@@ -34,7 +34,7 @@ fx_vis_smallmultiples(df = df_eo, title_text = 'Immigrant, SWANA, and Black yout
 df_et <- fx_create_df(con, tables, "Racial Justice, Equity, And Inclusion", "et", "tot_freq_racial_justice") 
 #View(df_et)
 fx_vis_smallmultiples(df = df_et, title_text = 'Over half of immigrant, unhoused, and LGBTQIA youth report poor quality health services get in the way of their best life at least some of the time'
-                      , subtitle_text = "How often does poor quality health services get in the way of your living your best life?",
+                      , subtitle_text = "How often does poor quality health services get in the way of you living your best life?",
                       likert_factors = freq_factors, graph_orderby = "Never",
                       insert_gradient = blue_gradient)
 
@@ -49,7 +49,7 @@ fx_vis_smallmultiples(df = df_co, title_text = 'All youth should feel hopeful ab
 #dz
 df_dz <- fx_create_df(con, tables, "Cultural Identity", "dz", "tot_freq_cultural_identity") 
 #View(df_dz)
-fx_vis_smallmultiples(df = df_dz, title_text = 'More than half of SWANA, AIAN, and female youth most often reported that their culture helps them feel good about who they are'
+fx_vis_smallmultiples(df = df_dz, title_text = 'More than half of SWANA, AIAN, and cisgender girls most often reported that their culture helps them feel good about who they are'
                       , subtitle_text = "My culture helps me feel good about who I am",
                       likert_factors = true_factors, graph_orderby = "Always true",
                       insert_gradient = blue_gradient)
