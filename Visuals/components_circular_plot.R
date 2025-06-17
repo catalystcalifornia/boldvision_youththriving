@@ -11,6 +11,7 @@ library(ggtext)
 library(ggchicklet)
 library(RPostgres)
 library(RPostgreSQL)
+library(patchwork)
 
 # connect to postgres and source functions
 source("W:\\RDA Team\\R\\credentials_source.R")
@@ -71,6 +72,7 @@ df_all <- df_all %>%
              str_detect(youth_label, "systems_impacted") ~ "Systems Impacted", 
              str_detect(youth_label, "Cisgender Male") ~ "Cis Man/Boy", 
              str_detect(youth_label, "Cisgender Female") ~ "Cis Woman/Girl", 
+             str_detect(youth_label, "Undocumented") ~ "Immigrant", 
              TRUE ~ str_to_title(youth_label)  # Capitalize first letter of each word otherwise
            ))
 
@@ -97,17 +99,16 @@ component_labels <- select(df_total, component_model) %>%
          component_label=gsub(component_label,pattern="experiences of racism and ", replacement=""),
          component_label=str_to_title(component_label))%>%
   mutate(component_label=ifelse(component_label=="Self Efficacy Hope", "Self-Efficacy And Hope",
-                                ifelse(component_label %in% c("Psychological Distress","Microaggressions",
-                                                              "Discrimination",
-                                                              "Structural Racism"),
-                                       paste0("Freedom From ",component_label), component_label)
-                                       ))
+                                       component_label))
+
+
  ## check
 component_labels$component_label
 
 # join labels
 df_all <- df_all %>%
   left_join(component_labels)
+
 
 # Step 2: Setting Bold Vision Style Guide ----
 
@@ -153,12 +154,12 @@ font_axis_label <- "Manifold Regular"
 # Step 3: Filter for selected components and for selected demographics -----
 # list of demographics to focus on
 unique(df_all$youth_label)
-subgroups<-c("AIAN","All Youth","Asian","Black","Latine","Multiracial","NHPI","SWANA","White","BIPOC","Systems Impacted","Undocumented","Unhoused","Cis Man/Boy","Cis Woman/Girl","LGBTQIA+")
+subgroups<-c("AIAN","All Youth","Asian","Black","Latine","Multiracial","NHPI","SWANA","White","BIPOC","Systems Impacted","Immigrant","Unhoused","Cis Man/Boy","Cis Woman/Girl","LGBTQIA+")
 subgroups
 
 # list of components to focus on
 component_labels$component_label
-components<-c("Freedom From Psychological Distress","Self-Efficacy And Hope","Freedom From Microaggressions","Caring Families And Relationships","Cultural Identity","Freedom From Structural Racism","Vibrant Communities")
+components<-c("Psychological Distress","Self-Efficacy And Hope","Microaggressions","Caring Families And Relationships","Cultural Identity","Structural Racism","Vibrant Communities")
 components
 
 # filter dataframe
@@ -169,7 +170,7 @@ df_all <- df_all %>%
   
 # Step 4: Run circular bar plot just by one component to test - PSYCHOLOGICAL DISTRESS-------
 # filter for the component
-df <- df_all %>% filter(component_label=='Freedom From Psychological Distress')
+df <- df_all %>% filter(component_label=='Psychological Distress')
 
 # factor labels for ordering subgroups
 df$youth_label_factor <- factor(df$youth_label, levels = subgroups)
@@ -197,94 +198,94 @@ label_data$hjust<-ifelse( angle < -90, 1, 0)
 label_data$angle<-ifelse(angle < -90, angle+180, angle)
 # ----- ------------------------------------------- ---- #
 
+# ----- #
+# Title work separately to fix alignment
+# Define the textual header using ggplot + ggtext::element_markdown
+title_block <- ggplot() +
+  theme_void() +
+  labs(
+    title = "Average Predicted <span style ='color: #F75EC1;'>Psychological Distress</span>",
+    subtitle = paste(
+      "L.A. County youth are not all thriving equally. LGBTQIA+, unhoused, immigrant, and",
+      "systems impacted youth are experiencing more psychological distress than other youth.",
+      sep = "\n"
+    )
+    ) +
+  theme(
+    plot.title = element_markdown(hjust = 0, size = 18, family = font_title),
+    plot.subtitle = element_text(hjust = 0, size = 13, family = font_subtitle),
+    plot.margin = margin(t = 0, r = 0, b = -4, l = 0)
+  )
+
+caption_block <- ggplot() +
+  theme_void() +
+  labs(
+       caption = paste(
+      "\nCatalyst California's calculations of Bold Vision Youth Thriving Survey, 2024. Note: AIAN=American Indian",
+      "& Alaska Native; NHPI: Native Hawaiian & Pacific Islander; SWANA=Southwest Asian & North African. For",
+      "more information on each group's definition, please refer to the 2025 Bold Vision Youth Thriving report.",
+      sep = "\n"
+    )
+  ) +
+  theme(
+      plot.caption = element_text(hjust = 0, size = 11, family = font_caption),
+    plot.margin = margin(t = -4, r = 0, b = 0, l = 0)
+  )
+
+
 p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
   geom_bar(aes(fill=avg_adjusted),stat = "identity", 
            alpha=1, show.legend=TRUE) +  
-  scale_fill_gradientn("Freedom From Psychological Distress",
-  colours=c("#FDDFF3","#FA9EDA","#F97ECD","#F75EC1")
+  scale_fill_gradientn("Psychological Distress",
+  colours=
+    # c("#FDDFF3","#FA9EDA","#F97ECD","#F75EC1") 
+  c("#FDE1F3", "#FCAEDC", "#F979CA", "#F75EC1")
   ,
   labels=c("<- Lower","","Higher ->")
   )+
   # Make the guide for the fill discrete
   guides(
-    fill = guide_colorsteps(
-      barwidth = 15, barheight = .5, title.position = "top", title.hjust = .5
+    fill = guide_colorsteps(title.position = "top", title.hjust = .5
     )
   ) +
-  # scale_fill_manual(values = c(
-  #   "Caring Families And Relationships" = light_green,
-  #   "Freedom From Microaggressions" = light_blue,
-  #   "Self-Efficacy And Hope" = dark_pink,
-  #   "Freedom From Structural Racism" = dark_blue,
-  #   "Freedom From Discrimination"=blue,
-  #   "Cultural Identity" = yellow,
-  #   "Freedom From Psychological Distress" = pink,
-  #   "Vibrant Communities" = dark_green
-  # )) +
-  ylim(-.25,1.3) +
+  scale_x_discrete(expand = c(0, 0)) +
+  ylim(-.25,1.1) +
   ylab("")+
   xlab("")+
-  # Add labels
-  labs(
-    title = "Average Predicted <span style ='color: #F75EC1;'>Freedom from Psychological <br>Distress</span>", 
-    subtitle = paste
-      ("\nLA County youth vary in how they are thriving emotionally. LGBTQIA+,",
-      "unhoused, undocumented, and systems impacted youth experience",
-      "the most differences compared to their counterparts.",
-      sep = "\n"
-    ),
-    caption = paste("\nCatalyst California's calculations of Bold Vision Youth Thriving Survey, 2024.",
-                    "Note: AIAN=American Indian & Alaska Native; BIPOC=Black, Indigeneous, People of Color;", 
-                    "LGBTQIA+=Lesbian, Gay, Bisexual, Transgender, Queer, Intersex, Asexual, & Gender", 
-                    "Nonconforming; NHPI: Native Hawaiian & Pacific Islander; SWANA=Southwest Asian & North",
-                    "African; Systems Impacted=Youth at any point in foster care, juvenile hall/probation camp",
-                    "jail/prison, group home/residential program, or lived with legal guardians.",
-                    sep="\n")) +
-  theme_minimal() +
-  theme(legend.title = element_text(hjust = 0.5,size = 12, family= font_axis_label),
-        legend.text = element_text(hjust = 0.5,size = 12, family= font_axis_label),
+   theme_void() +
+  theme(aspect.ratio=1,
+        legend.title = element_text(hjust = 0.5,size = 11, family= font_axis_label),
+        legend.text = element_text(hjust = 0.5,size = 11, family= font_axis_label),
         legend.position = "bottom", # no legend title
-        legend.margin=margin(l = 0),
-        # legend.margin=margin(-2,-2,-2,-2),
-        # legend.box.margin=margin(-2,-2,-2,-2),
-        # define style for axis text
+        legend.margin=margin(0,0,-5,0),
+        legend.box.margin=margin(-8,0,-8,0),
+        legend.key.height = unit(0.2, "cm"),
+        legend.key.width = unit(1.5, "cm"),
         axis.text.y=element_blank(),
-        # axis.text.y = element_text(size = 9, colour = "black", family= font_axis_label, face = "bold"),
         axis.text.x=element_blank(),
         axis.ticks=element_blank(),
         axis.ticks.length = unit(0, "pt"),
-        # axis.text.x=element_text(size = 11, colour = "black", family = font_axis_label),
         axis.title.x=element_blank(),
-        # axis.title.x = element_text(size = 12, colour = "black", family = font_axis_label, face = "bold"),
-        # define style for title and caption
-        plot.caption = element_text(hjust = 0.0, size = 10, colour = "black", family = font_caption),
-        plot.subtitle = 
-          element_text(hjust = 0.0, size = 14, family = font_subtitle), 
-        plot.title = 
-          element_markdown(hjust = 0.0, size = 20, family = font_title)
-        # ,
-        #   element_text(hjust = 0.0, size = 20, colour = "black", family = font_title)
-        , 
-        # grid line style
+         # grid line style
         panel.border=element_blank(),
         panel.grid = element_blank(),
-        # plot.margin = unit(rep(-1,4), "cm")  
-        # plot.margin=margin(0,0,0,0)
+        plot.margin = unit(c(-.3,-.1,-.2,-.1),"cm")
         ) + 
-  coord_polar() +
+  coord_polar(clip="off") +
   # Add the labels, using the label_data dataframe that we have created before
-  geom_text(data=label_data, aes(x=id, y=avg_adjusted+.02, label=youth_label, hjust=hjust), color="black", family=font_axis_label,alpha=0.6, size=4, angle= label_data$angle, inherit.aes = FALSE ) 
+  geom_text(data=label_data, aes(x=id, y=avg_adjusted+.006, label=youth_label, hjust=hjust), color="black", family=font_axis_label,alpha=0.6, size=3.3, angle= label_data$angle, inherit.aes = FALSE ) 
 
+final_plot <- title_block / p  / caption_block + plot_layout(heights=c(.05,.93,.02))
 
 showtext_opts(dpi=300)
 
-ggsave(plot=p, 
+ggsave(plot=final_plot, 
        file="./Visuals/Strong Minds/circular_plot_Psychological_Distress.png",
-       units = c("in"),  width = 8, height = 8)
+       units = c("in"),  width = 7.5, height = 5)
 
-ggsave(plot=p, 
+ggsave(plot=final_plot, 
        file="./Visuals/Strong Minds/circular_plot_Psychological_Distress.pdf",
-       units = c("in"),  width = 8, height = 8)
+       units = c("in"),  width = 7.5, height = 5)
 
 
 # Step 5: Make a function for circular bar plot -------
