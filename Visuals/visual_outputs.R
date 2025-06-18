@@ -9,7 +9,7 @@ source('.\\Visuals\\BV_styling.R')
 #dl
 df_dl <- fx_create_df(con, tables, "Caring Families And Relationships", "dl", "tot_freq_caring_families") 
 #View(df_dl)
-fx_vis_smallmultiples(df = df_dl, title_text = 'Caring individuals youth can rely on are essential to youth wellbeing, but fewer immigrant, SWANA, and Multiracial youth feel they always have someone to go to with a problem',
+fx_vis_smallmultiples(df = df_dl, title_text = 'Caring individuals youth can rely on are essential to youth well-being, but fewer immigrant, SWANA, and Multiracial youth feel they always have someone to go to with a problem',
                       subtitle_text = 'When I have a problem, I have someone who will be there for me', 
                       likert_factors = true_factors, graph_orderby = "Always true",
                       insert_gradient = green_gradient)
@@ -17,7 +17,7 @@ fx_vis_smallmultiples(df = df_dl, title_text = 'Caring individuals youth can rel
 #q10
 df_q10 <- fx_create_df(con, tables, "Positive Identity And Self-Worth", "q10", "tot_freq_positive_identity") 
 #View(df_q10)
-fx_vis_smallmultiples(df = df_q10, title_text = 'Having a spark in life supports emotional health and hope for the future, but LGBTQIA and NHPI youth are least likely to believe they have a spark',
+fx_vis_smallmultiples(df = df_q10, title_text = 'Having a spark in life supports emotional health and hope for the future, but LGBTQIA+ and NHPI youth are least likely to believe they have a spark',
                       subtitle_text = "When people are really happy, energized, and passionate about their talents, interests, or hobbies, we say they have a “spark” in their life.... Do you have this kind of spark in your life?",
                      likert_factors = yes_factors, graph_orderby = "Yes",
                      insert_gradient = orange_gradient)
@@ -33,7 +33,7 @@ fx_vis_smallmultiples(df = df_eo, title_text = 'Immigrant, SWANA, and Black yout
 #et
 df_et <- fx_create_df(con, tables, "Racial Justice, Equity, And Inclusion", "et", "tot_freq_racial_justice") 
 #View(df_et)
-fx_vis_smallmultiples(df = df_et, title_text = 'Over half of immigrant, unhoused, and LGBTQIA youth report poor quality health services get in the way of their best life at least some of the time'
+fx_vis_smallmultiples(df = df_et, title_text = 'Over half of immigrant, unhoused, and LGBTQIA+ youth report poor quality health services get in the way of their best life at least some of the time'
                       , subtitle_text = "How often does poor quality health services get in the way of you living your best life?",
                       likert_factors = freq_factors, graph_orderby = "Never",
                       insert_gradient = blue_gradient)
@@ -57,7 +57,7 @@ fx_vis_smallmultiples(df = df_dz, title_text = 'More than half of SWANA, AIAN, a
 #cy
 df_cy <- fx_create_df(con, tables, "Strong Minds", "cy", "tot_freq_strong_minds") 
 #View(df_cy)
-fx_vis_smallmultiples(df = df_cy, title_text = 'LGBTQIA youth are least likely to feel valuable and report feeling worthless more than other groups'
+fx_vis_smallmultiples(df = df_cy, title_text = 'LGBTQIA+ youth are least likely to feel valuable and report feeling worthless more than other groups'
                       ,subtitle_text = "About how often in the past 30 days, did you feel worthless?",
                       likert_factors = time_factors, graph_orderby = "None of the time",
                       insert_gradient = pink_gradient)

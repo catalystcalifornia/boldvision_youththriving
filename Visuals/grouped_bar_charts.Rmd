@@ -56,7 +56,7 @@ get_grouped_bar_chart <- function(crosstab_df,title_text,string_question_var1,st
       mutate(rate_se=rate_se*100)
     
     # Set the chart title
-    title_text <- paste(str_wrap(title_text, whitespace_only = TRUE, width = 65), collapse = "\n")
+    title_text <- paste(str_wrap(title_text, whitespace_only = TRUE, width = 60), collapse = "\n")
 
     # Set the x-axis title
     string_question_var1 <- str_wrap(string_question_var1, width = 80)
@@ -104,19 +104,16 @@ caption_theme <- element_text(hjust = 0, size = 11, colour = "black", family = f
     var1_q_num <- sub("^([Qq][0-9]+)\\..*", "\\1,", unique(crosstab_df$question_var1))
     var2_q_num <- sub("^([Qq][0-9]+)\\..*", "\\1,", unique(crosstab_df$question_var2))
     caption_text <- str_wrap(paste0(
-      "Data Source: Catalyst California calculations of Bold Vision Youth Thriving Survey, 2024. ",
-      "Question: ", var1_q_num, " ",
-      "Component: ", unique(crosstab_df$component_var1),
-      ", Subcomponent: ", unique(crosstab_df$subcomponent_var1), ". ",
-      "Question: ",var2_q_num, " ",
-      "Component: ", unique(crosstab_df$component_var2),
-      ", Subcomponent: ", unique(crosstab_df$subcomponent_var2), ". "
+      "Data Source: Catalyst California's calculations of Bold Vision Youth Thriving Survey, 2024. ",
+      "For more information on the methodology, please refer to the 2025 Bold Vision Youth Thriving report."
     ), width = 100)  # Apply wrapping only once
+
+    num_categories <- length(unique(df$response_var2))  # get number of categories for filling dependent on that later
 
     # Plot grouped bar chart
     final_visual <- ggplot(crosstab_df, aes(fill=response_var2, y=rate, x=response_var1)) + 
       geom_bar(position="dodge", stat="identity") +          # Create bar chart 
-      scale_fill_manual(values = diverging_bv_gradient) +               # Set the bar colors 
+      scale_fill_manual(values = if (num_categories == 5) diverging_bv_gradient else four_diverging) + #setting bar colors
       # Style legend title
       guides(fill=guide_legend(title=element_blank(),
                              # title.theme = subheading_theme, 
