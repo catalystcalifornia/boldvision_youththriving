@@ -71,6 +71,14 @@ under_10_vars <- freq_df %>%
 
 print(under_10_vars)
 
+# difference
+under_10_vars %>% filter(!Variable %in% under_5_vars$Variable)
+# at, bk, bl, cf, fk, q22 (don't wish to answer & Other), q24 (don't wish to answer), q25 (don't wish to answer), q26 (don't wish to answer)
+
+# check total ZIP Codes, under 10 would mean 245 suppressed over 194
+length(unique(raw_svy_data$zipcode_clean_respondent)) #329 unique
+# 74% would be suppressed at 10 count and 59% would be suppressed at 5 count
+
 # What to not include always #
 # Omit ZIP Code counts <=5 (zipcode_clean_respondent) -- make NA
 # Omit specified Other (ba) or Asian (bh) Race write-ins -- generalize to Other
@@ -145,6 +153,10 @@ under_10_vars_race <- freq_df_race %>%
 
 print(under_10_vars_race)
 
+# difference
+under_10_vars_race %>% filter(!Variable %in% under_5_vars_race$Variable)
+# at, bl, br, race_indigenous, race_other are added
+
 # Omit ba_clean, ba_original, recode ba to just include 1/0 for Other
 # race_dwta recode as NA
 # Omit bh_clean, bh_original, recode bh to just include 1/0 for Other
@@ -203,6 +215,9 @@ colSums(systems[, c(2:8)],na.rm=TRUE)
 
 
 # Summary
+## Sex at birth (q22) -- provided
+# Include Sex at Birth responses but recode Don’t Wish to Answer and Other to *
+
 ## SOGI data - special request
 # Omit original SOGI questions from provided data and special request data
 # Omit detailed_gender and detailed_sexuality from provided data and from special request data
@@ -212,18 +227,23 @@ colSums(systems[, c(2:8)],na.rm=TRUE)
 # Omit ba_clean, ba_original from provided data and from special request data
 # Omit bh_clean, bh_original from provided data and from special request data
 # Recode ba (from race_ethnicity_data) to just include 1/0 for Other in provided data
-# race_dwta (from race_ethnicity_data) recode as NA in provided data
-# recode (az) to NA in provided data
+# race_dwta (from race_ethnicity_data) do not include it
+# recode (az) to * in provided data do not include it
 # Recode bh (from race_ethnicity_data) to just include 1/0 for Other in provided data
-# Asian detailed_asian responses - but recode <=5 to Other in provided data
-# nh_race (from race_ethnicity_data) recode nh_other and do_not_wish to NA in provided data
+# Asian detailed_asian responses - but recode <=10 to Other in provided data
+# nh_race (from race_ethnicity_data) recode nh_other and do_not_wish to * in provided data
+# don't include "at" indigenous latinx or "ar"
+# only include race_aian_indigenous
+# don't include race_other (from race_ethnicity_data)
 
 ## NHPI data - special request
 # Omit br_clean, br_original from provided data and from special request data
 # Recode br (from race_ethnicity_data) to just include 1/0 for Other in special request data
 # Recode bk (from race_ethnicity_data) to Other in special request data
-# Recode bs (from race_ethnicity_data) to NA in special request data
-# NHPI detailed_nhpi responses - but recode <=5 to Other 
+# Drop bs (from race_ethnicity_data) in special request data
+# Recode bl (from race_ethnicity_data) to Other in special request data
+# Recode br (from race_ethnicity_data) to Other in special request data
+# NHPI detailed_nhpi responses - but recode <=10 to Other 
 # Special request data should include recoded responses from race_ethnicity_data rather than the original data
 
 
@@ -231,19 +251,22 @@ colSums(systems[, c(2:8)],na.rm=TRUE)
 # q24, q24a, q27, and q28 by special request with recoding by special request
 # Recoded variables - undocumented, systems_impacted,unhoused by special request
 # Recode specified Other write in for system involvement (q24a -> gg) -- generalize to other
-# Recode don't wish to answer from system involvement (q24a -> gf) -- make NA
-# Omit value of 5 from immigration (q27) -- make NA
-# Omit don't wish to answer from unhoused status value 4 from (q28) -- make NA
+# Drop don't wish to answer from system involvement (q24a -> gf)
+# Omit value of 5 from immigration (q27) -- make *
+# Omit don't wish to answer from unhoused status value 4 from (q28) -- make *
 
 ## Other demographics -- provided data
 # Omit write-ins to the employment and education status write-in question (bz) -- generalize to Other
 # Omit original org_spa, org_sp_an, q20 (old zip code column) variable entirely from provided and special request data
 # Numerical age omitted entirely from provided and special request data
+# Drop cf Don’t Wish to Answer response to "Q7. I am a full-time or part-time student. Right now I am in:" 
+# Recode value of 3 (Don’t wish to answer) from q25 “Q25. At any point, have you ever been detained AND/OR arrested by law enforcement in any capactiy?" to *
+# Recode value of 3 (don’t wish to answer) from q26 “Q. 26. At any point, have you ever been suspended, experienced an \"opportunity transfer\", been expelled, have been…” to *
 
 ## Geo demographics -- special request
 # Organization and ZIP Code available by special request
-# Omit org where count <=5 make NA
-# ZIP Code (zipcode_clean_respondent), but <=5 counts recoded as NA 
+# Omit org where count <=10 make *
+# ZIP Code (zipcode_clean_respondent), but <=10 counts recoded as *
 
 
 
