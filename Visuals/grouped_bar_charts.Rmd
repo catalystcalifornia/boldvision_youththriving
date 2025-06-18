@@ -108,7 +108,7 @@ caption_theme <- element_text(hjust = 0, size = 11, colour = "black", family = f
       "For more information on the methodology, please refer to the 2025 Bold Vision Youth Thriving report."
     ), width = 100)  # Apply wrapping only once
 
-    num_categories <- length(unique(df$response_var2))  # get number of categories for filling dependent on that later
+    num_categories <- length(unique(crosstab_df$response_var2))  # get number of categories for filling dependent on that later
 
     # Plot grouped bar chart
     final_visual <- ggplot(crosstab_df, aes(fill=response_var2, y=rate, x=response_var1)) + 
