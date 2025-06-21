@@ -58,3 +58,10 @@ diverging_bv_gradient <- c(
   "#F75EC1",   # bright pink
   "#EF4A66"    # dark pink
 )
+
+four_diverging <-  c(
+  "#2A12B2",   # deep blue
+  "#465ADC",   # light blue
+  "#F75EC1",   # bright pink
+  "#EF4A66"    # dark pink
+)

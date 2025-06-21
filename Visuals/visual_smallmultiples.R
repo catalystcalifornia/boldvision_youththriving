@@ -178,11 +178,11 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
        y = "",
        fill = "",  
        caption= paste(str_wrap(paste0(
-         " Data Source: Catalyst California calculations of Bold Vision Youth Thriving Survey, 2024.",
-         " *Estimates are unreliable. Some estimates are omitted when based on fewer than 5 respondents.
-         AIAN= American Idian and Alaskan Native; 
+         " Data Source: Catalyst California's calculations of Bold Vision Youth Thriving Survey, 2024.",
+         " *Unstable for policy purposes; groups with fewer than five individuals are omitted for privacy purposes. 
+         AIAN= American Idian and Alaska Native; 
          NHPI= Native Hawaiian & Pacific Islander;
-         SWANA= Southwest Asian & North African;
+         SWANA= Southwest Asian & North Africa. 
          For more information on each group's definition, 
          please refer to the 2025 Bold Vision Youth Thriving report.
          "),
