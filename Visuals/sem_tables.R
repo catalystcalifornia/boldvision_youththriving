@@ -45,8 +45,11 @@ sem_sig_df <- sem_df %>% filter(p_is_significant) %>%
     str_detect(rhs_label, "Race Asian") ~ "Asian Racial Identity",
     str_detect(rhs_label, "Microaggressions") ~ "Microaggressions",  
     str_detect(rhs_label, "Structural Racism") ~ "Structural Racism", 
+    str_detect(rhs_label, "Caring Families") ~ "Caring Families and Relationships", 
+    str_detect(rhs_label, "Opportunities For") ~ "Opportunities for Community Involvement", 
     TRUE ~ rhs_label
-  )) 
+  )) %>%
+  filter(rhs_label!='Other Racial Identity') # we are dropping other racial identity because this is based on less than 10 respondents
          
 # check
   sem_sig_df$rhs_label         
@@ -60,15 +63,15 @@ sem_sig_df <- sem_df %>% filter(p_is_significant) %>%
   
    # reverse some coefficients so it's easier to understand given we made all COMPONENT questions in the same direction in the model - higher score equals better
   # we need to reverse the positive components right now higher=higher freedom from psyc distress so once we make psyc distress negative (higher psyc distress), these components need to be reversed
-  reverse_c <- c("Caring Families And Relationships", "Feelings of Personal Safety","Sparks","Cultural Identity")
+  reverse_c <- c("Caring Families and Relationships", "Feelings of Personal Safety","Sparks","Cultural Identity")
    # we'll also want to reverse all demographic coefficients since we didn't reverse those in the models
-  reverse_d <- c("LGBTQIA+ Identity", "Asian Racial Identity","Systems Impacted","AIAN Racial Identity","Other Racial Identity")
+  reverse_d <- c("LGBTQIA+ Identity", "Asian Racial Identity","Systems Impacted","AIAN Racial Identity")
   
   
 # Reverse coefficients and prepare the data with arrow
 df <- df %>%
   mutate(std=ifelse(rhs_label %in% reverse_c | rhs_label %in% reverse_d, std.all*-1, std.all), # reverse
-    icon = ifelse(std >= 0, "\u25B2", "\u25BC"), # add arrow
+    icon = ifelse(std >= 0, "+", "\u2212"), # add + or -, - code is for nicer looking minus sign
     direction = ifelse(std >= 0, "increase", "decrease") # indicate increase or decrease
   ) %>%
     mutate(
@@ -77,7 +80,7 @@ df <- df %>%
 
 df <- df %>% select(rhs_label, std, icon, direction, y_pos) # reduce columns
 
-  n_rows <- length(unique(df$rhs_label)) # step to add lines between rows
+  # n_rows <- length(unique(df$rhs_label)) # step to add lines between rows
   
   line_positions <- seq(min(df$y_pos) - 1, max(df$y_pos) + 2.2, by = 2.2) # line positions with the double spacing
   
@@ -106,10 +109,11 @@ table <- ggplot(df, aes(y = y_pos)) + # rows with double spacing
   ) +
   labs(
     title = "Psychological Distress Predictors", 
-    subtitle = "Ordered from <span style ='color: #F75EC1;'>greatest</span> to <span style ='color: #FFD7EE;'>lowest </span>effect",
-    caption = paste("up arrow means an increase in psychological distress",
-                    "down arrow means a decrease in psychological distress",
-                    "All effects are statistically significant at the p<0.05 level",
+    subtitle = "Ordered from <span style ='color: #F75EC1;'>largest</span> to <span style ='color: #FFD7EE;'>smallest </span>effect",
+    caption = paste("+ means an increase in psychological distress",
+                    "- means a decrease in psychological distress",
+                    "All effects are statistically significant at the p<0.05 level. For more information", 
+                    "on the methodology, please refer to the 2025 Bold Vision Youth Thriving report.",
                     sep="\n")
                     
     ) +
