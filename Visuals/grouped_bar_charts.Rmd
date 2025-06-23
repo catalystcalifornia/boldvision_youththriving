@@ -24,40 +24,12 @@ library(showtext)
 library(scales)
 library(kableExtra)
 library(flextable)
-# library(ggchicklet)
 ```
 
 #### Step 2: Setting Bold Vision Style Guide
 
 ```{r}
-##Colors
-gray <- "#D6D7D6"
-pink <- "#F75EC1"
-dark_pink <- "#EF4A66"
-orange <- "#F57E20"
-yellow <- "#FFBF00"
-light_green <- "#00A75A"
-dark_green <- "#00864A"
-blue  <- "#2A12B2"
-light_blue <- "#465adc"
-
-## FONTS ## 
-font_add(family = "Manifold Regular", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Manifold/Fonts/manifoldcf-regular.otf")
-font_add(family = "Manifold CF", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Manifold/Fonts/manifoldcf-heavy.otf")
-font_add(family = "HelveticaNeueLTStdMdCn", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Helvetica Neue LT Std/HelveticaNeueLTStd-MdCn.otf")
-font_add(family = "HelveticaNeueLTStdHvCn", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Helvetica Neue LT Std/HelveticaNeueLTStd-HvCn.otf")
-font_add(family = "HelveticaNeueLTStdMdCnO", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Helvetica Neue LT Std/HelveticaNeueLTStd-MdCnO.otf")
-font_add(family = "HelveticaNeueLTStdMd", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Helvetica Neue LT Std/HelveticaNeueLTStd-Md.otf")
-# font_import()
-loadfonts(device = "win")
-windowsFonts()
-showtext_auto()
-# define fonts in chart
-font_title <- "HelveticaNeueLTStdHvCn"
-font_subtitle <- "HelveticaNeueLTStdMdCn"
-font_caption <- "Manifold Regular"
-font_bar_label <- "Manifold Regular"
-font_axis_label <- "Manifold Regular"
+source('Visuals\\BV_styling.R')
 ```
 
 #### Step 3: Connect to Database and Pull Data Table of Interest
@@ -83,16 +55,15 @@ get_grouped_bar_chart <- function(crosstab_df,title_text,string_question_var1,st
       mutate(rate_se=rate_se*100)
     
     # Set the chart title
-    title_text <- paste(str_wrap(title_text, whitespace_only = TRUE, width = 65), collapse = "\n")
+    title_text <- paste(str_wrap(title_text, whitespace_only = TRUE, width = 60), collapse = "\n")
 
     # Set the x-axis title
-    string_question_var1 <- str_wrap(string_question_var1, width = 105)
+    string_question_var1 <- str_wrap(string_question_var1, width = 80)
     # Reorder the x-axis labels 
     crosstab_df <- crosstab_df %>%
         mutate(response_var1 = reorder(response_var1, var1_number))
     # Wrap the x-axis labels at a reasonable width 
     x_labels <- str_wrap(unique(crosstab_df$response_var1), width = 20)
-    # x_labels <- str_wrap(paste(unique(crosstab_df$response_var1),string_question_var1), width = 20)
     
     # Set the legend title
     # string_question_var2 <- str_wrap(string_question_var2, width = 15)
@@ -101,7 +72,7 @@ get_grouped_bar_chart <- function(crosstab_df,title_text,string_question_var1,st
         mutate(response_var2 = reorder(response_var2, -var2_number))    
     # Set the bar colors
     # bar_colors <- c(dark_green,light_green,yellow,"#F26E85",dark_pink)
-    bar_colors <- c("#2c7bb6","#abd9e9","#ffffbf","#fdae61","#d7191c")
+    # bar_colors <- c("#2c7bb6","#abd9e9","#ffffbf","#fdae61","#d7191c")
 
     # Reverse the bar colors for the legend if needed
     var1 <- names(crosstab_df)[1]
@@ -117,12 +88,13 @@ get_grouped_bar_chart <- function(crosstab_df,title_text,string_question_var1,st
     # chart_title_theme <- element_text(hjust = 0.0, size = 18, colour = "black", family = font_title, face = "bold")
     heading_theme <- element_text(hjust = 0.5, size = 12, colour = "black", family = font_title, face = "bold")
     # x_title_theme <- element_text(hjust = 0.0, size = 12, colour = "black", family = font_axis_label, face = "bold", margin = margin(t = 10))
-    subheading_theme <- element_text(hjust = 0.5, size = 9, colour = "black", family = font_axis_label, face = "plain")
+    subheading_theme <- element_text(hjust = 0.5, size = 11, colour = "black", family = font_axis_label, face = "plain",
+                                     margin = margin(t = 5))
     # caption_theme <- element_text(hjust = 0.0, size = 8, colour = "black", family = font_caption, face = "plain", margin = margin(t = 10))
     
     chart_title_theme <- element_text(hjust = 0, size = 18, colour = "black", family = font_title, face = "bold", margin = margin(l = 0, b = 10))
 x_title_theme <- element_text(hjust = 0.5, size = 12, colour = "black", family = font_title, face = "bold", margin = margin(t = 10, l = 0))
-caption_theme <- element_text(hjust = 0, size = 8, colour = "black", family = font_caption, face = "plain", margin = margin(t = 10, l = 0))
+caption_theme <- element_text(hjust = 0, size = 11, colour = "black", family = font_caption, face = "plain", margin = margin(t = 10, l = 0))
 # subheading_theme <- element_text(hjust = 0, size = 9, colour = "black", family = font_axis_label, face = "bold", margin = margin(t = 10, l = 0))
 
     
@@ -130,19 +102,16 @@ caption_theme <- element_text(hjust = 0, size = 8, colour = "black", family = fo
     var1_q_num <- sub("^([Qq][0-9]+)\\..*", "\\1,", unique(crosstab_df$question_var1))
     var2_q_num <- sub("^([Qq][0-9]+)\\..*", "\\1,", unique(crosstab_df$question_var2))
     caption_text <- str_wrap(paste0(
-      "Question: ", var1_q_num, " ",
-      "Component: ", unique(crosstab_df$component_var1),
-      ", Subcomponent: ", unique(crosstab_df$subcomponent_var1), ". ",
-      "Question: ",var2_q_num, " ",
-      "Component: ", unique(crosstab_df$component_var2),
-      ", Subcomponent: ", unique(crosstab_df$subcomponent_var2), ". ",
-      "Data Source: Catalyst California calculations of Bold Vision Youth Thriving Survey, 2024."
-    ), width = 155)  # Apply wrapping only once
+      "Data Source: Catalyst California's calculations of Bold Vision Youth Thriving Survey, 2024. ",
+      "For more information on the methodology, please refer to the 2025 Bold Vision Youth Thriving report."
+    ), width = 100)  # Apply wrapping only once
+
+    num_categories <- length(unique(crosstab_df$response_var2))  # get number of categories for filling dependent on that later
 
     # Plot grouped bar chart
     final_visual <- ggplot(crosstab_df, aes(fill=response_var2, y=rate, x=response_var1)) + 
       geom_bar(position="dodge", stat="identity") +          # Create bar chart 
-      scale_fill_manual(values = bar_colors) +               # Set the bar colors 
+      scale_fill_manual(values = if (num_categories == 5) diverging_bv_gradient else four_diverging) + #setting bar colors
       # Style legend title
       guides(fill=guide_legend(title=element_blank(),
                              # title.theme = subheading_theme, 
@@ -152,8 +121,8 @@ caption_theme <- element_text(hjust = 0, size = 8, colour = "black", family = fo
       labs(title = title_text, subtitle=string_question_var2, caption = caption_text) +          # Set the chart title and caption
       theme_minimal() +
       theme(
-        legend.position = "top",
-        legend.margin = margin(l = 0),    # Ensures no extra left margin
+         legend.position = "top",
+        legend.margin = margin(l = 0),    # Ensures no extra left margin  
         axis.title.x = x_title_theme,       # Set style for x-axis title 
         axis.text.x = subheading_theme,         # Set style for x-axis labels 
         plot.caption = caption_theme,           # Set style for caption
@@ -171,17 +140,17 @@ caption_theme <- element_text(hjust = 0, size = 8, colour = "black", family = fo
                         var2, "_", var1, "_grouped_barchart")
     showtext_opts(dpi=300)
     
-    # Save in SVG
-    ggsave(plot = final_visual, filename = paste0(base_path, ".svg"),
-       device = "svg", width = 8, height = 5.5)
+    # # Save in SVG
+    # ggsave(plot = final_visual, filename = paste0(base_path, ".svg"),
+    #    device = "svg", width = 8, height = 5.5)
     
     # Save in PNG
     # ggsave(plot = final_visual, filename = paste0(base_path, ".png"),
     #        device = "png", width = 8, height = 5.5)
     
     # Save in PDF
-    # ggsave(plot = final_visual, filename = paste0(base_path, ".pdf"),
-    #        device = "pdf", width = 8, height = 5.5)
+    ggsave(plot = final_visual, filename = paste0(base_path, ".pdf"),
+           device = "pdf", width = 7.5, height = 5)
     
     return(final_visual)
 }
