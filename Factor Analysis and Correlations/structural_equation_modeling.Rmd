@@ -1055,6 +1055,7 @@ model_1j.6 <- '
     undocumented +
     cisgender_mf
 '
+# Run model on unweighted data WITH FIML
 fit_1j.6 <- sem(model_1j.6, data = cisgender_svy_data, std.lv = TRUE, missing = "fiml.x")
  
 sem_output_1j.6 <- get_sem_results(fit_1j.6) %>% 
@@ -1063,14 +1064,10 @@ sem_output_1j.6 <- get_sem_results(fit_1j.6) %>%
 
 sem_output_1j.6
 
-# # Run model on weighted data -- NEED TO UPDATE
-# fit_1j.6_weighted <- lavaan.survey(fit_1j.6, cisgender_svy_data_weighted)
-# 
-# sem_output_1j.6_weighted <- get_sem_results(fit_1j.6_weighted) %>% 
-#   mutate(model_name="1j.6_weighted") %>%
-#   select(model_name, everything())
-# 
-# compare_1j.6_weighted <- compare_models_weighted(sem_output_1j.6, sem_output_1j.6_weighted)
+# with standard errors
+sem_output_1j.6_se <- get_sem_results_se(fit_1j.6) %>% 
+  mutate(model_name="1j.6") %>%
+  select(model_name, everything())
 
 # Run model on weighted data WITH FIML and robust standard errors
 fit_1j.6_weighted_fiml<- sem(model_1j.6, data = cisgender_svy_data, sampling.weights = "weights_final", std.lv = TRUE, missing = "fiml.x", se="robust")
@@ -1078,6 +1075,18 @@ fit_1j.6_weighted_fiml<- sem(model_1j.6, data = cisgender_svy_data, sampling.wei
 sem_output_1j.6_weighted_fiml <- get_sem_results_se(fit_1j.6_weighted_fiml) %>% 
   mutate(model_name="1j.6_weighted_fiml") %>%
   select(model_name, everything())
+
+# Run model on weighted data WITHOUT FIML
+fit_1j.6_weighted <- sem(model_1j.6, data = cisgender_svy_data, sampling.weights = "weights_final", std.lv = TRUE, se="robust")
+
+sem_output_1j.6_weighted <- get_sem_results_se(fit_1j.6_weighted) %>% 
+  mutate(model_name="1j.6_weighted") %>%
+  select(model_name, everything())
+
+compare_1j.6_weighted <- compare_models_weighted(sem_output_1j.6_se, sem_output_1j.6_weighted_fiml,sem_output_1j.6_weighted)
+
+
+
 ```
 
 ```{r}
@@ -1769,14 +1778,10 @@ sem_output_2f.8 <- get_sem_results(fit_2f.8) %>%
 
 sem_output_2f.8
 
-# # Run model on weighted data - NEED TO UPDATE
-# fit_2f.8_weighted <- lavaan.survey(fit_2f.8, cisgender_svy_data_weighted)
-# 
-# sem_output_2f.8_weighted <- get_sem_results(fit_2f.8_weighted) %>% 
-#   mutate(model_name="2f.8_weighted") %>%
-#   select(model_name, everything())
-# 
-# compare_2f.8_weighted <- compare_models_weighted(sem_output_2f.8, sem_output_2f.8_weighted)
+# with standard errors
+sem_output_2f.8_se <- get_sem_results_se(fit_2f.8) %>% 
+  mutate(model_name="2f.8") %>%
+  select(model_name, everything())
 
 # Run model on weighted data WITH FIML and robust standard errors
 fit_2f.8_weighted_fiml<- sem(model_2f.8, data = cisgender_svy_data, sampling.weights = "weights_final", std.lv = TRUE, missing = "fiml.x", se="robust")
@@ -1784,6 +1789,16 @@ fit_2f.8_weighted_fiml<- sem(model_2f.8, data = cisgender_svy_data, sampling.wei
 sem_output_2f.8_weighted_fiml <- get_sem_results_se(fit_2f.8_weighted_fiml) %>% 
   mutate(model_name="2f.8_weighted_fiml") %>%
   select(model_name, everything())
+
+# Run model on weighted data WITHOUT FIML
+fit_2f.8_weighted <- sem(model_2f.8, data = cisgender_svy_data, sampling.weights = "weights_final", std.lv = TRUE, se="robust")
+
+sem_output_2f.8_weighted <- get_sem_results_se(fit_2f.8_weighted) %>% 
+  mutate(model_name="2f.8_weighted") %>%
+  select(model_name, everything())
+
+compare_2f.8_weighted <- compare_models_weighted(sem_output_2f.8_se, sem_output_2f.8_weighted_fiml,sem_output_2f.8_weighted)
+
 ```
 
 ```{r}
