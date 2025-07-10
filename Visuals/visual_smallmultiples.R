@@ -161,7 +161,7 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
   # Define custom BV colors 
   scale_fill_manual(values = insert_gradient) + 
   scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
-  facet_grid(.~ youth_label, scales = "free_x", space="free", nrow = 2, strip.position = "bottom") +  # Create small multiples
+  facet_grid(.~ youth_label, scales = "free_x", nrow = 2, strip.position = "bottom") +  # Create small multiples
   #bar labels
   geom_text(data = df,
               # subset(df, show_label),
