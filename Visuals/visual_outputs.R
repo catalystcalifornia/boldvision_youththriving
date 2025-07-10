@@ -34,7 +34,7 @@ fx_vis_smallmultiples(df = df_eo, title_text = 'Immigrant, SWANA, and Black yout
 df_et <- fx_create_df(con, tables, "Racial Justice, Equity, And Inclusion", "et", "tot_freq_racial_justice") 
 #View(df_et)
 fx_vis_smallmultiples(df = df_et, title_text = 'Over half of immigrant, unhoused, and LGBTQIA+ youth report poor quality health services get in the way of their best life at least some of the time'
-                      , subtitle_text = "How often does poor quality health services get in the way of you living your best life?",
+                      , subtitle_text = "How often do poor quality health services get in the way of you living your best life?",
                       likert_factors = freq_factors, graph_orderby = "Never",
                       insert_gradient = blue_gradient)
 
