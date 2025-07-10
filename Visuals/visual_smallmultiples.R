@@ -145,18 +145,16 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
     mutate(
       youth_label = reorder(youth_label, -max_order), # Negative sign for descending order
       label = case_when(
+        count < 5, NA, # threshold to leave out any data has a count of 5 or less
         rate_cv > 40 ~ paste0(round(rate, 0), "%*"),
         TRUE ~ paste0(round(rate, 0), "%")
-      ))
+      ),
+      rate=case_when(
+        count < 5, NA, # threshold to leave out any data has a count of 5 or less
+        TRUE ~ rate))
 
   #now order response category in associated factor level
   df$response <- factor(df$response, levels = likert_factors)
-  
-  df_incomplete <- df %>% filter(count > 5)  # threshold to leave out any data has a count of 5 or less
-   
-  # Fill missing combinations with NA
-  df <- df_incomplete %>%
-    complete(youth_label, response = likert_factors, fill = list(value = 0))
   
   df_visual <- ggplot(df, aes(x = response, y = rate
                               , fill = response
@@ -165,7 +163,7 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
   # Define custom BV colors 
   scale_fill_manual(values = insert_gradient) + 
   scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
-  facet_wrap(~ youth_label, scales = "fixed", nrow = 2, strip.position = "bottom") +  # Create small multiples
+  facet_wrap(~ youth_label, scales = "free_x", nrow = 2, strip.position = "bottom") +  # Create small multiples
   #bar labels
   geom_text(data = df,
               # subset(df, show_label),
