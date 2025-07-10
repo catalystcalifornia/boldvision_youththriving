@@ -91,7 +91,6 @@ fx_create_df <- function(con, tables, response_domain, variable, response_domain
   df_final <- df_combined %>%
     filter(!grepl("^not ", .[[1]], ignore.case = TRUE)) %>%  # Filters out rows where first column starts with "not "
     filter(!response %in% c("Don't wish to answer", "Don't know", "Does not apply to me")) %>% #Fiters out rows with responses we don't want to visualize
-    filter(count > 5) %>%  # threshold to leave out any data has a count of 5 or less
     mutate(youth_label = case_when(
       str_count(youth_label, " ") == 0 & nchar(youth_label) > 8 ~ str_replace(youth_label, "(.{4,5})", "\\1-\n"),  # Insert break for long single words
       TRUE ~ str_wrap(youth_label, width = 8.25)),
@@ -153,6 +152,11 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
   #now order response category in associated factor level
   df$response <- factor(df$response, levels = likert_factors)
   
+  df_incomplete <- df %>% filter(count > 5)  # threshold to leave out any data has a count of 5 or less
+   
+  # Fill missing combinations with NA
+  df <- df_incomplete %>%
+    complete(youth_label, category = likert_factors, fill = list(value = 0))
   
   df_visual <- ggplot(df, aes(x = response, y = rate
                               , fill = response
@@ -161,7 +165,7 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
   # Define custom BV colors 
   scale_fill_manual(values = insert_gradient) + 
   scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
-  facet_wrap(~ youth_label, scales = "free_x", nrow = 2, strip.position = "bottom") +  # Create small multiples
+  facet_wrap(~ youth_label, scales = "fixed", nrow = 2, strip.position = "bottom") +  # Create small multiples
   #bar labels
   geom_text(data = df,
               # subset(df, show_label),
