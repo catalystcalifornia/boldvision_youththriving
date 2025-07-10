@@ -145,12 +145,12 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
     mutate(
       youth_label = reorder(youth_label, -max_order), # Negative sign for descending order
       label = case_when(
-        count < 5, NA, # threshold to leave out any data has a count of 5 or less
+        count <= 5, NA, # threshold to leave out any data has a count of 5 or less
         rate_cv > 40 ~ paste0(round(rate, 0), "%*"),
         TRUE ~ paste0(round(rate, 0), "%")
       ),
       rate=case_when(
-        count < 5, NA, # threshold to leave out any data has a count of 5 or less
+        count <= 5, NA, # threshold to leave out any data has a count of 5 or less
         TRUE ~ rate))
 
   #now order response category in associated factor level
