@@ -156,7 +156,7 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
    
   # Fill missing combinations with NA
   df <- df_incomplete %>%
-    complete(youth_label, category = likert_factors, fill = list(value = 0))
+    complete(youth_label, response = likert_factors, fill = list(value = 0))
   
   df_visual <- ggplot(df, aes(x = response, y = rate
                               , fill = response
