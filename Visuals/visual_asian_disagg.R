@@ -74,7 +74,7 @@ df_visual <- ggplot(df, aes(x = subgroup_asian, y = rate, fill = response_group 
        "Groups with fewer than five individuals are omitted for privacy purposes. ",
         "For more information on each group's definition, 
          please refer to the 2025 Bold Vision Youth Thriving report."),
-                               whitespace_only = TRUE, width = 100), collapse = "\n")) +
+                               whitespace_only = TRUE, width = 90), collapse = "\n")) +
   #theme/aesthetics
   theme_minimal() +
   theme(legend.position = "top",  # Show legend on the top/bottom
@@ -84,16 +84,12 @@ df_visual <- ggplot(df, aes(x = subgroup_asian, y = rate, fill = response_group 
         axis.ticks.y = element_blank(),
          axis.text.y = element_blank(),
         # define style for legend
-        legend.text = element_text(size = 12, colour = "black", family = font_subtitle, 
-                                   # face = "bold",
-                                   margin = margin(t = 5)),
+        legend.text = element_text(size = 12, colour = "black", family = font_subtitle
+                                   ),
         legend.title = element_text(size = 12, colour = "black", family = font_subtitle
-                                    # , 
-                                    # # face = "bold",
-                                    # margin = margin(t = 5)
                                     ),
-        legend.margin=margin(-6,0,-2,0),
-        legend.box.margin=margin(-6,0,-2,0),
+        legend.margin=margin(-6,0,-2,0), # make legend margins tighter
+        legend.box.margin=margin(-6,0,-2,0), # make legend margins tighter
         # define style for title and caption
         plot.caption = element_text(hjust = 0.0, size = 11, colour = "black", family = font_caption, face = "plain"),
         plot.title = element_text(hjust = 0.0, size = 18, colour = "black", family = font_title),
