@@ -112,7 +112,7 @@ table <- ggplot(df, aes(y = y_pos)) + # rows with double spacing
     caption = paste("+ means a worsening effect, or an increase in psychological distress.",
                     "- means a protective effect, or a decrease in psychological distress.",
                     "All effects are statistically significant at the p<0.05 level and ordered by absolute value.", 
-                    "For more information, please refer to the 2025 Bold Vision Youth Thriving report.",
+                    "For more information, see the 2025 Bold Vision Youth Thriving Report Methodology.",
                     sep="\n")
                     
     ) +
@@ -195,7 +195,7 @@ table <- ggplot(df, aes(y = y_pos)) + # rows with double spacing
     caption = paste("+ means a protective effect, or an increase in self-efficacy and hope.",
                     "- means a worsening effect, or a decrease in self-efficacy and hope.",
                     "All effects are statistically significant at the p<0.05 level and ordered by absolute value.", 
-                    "For more information, please refer to the 2025 Bold Vision Youth Thriving report.",
+                    "For more information, see the 2025 Bold Vision Youth Thriving Report Methodology.",
                     sep="\n")
     
   ) +
