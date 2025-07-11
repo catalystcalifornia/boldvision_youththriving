@@ -137,6 +137,13 @@ freq_factors_reverse<-c("All of the time", "Most of the time","Sometimes", "Rare
 fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors, graph_orderby, insert_gradient
                                   ) {
   
+  # complete cases where there were 0 responses originally
+  df <- df %>%
+    complete(
+      youth_label,
+      response = likert_factors
+    )
+  
   #order the individual graphs by descending order of desired response 
   df <- df %>%
     group_by(youth_label) %>%
@@ -155,6 +162,7 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
 
   #now order response category in associated factor level
   df$response <- factor(df$response, levels = likert_factors)
+
   
   df_visual <- ggplot(df, aes(x = response, y = rate
                               , fill = response
@@ -213,18 +221,18 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
   
   ggsave(plot = df_visual, 
          file = paste0("./Visuals/", 
-                       unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.svg"),
+                       unique(df$response_domain[!is.na(df$response_domain)]), "/", unique(df$variable[!is.na(df$variable)]), "_smallmultiples.svg"),
          units = "in", width = 7.5, height = 10)
   ggsave(plot = df_visual, 
          file = paste0("./Visuals/",
-                       unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.pdf"),
+                       unique(df$response_domain[!is.na(df$response_domain)]), "/", unique(df$variable[!is.na(df$variable)]), "_smallmultiples.pdf"),
          units = "in", width = 7.5, height = 10)
 
   showtext_opts(dpi=300)
   
   ggsave(plot = df_visual, 
          file = paste0("./Visuals/",
-                       unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.png"),
+                       unique(df$response_domain[!is.na(df$response_domain)]), "/", unique(df$variable[!is.na(df$variable)]), "_smallmultiples.png"),
          units = "in", width = 7.5, height = 10)
   
   return(df_visual)
