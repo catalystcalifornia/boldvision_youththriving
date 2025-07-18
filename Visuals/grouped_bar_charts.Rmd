@@ -14,7 +14,6 @@ library(here)
 library(dplyr)
 library(data.table)
 library(sf)
-library(ggplot2)
 library(RPostgres)
 library(formattable)
 library(svglite)
@@ -29,7 +28,8 @@ library(flextable)
 #### Step 2: Setting Bold Vision Style Guide
 
 ```{r}
-source('Visuals\\BV_styling.R')
+source('BV_styling.R')
+
 ```
 
 #### Step 3: Connect to Database and Pull Data Table of Interest
@@ -40,7 +40,7 @@ source("W:\\RDA Team\\R\\credentials_source.R")
 con <- connect_to_db("bold_vision")
 
 # source the function to get crosstabs
-source("W:\\Project\\OSI\\Bold Vision\\Youth Thriving Survey\\GitHub\\AV\\boldvision_youththriving\\Descriptive and Demographic Analyses\\crosstab_svyquestions.R")
+source("..\\Descriptive and Demographic Analyses\\crosstab_svyquestions.R")
 ```
 
 ## Function get_grouped_bar_chart()
@@ -247,7 +247,7 @@ crosstab_df <- cross_tab_df(svy_data,"et","cy",svy_dd)
 
 title_text <- "When youth lack access to quality health services, their mental health suffers"
 string_question_var2 <- "During the past 30 days, I felt worthless..."
-string_question_var1 <- "Poor quality health services gets in the way of me living my best life."
+string_question_var1 <- "Poor quality health services get in the way of me living my best life."
 
 get_grouped_bar_chart(crosstab_df,title_text,string_question_var1,string_question_var2,svy_dd)
 # push_crosstab_table(crosstab_df,"crosstab_psych_distress_structural_racism")

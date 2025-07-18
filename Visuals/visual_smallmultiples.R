@@ -91,7 +91,6 @@ fx_create_df <- function(con, tables, response_domain, variable, response_domain
   df_final <- df_combined %>%
     filter(!grepl("^not ", .[[1]], ignore.case = TRUE)) %>%  # Filters out rows where first column starts with "not "
     filter(!response %in% c("Don't wish to answer", "Don't know", "Does not apply to me")) %>% #Fiters out rows with responses we don't want to visualize
-    filter(count > 5) %>%  # threshold to leave out any data has a count of 5 or less
     mutate(youth_label = case_when(
       str_count(youth_label, " ") == 0 & nchar(youth_label) > 8 ~ str_replace(youth_label, "(.{4,5})", "\\1-\n"),  # Insert break for long single words
       TRUE ~ str_wrap(youth_label, width = 8.25)),
@@ -138,6 +137,13 @@ freq_factors_reverse<-c("All of the time", "Most of the time","Sometimes", "Rare
 fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors, graph_orderby, insert_gradient
                                   ) {
   
+  # complete cases where there were 0 responses originally
+  df <- df %>%
+    complete(
+      youth_label,
+      response = likert_factors
+    )
+  
   #order the individual graphs by descending order of desired response 
   df <- df %>%
     group_by(youth_label) %>%
@@ -146,13 +152,17 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
     mutate(
       youth_label = reorder(youth_label, -max_order), # Negative sign for descending order
       label = case_when(
+        count <= 5 ~ NA, # threshold to leave out any data has a count of 5 or less
         rate_cv > 40 ~ paste0(round(rate, 0), "%*"),
         TRUE ~ paste0(round(rate, 0), "%")
-      ))
+      ),
+      rate=case_when(
+        count <= 5 ~ NA, # threshold to leave out any data has a count of 5 or less
+        TRUE ~ rate))
 
   #now order response category in associated factor level
   df$response <- factor(df$response, levels = likert_factors)
-  
+
   
   df_visual <- ggplot(df, aes(x = response, y = rate
                               , fill = response
@@ -180,9 +190,9 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
        caption= paste(str_wrap(paste0(
          " Data Source: Catalyst California's calculations of Bold Vision Youth Thriving Survey, 2024.",
          " *Unstable for policy purposes; groups with fewer than five individuals are omitted for privacy purposes. 
-         AIAN= American Idian and Alaska Native; 
+         AIAN= American Indian and Alaska Native; 
          NHPI= Native Hawaiian & Pacific Islander;
-         SWANA= Southwest Asian & North Africa. 
+         SWANA= Southwest Asian & North African. 
          For more information on each group's definition, 
          please refer to the 2025 Bold Vision Youth Thriving report.
          "),
@@ -211,18 +221,18 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
   
   ggsave(plot = df_visual, 
          file = paste0("./Visuals/", 
-                       unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.svg"),
+                       unique(df$response_domain[!is.na(df$response_domain)]), "/", unique(df$variable[!is.na(df$variable)]), "_smallmultiples.svg"),
          units = "in", width = 7.5, height = 10)
   ggsave(plot = df_visual, 
          file = paste0("./Visuals/",
-                       unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.pdf"),
+                       unique(df$response_domain[!is.na(df$response_domain)]), "/", unique(df$variable[!is.na(df$variable)]), "_smallmultiples.pdf"),
          units = "in", width = 7.5, height = 10)
 
   showtext_opts(dpi=300)
   
   ggsave(plot = df_visual, 
          file = paste0("./Visuals/",
-                       unique(df$response_domain), "/", unique(df$variable), "_smallmultiples.png"),
+                       unique(df$response_domain[!is.na(df$response_domain)]), "/", unique(df$variable[!is.na(df$variable)]), "_smallmultiples.png"),
          units = "in", width = 7.5, height = 10)
   
   return(df_visual)
