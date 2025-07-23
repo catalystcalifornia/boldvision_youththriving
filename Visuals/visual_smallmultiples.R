@@ -68,6 +68,7 @@ fx_create_df <- function(con, tables, response_domain, variable, response_domain
                  str_detect(youth_label, "nhpi") ~ str_to_upper(youth_label),
                  str_detect(youth_label, "twoormor") ~ "Multiracial",  # Rename "Twoormor" to "Two or More"
                  str_detect(youth_label, "latinx") ~ "Latine",  # Rename "Latinx" to "Latine
+                 str_detect(youth_label, "systems") ~ "Systems- impacted",  
                  TRUE ~ str_to_title(youth_label)  # Capitalize first letter of each word otherwise
                )) 
     
@@ -193,8 +194,7 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
          AIAN= American Indian and Alaska Native; 
          NHPI= Native Hawaiian & Pacific Islander;
          SWANA= Southwest Asian & North African. 
-         For more information on each group's definition, 
-         please refer to the 2025 Bold Vision Youth Thriving report.
+         For more information, see the 2025 Bold Vision Youth Thriving Report Methodology..
          "),
          whitespace_only = TRUE, width = 110), collapse = "\n")) +
   theme(legend.position = "bottom",  # Show legend on the top/bottom
