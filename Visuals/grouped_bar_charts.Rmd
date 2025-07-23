@@ -63,7 +63,7 @@ get_grouped_bar_chart <- function(crosstab_df,title_text,string_question_var1,st
     crosstab_df <- crosstab_df %>%
         mutate(response_var1 = reorder(response_var1, var1_number))
     # Wrap the x-axis labels at a reasonable width 
-    x_labels <- str_wrap(unique(crosstab_df$response_var1), width = 20)
+    x_labels <- str_wrap(unique(crosstab_df$response_var1), width = 15)
     
     # Set the legend title
     # string_question_var2 <- str_wrap(string_question_var2, width = 15)
@@ -101,7 +101,7 @@ caption_theme <- element_text(hjust = 0, size = 11, colour = "black", family = f
     # Set the caption text
     var1_q_num <- sub("^([Qq][0-9]+)\\..*", "\\1,", unique(crosstab_df$question_var1))
     var2_q_num <- sub("^([Qq][0-9]+)\\..*", "\\1,", unique(crosstab_df$question_var2))
-    caption_text <- "\nData Source: Catalyst California's calculations of Bold Vision Youth Thriving Survey, \n2024. For more information on the methodology, please refer to the 2025 Bold Vision \nYouth Thriving report."
+    caption_text <- "\nData Source: Catalyst California's calculations of Bold Vision Youth Thriving Survey, \n2024. For more information, see the 2025 Bold Vision Youth Thriving Report Methodology."
     # caption_text <- str_wrap(paste0(
     #   "Data Source: Catalyst California's calculations of Bold Vision Youth Thriving Survey, 2024. ",
     #   "For more information on the methodology, please refer to the 2025 Bold Vision Youth Thriving report."
@@ -133,7 +133,9 @@ caption_theme <- element_text(hjust = 0, size = 11, colour = "black", family = f
       theme_minimal() +
       theme(
         legend.position = "right",
-        legend.margin = margin(l = 0),    # Ensures no extra left margin 
+        legend.margin = margin(0, 0, -5, 0),
+        legend.box.margin = margin(-8,0,-8,0), # adjusting margin to reduce white space
+        legend.text.align = 0,
         axis.title.x = x_title_theme,       # Set style for x-axis title 
         axis.text.x = subheading_theme,         # Set style for x-axis labels 
         plot.caption = caption_theme,           # Set style for caption
@@ -235,7 +237,7 @@ crosstab_df <- cross_tab_df(svy_data,"eo","cy",svy_dd)
 #   group_by(eo) %>%
 #   summarise(sum(rate))
 
-title_text <- "When youth are told hurtful or offensive jokes/comments about their race, they are more likely to feel worthless"
+title_text <- "When youth are told hurtful comments about their race, they are more likely to feel worthless"
 
 # string_question_var2 <- "How often during the past 30 days did you feel worthless?"
 string_question_var2 <- "During the past 30 days, \nI felt worthless..."
@@ -256,7 +258,7 @@ crosstab_df <- cross_tab_df(svy_data,"et","cy",svy_dd)
 #   group_by(et) %>%
 #   summarise(sum(rate))
 
-title_text <- "When youth lack access to quality health services, they are likely to feel worthless"
+title_text <- "When youth lack access to quality health services, they are more likely to feel worthless"
 string_question_var2 <- "During the past 30 days, \nI felt worthless..."
 string_question_var1 <- "Poor quality health services get in the way of me living my best life."
 
