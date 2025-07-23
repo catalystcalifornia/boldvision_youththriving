@@ -69,7 +69,7 @@ df_all <- df_all %>%
              str_detect(youth_label, "twoormor") ~ "Multiracial",  # Rename "Twoormor" to "Multiracial"
              str_detect(youth_label, "latinx") ~ "Latine",  # Rename latinx to Latine
              str_detect(youth_label, "other") ~ "Another Race",  # Rename other to Another Race
-             str_detect(youth_label, "systems_impacted") ~ "Systems Impacted", 
+             str_detect(youth_label, "systems_impacted") ~ "Systems-impacted", 
              str_detect(youth_label, "Cisgender Male") ~ "Cis Man/Boy", 
              str_detect(youth_label, "Cisgender Female") ~ "Cis Woman/Girl", 
              str_detect(youth_label, "undocumented") ~ "Immigrant", 
@@ -98,8 +98,9 @@ component_labels <- select(df_total, component_model) %>%
          component_label=gsub(component_label,pattern="_", replacement=" "),
          component_label=gsub(component_label,pattern="experiences of racism and ", replacement=""),
          component_label=str_to_title(component_label))%>%
-  mutate(component_label=ifelse(component_label=="Self Efficacy Hope", "Self-Efficacy And Hope",
-                                       component_label))
+  mutate(component_label=ifelse(component_label=="Self Efficacy Hope", "Self-Efficacy and Hope",
+                                ifelse(component_label=="Caring Families And Relationships", "Caring Families and Relationships",
+                                       component_label)))
 
 
  ## check
@@ -112,54 +113,19 @@ df_all <- df_all %>%
 
 # Step 2: Setting Bold Vision Style Guide ----
 
-## Colors
-
-gray <- "#D6D7D6"
-pink <- "#F75EC1"
-dark_pink <- "#EF4A66"
-orange <- "#F57E20"
-yellow <- "#FFBF00"
-light_green <- "#00A75A"
-dark_green <- "#00864A"
-blue  <- "#2A12B2"
-light_blue <- "#465adc"
-dark_blue <-'#220f8c'
-
-# https://colorampgen.vercel.app/
-
-## FONTS ## 
-font_add(family = "Manifold Regular", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Manifold/Fonts/manifoldcf-regular.otf")
-font_add(family = "Manifold CF", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Manifold/Fonts/manifoldcf-heavy.otf")
-font_add(family = "HelveticaNeueLTStdMdCn", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Helvetica Neue LT Std/HelveticaNeueLTStd-MdCn.otf")
-font_add(family = "HelveticaNeueLTStdHvCn", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Helvetica Neue LT Std/HelveticaNeueLTStd-HvCn.otf")
-font_add(family = "HelveticaNeueLTStdMdCnO", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Helvetica Neue LT Std/HelveticaNeueLTStd-MdCnO.otf")
-font_add(family = "HelveticaNeueLTStdMd", regular = "W:/Project/OSI/Bold Vision/BV 2021/Deliverables/Bold Vision Fonts/Helvetica Neue LT Std/HelveticaNeueLTStd-Md.otf")
-
-
-# font_import()
-loadfonts(device = "win")
-windowsFonts()
-showtext_auto()
-
-
-# define fonts in chart
-font_title <- "HelveticaNeueLTStdHvCn"
-font_subtitle <- "HelveticaNeueLTStdMdCn"
-font_caption <- "Manifold Regular"
-font_bar_label <- "Manifold Regular"
-font_axis_label <- "Manifold Regular"
-
+#Load BV styling, colors and fonts
+source('Visuals\\BV_styling.R')
 
 
 # Step 3: Filter for selected components and for selected demographics -----
 # list of demographics to focus on
 unique(df_all$youth_label)
-subgroups<-c("AIAN","All Youth","Asian","Black","Latine","Multiracial","NHPI","SWANA","White","BIPOC","Systems Impacted","Immigrant","Unhoused","Cis Man/Boy","Cis Woman/Girl","LGBTQIA+")
+subgroups<-c("AIAN","All Youth","Asian","Black","Latine","Multiracial","NHPI","SWANA","White","BIPOC","Systems-impacted","Immigrant","Unhoused","Cis Man/Boy","Cis Woman/Girl","LGBTQIA+")
 subgroups
 
 # list of components to focus on
 component_labels$component_label
-components<-c("Psychological Distress","Self-Efficacy And Hope","Microaggressions","Caring Families And Relationships","Cultural Identity","Structural Racism","Vibrant Communities")
+components<-c("Psychological Distress","Self-Efficacy and Hope","Microaggressions","Caring Families and Relationships","Cultural Identity","Structural Racism","Vibrant Communities")
 components
 
 # filter dataframe
@@ -204,16 +170,16 @@ label_data$angle<-ifelse(angle < -90, angle+180, angle)
 title_block <- ggplot() +
   theme_void() +
   labs(
-    title = "Average Predicted <span style ='color: #F75EC1;'>Psychological Distress</span>",
+    title = "Average Expected <span style ='color: #F75EC1;'>Psychological Distress</span>",
     subtitle = paste(
       "L.A. County youth are not all thriving equally. LGBTQIA+, unhoused, immigrant, and",
-      "systems impacted youth are experiencing more psychological distress than other youth.",
+      "systems-impacted youth are experiencing more psychological distress than other youth.",
       sep = "\n"
     )
     ) +
   theme(
-    plot.title = element_markdown(hjust = 0, size = 18, family = font_title),
-    plot.subtitle = element_text(hjust = 0, size = 13, family = font_subtitle),
+    plot.title = element_markdown(hjust = 0, size = title_fs, family = font_title),
+    plot.subtitle = element_text(hjust = 0, size = 14, family = font_subtitle),
     plot.margin = margin(t = 0, r = 0, b = -4, l = 0)
   )
 
@@ -222,13 +188,13 @@ caption_block <- ggplot() +
   labs(
        caption = paste(
       "\nCatalyst California's calculations of Bold Vision Youth Thriving Survey, 2024. Note: AIAN=American Indian",
-      "& Alaska Native; NHPI: Native Hawaiian & Pacific Islander; SWANA=Southwest Asian & North African. For",
-      "more information on each group's definition, please refer to the 2025 Bold Vision Youth Thriving report.",
+      "& Alaska Native; NHPI: Native Hawaiian & Pacific Islander; SWANA=Southwest Asian & North African.",
+      "For more information, see the 2025 Bold Vision Youth Thriving Report Methodology.",
       sep = "\n"
     )
   ) +
   theme(
-      plot.caption = element_text(hjust = 0, size = 11, family = font_caption),
+      plot.caption = element_text(hjust = 0, size = caption_fs, family = font_caption),
     plot.margin = margin(t = -4, r = 0, b = 0, l = 0)
   )
 
@@ -236,18 +202,12 @@ caption_block <- ggplot() +
 p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
   geom_bar(aes(fill=avg_adjusted),stat = "identity", 
            alpha=1, show.legend=TRUE) +  
-  scale_fill_gradientn("Psychological Distress",
-  colours=
-    # c("#FDDFF3","#FA9EDA","#F97ECD","#F75EC1") 
-  c("#FDE1F3", "#FCAEDC", "#F979CA", "#F75EC1")
-  ,
-  labels=c("<- Lower","","Higher ->")
+  scale_fill_gradient("Psychological Distress",
+                       low="#FDE1F3", high="#F75EC1",
+                      breaks = c(min(df$avg_adjusted), max(df$avg_adjusted)),
+                       labels=c("Lower","Higher"),
+                      guide=guide_colorbar(title.position="top",title.hjust = .5,ticks=FALSE)
   )+
-  # Make the guide for the fill discrete
-  guides(
-    fill = guide_colorsteps(title.position = "top", title.hjust = .5
-    )
-  ) +
   scale_x_discrete(expand = c(0, 0)) +
   ylim(-.25,1.1) +
   ylab("")+
@@ -256,11 +216,11 @@ p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
   theme(aspect.ratio=1,
         legend.title = element_text(hjust = 0.5,size = 11, family= font_axis_label),
         legend.text = element_text(hjust = 0.5,size = 11, family= font_axis_label),
-        legend.position = "bottom", # no legend title
-        legend.margin=margin(0,0,-5,0),
+        legend.position = "bottom", 
+        legend.margin=margin(-2,0,-5,0),
         legend.box.margin=margin(-8,0,-8,0),
         legend.key.height = unit(0.2, "cm"),
-        legend.key.width = unit(1.5, "cm"),
+        legend.key.width = unit(1, "cm"),
         axis.text.y=element_blank(),
         axis.text.x=element_blank(),
         axis.ticks=element_blank(),
@@ -273,7 +233,7 @@ p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
         ) + 
   coord_polar(clip="off") +
   # Add the labels, using the label_data dataframe that we have created before
-  geom_text(data=label_data, aes(x=id, y=avg_adjusted+.006, label=youth_label, hjust=hjust), color="black", family=font_axis_label,alpha=0.6, size=3.4, angle= label_data$angle, inherit.aes = FALSE ) 
+  geom_text(data=label_data, aes(x=id, y=avg_adjusted+.007, label=youth_label, hjust=hjust), color="black", family=font_axis_label,alpha=0.6, size=3.5, angle= label_data$angle, inherit.aes = FALSE ) 
 
 final_plot <- title_block / p  / caption_block + plot_layout(heights=c(.06,.93,.01))
 
@@ -290,7 +250,7 @@ ggsave(plot=final_plot,
 
 # Step 5: Make a function for circular bar plot -------
 
-circular_plot <- function(component_input,component_folder,component_colors,legend_labels, title_text,subtitle_text) {
+circular_plot <- function(component_input,component_folder,color_low, color_high, title_text,subtitle_text) {
   
   # ----- This section prepares the data for the visual ---- #
   # filter for the component
@@ -329,8 +289,8 @@ circular_plot <- function(component_input,component_folder,component_colors,lege
       subtitle = subtitle_text
     ) +
     theme(
-      plot.title = element_markdown(hjust = 0, size = 18, family = font_title),
-      plot.subtitle = element_text(hjust = 0, size = 13, family = font_subtitle),
+      plot.title = element_markdown(hjust = 0, size = title_fs, family = font_title),
+      plot.subtitle = element_text(hjust = 0, size = 14, family = font_subtitle),
       plot.margin = margin(t = 0, r = 0, b = -4, l = 0)
     )
   
@@ -339,13 +299,13 @@ circular_plot <- function(component_input,component_folder,component_colors,lege
     labs(
       caption = paste(
         "\nCatalyst California's calculations of Bold Vision Youth Thriving Survey, 2024. Note: AIAN=American Indian",
-        "& Alaska Native; NHPI: Native Hawaiian & Pacific Islander; SWANA=Southwest Asian & North African. For",
-        "more information on each group's definition, please refer to the 2025 Bold Vision Youth Thriving report.",
+        "& Alaska Native; NHPI: Native Hawaiian & Pacific Islander; SWANA=Southwest Asian & North African.",
+        "For more information, see the 2025 Bold Vision Youth Thriving Report Methodology.",
         sep = "\n"
       )
     ) +
     theme(
-      plot.caption = element_text(hjust = 0, size = 11, family = font_caption),
+      plot.caption = element_text(hjust = 0, size = caption_fs, family = font_caption),
       plot.margin = margin(t = -4, r = 0, b = 0, l = 0)
     )
   
@@ -354,15 +314,12 @@ circular_plot <- function(component_input,component_folder,component_colors,lege
   p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
     geom_bar(aes(fill=avg_adjusted),stat = "identity", 
              alpha=1, show.legend=TRUE) +  
-    scale_fill_gradientn(component_input, # legend title
-                         colours=component_colors, # legend color ramp
-                         labels=legend_labels # upper and lower labels for legend
+    scale_fill_gradient(component_input, # legend title
+                         low=color_low, high=color_high, # legend color ramp
+                         breaks = c(min(df$avg_adjusted), max(df$avg_adjusted)),
+                         labels=c("Lower","Higher"),
+                         guide=guide_colorbar(title.position="top",title.hjust = .5,ticks=FALSE)
     )+
-    # Make the guide for the fill discrete
-    guides(
-      fill = guide_colorsteps(title.position = "top", title.hjust = .5
-      )
-    ) +
     scale_x_discrete(expand = c(0, 0)) +
     ylim(-.25,1.1) +
     ylab("")+
@@ -372,10 +329,10 @@ circular_plot <- function(component_input,component_folder,component_colors,lege
           legend.title = element_text(hjust = 0.5,size = 11, family= font_axis_label),
           legend.text = element_text(hjust = 0.5,size = 11, family= font_axis_label),
           legend.position = "bottom", # no legend title
-          legend.margin=margin(0,0,-5,0),
+          legend.margin=margin(-2,0,-5,0),
           legend.box.margin=margin(-8,0,-8,0),
           legend.key.height = unit(0.2, "cm"),
-          legend.key.width = unit(1.5, "cm"),
+          legend.key.width = unit(1, "cm"),
           axis.text.y=element_blank(),
           axis.text.x=element_blank(),
           axis.ticks=element_blank(),
@@ -388,7 +345,7 @@ circular_plot <- function(component_input,component_folder,component_colors,lege
     ) + 
     coord_polar(clip="off") +
     # Add the labels, using the label_data dataframe that we have created before
-    geom_text(data=label_data, aes(x=id, y=avg_adjusted+.006, label=youth_label, hjust=hjust), color="black", family=font_axis_label,alpha=0.6, size=3.4, angle= label_data$angle, inherit.aes = FALSE ) 
+    geom_text(data=label_data, aes(x=id, y=avg_adjusted+.007, label=youth_label, hjust=hjust), color="black", family=font_axis_label,alpha=0.6, size=3.5, angle= label_data$angle, inherit.aes = FALSE ) 
   
   # ----- This section saves and outputs the plot ---- #
   
@@ -411,65 +368,65 @@ circular_plot <- function(component_input,component_folder,component_colors,lege
 ### Structural Racism -------
 component_input <- "Structural Racism" # component being visualized for filtering and legend title
 component_folder <- "Racial Justice, Equity, And Inclusion" # name of folder in deliverables to save to
-component_colors <-c("#D9D5FA", "#A7A0F4", "#756AEA", "#2A12B2") # color ramp for the legend
-legend_labels <- c("<- Lower","","Higher ->") # if function doesn't work, e.g., error in get_labels might need to add another blank value
-title_text <- "Average Predicted <span style ='color: #2A12B2;'>Structural Racism</span>" # replace color hex and name between <>
+color_low <-"#D9D5FA" # low color for ramp
+color_high <-"#2A12B2" # high color for ramp
+title_text <- "Average Expected <span style ='color: #2A12B2;'>Structural Racism</span>" # replace color hex and name between <>
 subtitle_text <- paste("All youth should live without experiencing structural racism, but in L.A. County, immigrant,", # text breaks in the subtitle after running initial visual
-                       "unhoused, and LGBTQIA+ are predicted to experience structural racism the most.",
+                       "unhoused, and LGBTQIA+ youth experience structural racism the most.",
                        sep = "\n")
 
-circular_plot(component_input,component_folder,component_colors,legend_labels,title_text,subtitle_text)
+circular_plot(component_input,component_folder,color_low, color_high,title_text,subtitle_text)
 # works
 
 ### Microaggressions -------
 component_input <- "Microaggressions" # component being visualized for filtering and legend title
 component_folder <- "Racial Justice, Equity, And Inclusion" # name of folder in deliverables to save to
-component_colors <- c("#D9D5FA", "#A7A0F4", "#756AEA", "#2A12B2")# color ramp for the legend
-legend_labels <- c("<- Lower","","","Higher ->") # if function doesn't work, e.g., error in get_labels might need to add another blank value
-title_text <- "Average Predicted <span style ='color: #2A12B2;'>Microaggressions </span>" # replace color hex and name between <>
-subtitle_text <- paste("L.A. County youth vary in how likely they are to experience micoaggressions. Immigrant, Black,", # text breaks in the subtitle after running initial visual
-  "unhoused, and SWANA youth are most likely to be subject to microaggressions.",
+color_low <-"#D9D5FA" # low color for ramp
+color_high <-"#2A12B2" # high color for ramp
+title_text <- "Average Expected <span style ='color: #2A12B2;'>Microaggressions </span>" # replace color hex and name between <>
+subtitle_text <- paste("L.A. County youth vary in how likely they are to experience micoaggressions. Immigrant, ", # text breaks in the subtitle after running initial visual
+  "Black, unhoused, and SWANA youth are most likely to be subject to microaggressions.",
   sep = "\n")
 
-circular_plot(component_input,component_folder,component_colors,legend_labels,title_text,subtitle_text)
+circular_plot(component_input,component_folder,color_low, color_high,title_text,subtitle_text)
 
 
 ### Caring Families and Relationships -------
-component_input <- "Caring Families And Relationships" # component being visualized for filtering and legend title
-component_folder <- "Caring Families And Relationships" # name of folder in deliverables to save to
-component_colors <-c("#C4F0DC", "#7CDDBA", "#33C898", "#00864A")# color ramp for the legend
-legend_labels <- c("<- Lower","","","Higher ->") # if function doesn't work, e.g., error in get_labels might need to add or remove another blank value
-title_text <- "Average Predicted <span style ='color: #00864A;'>Caring Families and Relationships</span>" # replace color hex and name between <>
+component_input <- "Caring Families and Relationships" # component being visualized for filtering and legend title
+component_folder <- "Caring Families and Relationships" # name of folder in deliverables to save to
+color_low <-"#C4F0DC" # low color for ramp
+color_high <-"#00864A" # high color for ramp
+title_text <- "Average Expected <span style ='color: #00864A;'>Caring Families and Relationships</span>" # replace color hex and name between <>
 subtitle_text <- paste("All youth should have support from their families and other adults in their lives. Unhoused",
-                        "systems impacted, and immigrant youth are least likely to feel they have someone to go to.",
+                        "systems-impacted, and immigrant youth are least likely to feel they have someone to go to.",
                         sep = "\n")
 
-circular_plot(component_input,component_folder,component_colors,legend_labels,title_text,subtitle_text)
+circular_plot(component_input,component_folder,color_low, color_high,title_text,subtitle_text)
 
 
 ### Self-Efficacy and Hope -------
-component_input <- "Self-Efficacy And Hope" # component being visualized for filtering and legend title
-component_folder <- "Positive Identity And Self-Worth" # name of folder in deliverables to save to
-component_colors <-c("#FDD8DD", "#F9A3AF",  "#F14968", "#EF4A66")  # color ramp for the legend
-legend_labels <- c("<- Lower","","","Higher ->") # if function doesn't work, e.g., error in get_labels might need to add another blank value
-title_text <- "Average Predicted <span style ='color: #EF4A66;'>Self-Efficacy And Hope</span>" # replace color hex and name between <>
-subtitle_text <- paste("All youth should feel hope and confidence. LGBTQIA+, Asian, and Multiracial youth on average", # text breaks in the subtitle after running initial visual
-                       "feel less confidence and hope for their future compared to other youth",
+component_input <- "Self-Efficacy and Hope" # component being visualized for filtering and legend title
+component_folder <- "Positive Identity and Self-Worth" # name of folder in deliverables to save to
+color_low <-"#FDD8DD" # low color for ramp
+color_high <- "#EF4A66" # high color for ramp
+title_text <- "Average Expected <span style ='color: #EF4A66;'>Self-Efficacy and Hope</span>" # replace color hex and name between <>
+subtitle_text <- paste("All youth should feel hopeful and confident. LGBTQIA+, Asian, and Multiracial youth on ", # text breaks in the subtitle after running initial visual
+                       "average feel less confidence and hope for their future compared to other youth.",
                        sep = "\n"
 )
 
-circular_plot(component_input,component_folder,component_colors,legend_labels,title_text,subtitle_text)
+circular_plot(component_input,component_folder,color_low, color_high,title_text,subtitle_text)
 
 ### Cultural Identity -------
 component_input <- "Cultural Identity" # component being visualized for filtering and legend title
 component_folder <- "Cultural Identity" # name of folder in deliverables to save to
-component_colors <- c("#D9D5FA", "#A7A0F4", "#756AEA", "#2A12B2") # color ramp for the legend
-legend_labels <- c("<- Lower","","","","Higher ->") # if function doesn't work, e.g., error in get_labels might need to add another blank value
-title_text <- "Average Predicted Feelings of <span style ='color: #2A12B2;'>Cultural Identity</span>" # replace color hex and name between <>
-subtitle_text <- paste("All youth should be able to have a strong cultural identity. Multiracial, immigrant, LGBTQIA+,", # text breaks in the subtitle after running initial visual
-                       "White, unhoused, and systems impacted youth derive less strength from their cultural identity.",
+color_low <-"#D9D5FA" # low color for ramp
+color_high <-"#2A12B2" # high color for ramp
+title_text <- "Average Expected <span style ='color: #2A12B2;'>Cultural Identity</span>" # replace color hex and name between <>
+subtitle_text <- paste("All youth should be able to have a strong cultural identity. Multiracial, immigrant, and", # text breaks in the subtitle after running initial visual
+                       "LGBTQIA+ youth on average feel less connected to their cultural identity.",
                        sep = "\n"
 )
 
-circular_plot(component_input,component_folder,component_colors,legend_labels,title_text,subtitle_text)
+circular_plot(component_input,component_folder,color_low, color_high,title_text,subtitle_text)
 
