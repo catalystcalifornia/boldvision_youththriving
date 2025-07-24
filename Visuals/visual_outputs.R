@@ -25,7 +25,7 @@ fx_vis_smallmultiples(df = df_q10, title_text = 'Having a spark in life supports
 #eo
 df_eo <- fx_create_df(con, tables, "Racial Justice, Equity, And Inclusion", "eo", "tot_freq_racial_justice") 
 #View(df_eo)
-fx_vis_smallmultiples(df = df_eo, title_text = 'Immigrant, SWANA, and Black youth are most likely to experience distressing and racialized interactions'
+fx_vis_smallmultiples(df = df_eo, title_text = 'No young person should experience distressing or racialized interactions based on their race, yet immigrant, SWANA, and Black youth are most likely to subject to these interactions'
                       ,subtitle_text = "In the past 12 months, how often have you dealt with being told hurtful or offensive jokes/comments about your race?",
                       likert_factors = freq_factors, graph_orderby = "Never",
                       insert_gradient = blue_gradient)
@@ -33,7 +33,7 @@ fx_vis_smallmultiples(df = df_eo, title_text = 'Immigrant, SWANA, and Black yout
 #et
 df_et <- fx_create_df(con, tables, "Racial Justice, Equity, And Inclusion", "et", "tot_freq_racial_justice") 
 #View(df_et)
-fx_vis_smallmultiples(df = df_et, title_text = 'Over half of immigrant, unhoused, and LGBTQIA+ youth report poor quality health services get in the way of their best life at least some of the time'
+fx_vis_smallmultiples(df = df_et, title_text = 'All youth should have access to quality health services, but over half of immigrant, unhoused, and LGBTQIA+ youth report poor quality health services get in the way of living their best life at least sometimes'
                       , subtitle_text = "How often do poor quality health services get in the way of you living your best life?",
                       likert_factors = freq_factors, graph_orderby = "Never",
                       insert_gradient = blue_gradient)
@@ -49,7 +49,7 @@ fx_vis_smallmultiples(df = df_co, title_text = 'All youth should feel hopeful ab
 #dz
 df_dz <- fx_create_df(con, tables, "Cultural Identity", "dz", "tot_freq_cultural_identity") 
 #View(df_dz)
-fx_vis_smallmultiples(df = df_dz, title_text = 'More than half of SWANA, AIAN, and cisgender girls most often reported that their culture helps them feel good about who they are'
+fx_vis_smallmultiples(df = df_dz, title_text = 'Cultural identity matters to youth confidence and hope, and more than half of SWANA, AIAN, and cisgender girl youth reported that their culture helps them feel good about who they are'
                       , subtitle_text = "My culture helps me feel good about who I am",
                       likert_factors = true_factors, graph_orderby = "Always true",
                       insert_gradient = blue_gradient)
@@ -57,7 +57,7 @@ fx_vis_smallmultiples(df = df_dz, title_text = 'More than half of SWANA, AIAN, a
 #cy
 df_cy <- fx_create_df(con, tables, "Strong Minds", "cy", "tot_freq_strong_minds") 
 #View(df_cy)
-fx_vis_smallmultiples(df = df_cy, title_text = 'LGBTQIA+ youth are least likely to feel valuable and report feeling worthless more than other groups'
+fx_vis_smallmultiples(df = df_cy, title_text = 'All youth should feel valuable, but LGBTQIA+ youth are more likely to report feeling worthless than other groups'
                       ,subtitle_text = "About how often in the past 30 days, did you feel worthless?",
                       likert_factors = time_factors, graph_orderby = "None of the time",
                       insert_gradient = pink_gradient)
@@ -65,8 +65,8 @@ fx_vis_smallmultiples(df = df_cy, title_text = 'LGBTQIA+ youth are least likely 
 #dm
 df_dm <- fx_create_df(con, tables, "Positive Identity And Self-Worth", "dm", "tot_freq_positive_identity") 
 #View(df_dm)
-fx_vis_smallmultiples(df = df_dm, title_text = 'Immigrant, unhoused, and systems impacted youth are least likely to have opportunities to connect and engage with their community'
-                      , subtitle_text = "How true is it that there are ways for you to get involved with your community?",
+fx_vis_smallmultiples(df = df_dm, title_text = 'Community involvement matters to youth confidence and hope, but immigrant, unhoused, and systems-impacted youth are least likely to have opportunities to engage with their community'
+                      , subtitle_text = "There are ways for me to get involved in my community",
                       likert_factors = true_factors, graph_orderby = "Always true",
                       insert_gradient = dark_pink_gradient)
 
