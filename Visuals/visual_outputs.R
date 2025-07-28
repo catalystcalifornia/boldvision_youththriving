@@ -25,7 +25,7 @@ fx_vis_smallmultiples(df = df_q10, title_text = 'Having a spark in life supports
 #eo
 df_eo <- fx_create_df(con, tables, "Racial Justice, Equity, And Inclusion", "eo", "tot_freq_racial_justice") 
 #View(df_eo)
-fx_vis_smallmultiples(df = df_eo, title_text = 'No young person should experience distressing or racialized interactions based on their race, yet immigrant, SWANA, and Black youth are most likely to subject to these interactions'
+fx_vis_smallmultiples(df = df_eo, title_text = 'No young person should experience distressing or racialized interactions based on their race, yet immigrant, SWANA, and Black youth are most likely to be subject to these interactions'
                       ,subtitle_text = "In the past 12 months, how often have you dealt with being told hurtful or offensive jokes/comments about your race?",
                       likert_factors = freq_factors, graph_orderby = "Never",
                       insert_gradient = blue_gradient)
@@ -49,7 +49,7 @@ fx_vis_smallmultiples(df = df_co, title_text = 'All youth should feel hopeful ab
 #dz
 df_dz <- fx_create_df(con, tables, "Cultural Identity", "dz", "tot_freq_cultural_identity") 
 #View(df_dz)
-fx_vis_smallmultiples(df = df_dz, title_text = 'Cultural identity matters to youth confidence and hope, and more than half of SWANA, AIAN, and cisgender girl youth reported that their culture helps them feel good about who they are'
+fx_vis_smallmultiples(df = df_dz, title_text = 'Cultural identity matters to youth confidence and hope, and more than half of SWANA, AIAN, and cisgender girl youth reported that their culture always helps them feel good about who they are'
                       , subtitle_text = "My culture helps me feel good about who I am",
                       likert_factors = true_factors, graph_orderby = "Always true",
                       insert_gradient = blue_gradient)
