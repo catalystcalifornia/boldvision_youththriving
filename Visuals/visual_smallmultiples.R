@@ -68,6 +68,9 @@ fx_create_df <- function(con, tables, response_domain, variable, response_domain
                  str_detect(youth_label, "nhpi") ~ str_to_upper(youth_label),
                  str_detect(youth_label, "twoormor") ~ "Multiracial",  # Rename "Twoormor" to "Two or More"
                  str_detect(youth_label, "latinx") ~ "Latine",  # Rename "Latinx" to "Latine
+                 str_detect(youth_label, "systems") ~ "Systems- impacted",  
+                 str_detect(youth_label, "girl") ~ "Cis Woman/ Girl",  
+                 str_detect(youth_label, "boy") ~ "Cis Man/ Boy",  
                  TRUE ~ str_to_title(youth_label)  # Capitalize first letter of each word otherwise
                )) 
     
@@ -187,16 +190,13 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
        x = "",  
        y = "",
        fill = "",  
-       caption= paste(str_wrap(paste0(
-         " Data Source: Catalyst California's calculations of Bold Vision Youth Thriving Survey, 2024.",
-         " *Unstable for policy purposes; groups with fewer than five individuals are omitted for privacy purposes. 
-         AIAN= American Indian and Alaska Native; 
-         NHPI= Native Hawaiian & Pacific Islander;
-         SWANA= Southwest Asian & North African. 
-         For more information on each group's definition, 
-         please refer to the 2025 Bold Vision Youth Thriving report.
-         "),
-         whitespace_only = TRUE, width = 110), collapse = "\n")) +
+       caption= paste(
+         "Data Source: Catalyst California's calculations of Bold Vision Youth Thriving Survey, 2024. *Unstable for",
+         "policy purposes; groups with fewer than five individuals are omitted for privacy purposes. AIAN=American",  
+         "Indian and Alaska Native; NHPI=Native Hawaiian & Pacific Islander; SWANA=Southwest Asian & North African.", 
+         "For more information, see the 2025 Bold Vision Youth Thriving Report Methodology.",
+         sep="\n"
+         )) +
   theme(legend.position = "bottom",  # Show legend on the top/bottom
      # remove axis text
      axis.text.x = element_blank(), 

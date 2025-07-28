@@ -70,11 +70,10 @@ df_visual <- ggplot(df, aes(x = subgroup_asian, y = rate, fill = response_group 
         x = "",
        y = "",
        fill = "",
-       caption= paste(str_wrap(paste0("Data Source: Catalyst California's calculations of Bold Vision Youth Thriving Survey, 2024. ", 
-       "Groups with fewer than five individuals are omitted for privacy purposes. ",
-        "For more information on each group's definition, 
-         please refer to the 2025 Bold Vision Youth Thriving report."),
-                               whitespace_only = TRUE, width = 90), collapse = "\n")) +
+       caption= paste("Data Source: Catalyst California's calculations of Bold Vision Youth Thriving Survey,",
+       "2024. Groups with fewer than five individuals are omitted for privacy purposes.", 
+       "For more information, see the 2025 Bold Vision Youth Thriving Report Methodology.",
+                               sep = "\n")) +
   #theme/aesthetics
   theme_minimal() +
   theme(legend.position = "top",  # Show legend on the top/bottom
