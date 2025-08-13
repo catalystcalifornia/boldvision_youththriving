@@ -127,8 +127,8 @@ table <- ggplot(df, aes(y = y_pos)) + # rows with double spacing
    plot.caption = element_text(hjust = 0.0, size = caption_fs, colour = "black", family = font_caption),
    plot.subtitle =element_markdown(hjust = 0.0, size = subtitle_fs, colour = "black",family = font_subtitle),
    plot.title =element_text(hjust = 0.0, size = title_fs, colour = "black",family = font_title),
-   panel.background = element_rect(fill = "#F5F5F5", color = NA),  # light gray background
-   plot.background = element_rect(fill = "white", color = NA),     # keep outer plot white
+   panel.background = element_rect(fill = 'transparent', color = NA),  # light gray background
+   plot.background = element_rect(fill = 'transparent', color = NA),     # keep outer plot white
     ) +
   # header row
   annotate("text", x = 0.85, y = header_y, label = "Effect", hjust = 0.4, 
@@ -190,7 +190,7 @@ table <- ggplot(df, aes(y = y_pos)) + # rows with double spacing
     expand = expansion(add = 1)
   ) +
  labs(
-    title = "Self-Efficacy And Hope Predictors", 
+    title = "Self-Efficacy and Hope for the Future Predictors", 
     subtitle = "Ordered from <span style ='color: #EF4A66;'>largest</span> to <span style ='color: #F9A3AF;'>smallest </span>effect",
     caption = paste("+ means a protective effect, or an increase in self-efficacy and hope.",
                     "- means a worsening effect, or a decrease in self-efficacy and hope.",
@@ -210,8 +210,8 @@ table <- ggplot(df, aes(y = y_pos)) + # rows with double spacing
     plot.caption = element_text(hjust = 0.0, size = caption_fs, colour = "black", family = font_caption),
     plot.subtitle =element_markdown(hjust = 0.0, size = subtitle_fs, colour = "black",family = font_subtitle),
     plot.title =element_text(hjust = 0.0, size = title_fs, colour = "black",family = font_title),
-    panel.background = element_rect(fill = "#F5F5F5", color = NA),  # light gray background
-    plot.background = element_rect(fill = "white", color = NA),     # keep outer plot white
+    panel.background = element_rect(fill = 'transparent', color = NA),  # light gray background
+    plot.background = element_rect(fill = 'transparent', color = NA),     # keep outer plot white
   ) +
   # header row
   annotate("text", x = 0.85, y = header_y, label = "Effect", hjust = 0.4, 
