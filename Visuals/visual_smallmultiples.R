@@ -20,7 +20,7 @@ library(scales)
 library(kableExtra)
 library(flextable)
 library(ggchicklet)
-library(GGRidge)
+# library(GGRidge)
 
 
 #Load BV styling, colors and fonts

@@ -68,7 +68,7 @@ df_dm <- fx_create_df(con, tables, "Positive Identity And Self-Worth", "dm", "to
 fx_vis_smallmultiples(df = df_dm, title_text = 'Community involvement matters to youth confidence and hope, but immigrant, unhoused, and systems-impacted youth are least likely to have opportunities to engage with their community'
                       , subtitle_text = "There are ways for me to get involved in my community",
                       likert_factors = true_factors, graph_orderby = "Always true",
-                      insert_gradient = dark_pink_gradient)
+                      insert_gradient = green_gradient)
 
 
 # ####visualizing key findings for Youth Council presentation 10/19/24 (NOTE: Charts are archived since data has been updated since then)#### 
