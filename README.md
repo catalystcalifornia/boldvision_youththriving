@@ -135,14 +135,14 @@ library(ggchicklet)
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 # Citation
-To cite Bold Vision, please use the following:
+To cite Bold Vision:
 Catalyst California; BOLD VISION, boldvisionla.org, 2024.
 
 To cite Bold Vision Youth Thriving Survey Report: 
 Catalyst California. [Bold Vision Youth Thriving Survey Report]. Los Angeles, CA: Bold Vision, 2025. [https://www.boldvisionla.org/news-updates/]
 
 To cite Bold Vision Youth Thriving Survey: 
-Catalyst California and the Social Justice Learning
+Catalyst California and the Social Justice Learning Institute, Bold Vision Youth Thriving Survey, 2024.
 
 # About Catalyst California
 
