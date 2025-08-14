@@ -45,7 +45,7 @@ We defined ten components to youth thriving based on our literature review, inpu
 
 We developed the BVYTS based on these 10 components but prioritized specific items to keep the survey manageable for youth completion. We selected components and questions based on SAG feedback, youth group interviews, ICSS expertise, Bold Vision's priorities, and data gaps not covered in Bold Vision's Midterm report.  
 
-| Domain                         | Description |   
+| Components                         | Description |   
 | ----------------------------- | -------|
 | Strong Minds and Bodies | Youth having positive mental and physical health, which includes but is not limited to positive emotions, health behaviors, and cognitive development. |
 | Positive Identity and Self-Worth | Youth having a strong sense of self, purpose, self-worth, and hope for the future. |  
