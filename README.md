@@ -1,4 +1,4 @@
-# Bold Vision Youth Thriving Survey 
+# Bold Vision Youth Thriving Survey 2025
 
 <img src="https://www.boldvisionla.org/wp-content/uploads/2022/09/Bold-Vision-Light-Logo.png" alt="Bold Vision Logo">
 
@@ -30,7 +30,7 @@ Data is a vital tool to measure how youth of color are thriving, or lacking the 
 
 # About the Bold Vision Youth Thriving Survey
 
-The Bold Vision Youth Thriving Survey (BVYTS) aims to uplift the voices of young people and provides a better understanding of the factors influencing their lives—directly from their perspectives. Through collaboration with more than 40 youth-serving community-based organizations (CBOs), the survey reached a diverse and large sample of young people across L.A. County. The survey offers invaluable insight into what youth need to thrive, and where change is most urgently needed. Read the report on the first analysis and findings from the survey data [here](INSERT LINK). 
+The Bold Vision Youth Thriving Survey analyzed responses from over 3,000 youth in LA County ages 15-24. The survey is the first of its kind survey that provides policymakers with insights on the factors influencing the ability of L.A. County youth to thrive—from their own perspectives. The survey aims to uplift the voices of young people and provides a better understanding of the factors influencing their lives—directly from their perspectives. Through collaboration with more than 40 youth-serving community-based organizations (CBOs), the survey reached a diverse and large sample of young people across L.A. County. The survey offers invaluable insight into what youth need to thrive, and where change is most urgently needed. Read the report on the first analysis and findings from the survey data [here](INSERT LINK). 
 
 # Acknowledgement and Partners
 
