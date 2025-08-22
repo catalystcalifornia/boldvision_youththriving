@@ -173,7 +173,7 @@ title_block <- ggplot() +
     title = "Average Expected <span style ='color: #F75EC1;'>Psychological Distress</span>",
     subtitle = paste(
       "L.A. County youth are not all thriving equally. LGBTQIA+, unhoused, immigrant, and",
-      "systems-impacted youth are experiencing more psychological distress than other youth.",
+      "systems-impacted youth experience more psychological distress than other youth.",
       sep = "\n"
     )
     ) +
@@ -398,7 +398,7 @@ color_low <-"#C4F0DC" # low color for ramp
 color_high <-"#00864A" # high color for ramp
 title_text <- "Average Expected <span style ='color: #00864A;'>Caring Families and Relationships</span>" # replace color hex and name between <>
 subtitle_text <- paste("All youth should have support from their families and other adults in their lives. Unhoused",
-                        "systems-impacted, and immigrant youth are least likely to feel they have someone to go to.",
+                        "systems-impacted, and immigrant youth are least likely to have these caring relationships.",
                         sep = "\n")
 
 circular_plot(component_input,component_folder,color_low, color_high,title_text,subtitle_text)
