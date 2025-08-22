@@ -188,7 +188,7 @@ caption_block <- ggplot() +
   labs(
        caption = paste(
       "\nCatalyst California's calculations of Bold Vision Youth Thriving Survey, 2024. Note: AIAN=American Indian",
-      "& Alaska Native; NHPI: Native Hawaiian & Pacific Islander; SWANA=Southwest Asian & North African.",
+      "& Alaska Native; NHPI=Native Hawaiian & Pacific Islander; SWANA=Southwest Asian & North African.",
       "For more information, see the 2025 Bold Vision Youth Thriving Report Methodology.",
       sep = "\n"
     )
@@ -299,7 +299,7 @@ circular_plot <- function(component_input,component_folder,color_low, color_high
     labs(
       caption = paste(
         "\nCatalyst California's calculations of Bold Vision Youth Thriving Survey, 2024. Note: AIAN=American Indian",
-        "& Alaska Native; NHPI: Native Hawaiian & Pacific Islander; SWANA=Southwest Asian & North African.",
+        "& Alaska Native; NHPI=Native Hawaiian & Pacific Islander; SWANA=Southwest Asian & North African.",
         "For more information, see the 2025 Bold Vision Youth Thriving Report Methodology.",
         sep = "\n"
       )
