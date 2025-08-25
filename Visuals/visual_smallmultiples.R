@@ -193,7 +193,7 @@ fx_vis_smallmultiples <- function(df, title_text, subtitle_text, likert_factors,
        caption= paste(
          "Data Source: Catalyst California's calculations of Bold Vision Youth Thriving Survey, 2024. *Unstable for",
          "policy purposes; groups with fewer than five individuals are omitted for privacy purposes. AIAN=American",  
-         "Indian and Alaska Native; NHPI=Native Hawaiian & Pacific Islander; SWANA=Southwest Asian & North African.", 
+         "Indian & Alaska Native; NHPI=Native Hawaiian & Pacific Islander; SWANA=Southwest Asian & North African.", 
          "For more information, see the 2025 Bold Vision Youth Thriving Report Methodology.",
          sep="\n"
          )) +
