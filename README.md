@@ -1,4 +1,5 @@
-# Brighter Futures: The Bold Vision Youth Thriving Survey, September 2025
+# Brighter Futures: The Bold Vision Youth Thriving Survey
+September 2025
 
 <img src="https://www.boldvisionla.org/wp-content/uploads/2022/09/Bold-Vision-Light-Logo.png" alt="Bold Vision Logo">
 
@@ -29,27 +30,25 @@
 
 # About Bold Vision
 
-[Bold Vision](https://www.boldvisionla.org/) is a multi-sector, multi-generational initiative that aims to fundamentally improve the lives of Black Indigenous People of Color (BIPOC) children and youth, creating lasting change in our communities by expanding paths towards success for young people across Los Angeles County. Thanks to decades of power-building, Los Angeles is reaching a tipping point. This tipping point is an opportunity for youth of color and allies to eliminate existing inequities and transform public systems into ones of support, not suppression. The task before us is to follow the lead of youth of color, and commit to the investments, advocacy, and power-building needed to finally uproot inequities from our public systems. 
-
-Bold Vision’s central goal is to promote BIPOC youth thriving. To accomplish this goal, Bold Vision develops youth leadership and builds youth-led systems change campaigns. Data is a vital tool to measure how youth of color are thriving, or lacking the resources and guidance necessary to reaching their fullest potential. Bold Vision released its first data-driven report measuring how well youth are thriving across Los Angeles in 2022 and a follow up midterm report in 2024 with updated indicators. These [reports](https://www.boldvisionla.org/issue/) document the racial and geographic inequities youth face in the county. But what remained missing was a deeper, more nuanced understanding of how young people themselves perceive their own well-being, and the complex factors that contribute to or inhibit their ability to thrive. The Bold Vision Youth Thriving Survey (BVYTS) aims to fill that gap. Through collaboration with more than 40 youth-serving community-based organizations (CBOs), the BVYTS collected responses from over 3,000 youth ages 15-24 in L.A. County. 
+[Bold Vision](https://www.boldvisionla.org/) is a multi-sector, multi-generational initiative that aims to fundamentally improve the lives of Black Indigenous People of Color (BIPOC) children and youth, creating lasting change in our communities by expanding paths towards success for young people across Los Angeles County. Bold Vision’s central goal is to promote BIPOC youth thriving. To accomplish this goal, Bold Vision develops youth leadership and builds youth-led systems change campaigns. Data is a vital tool to measure how youth of color are thriving, or lacking the resources and guidance necessary to reaching their fullest potential. To taht end, Bold Vision released its first data-driven report measuring how well youth are thriving across Los Angeles in 2022 and a follow up mid-term report in 2024 with updated indicators. These [reports](https://www.boldvisionla.org/issue/) document the racial and geographic inequities youth face in the county. What remained missing was a deeper, more nuanced understanding of how young people themselves perceive their own well-being, and the complex factors that contribute to or inhibit their ability to thrive. The Bold Vision Youth Thriving Survey (BVYTS) aims to fill that gap. Through collaboration with more than 40 youth-serving community-based organizations (CBOs), the BVYTS collected responses from over 3,000 youth ages 15-24 in L.A. County. 
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 # About the Bold Vision Youth Thriving Survey
 
-The BVYTS is the first and largest of its kind in L.A. County, providing a powerful, inclusive look at how young people of all identities are doing—from their own perspectives. It provides a path forward, grounded in data, for understanding what drives youth thriving in L.A. County and where action is most needed to improve youth thriving.
+The BVYTS is the first and largest of its kind survey in L.A. County, providing a powerful, inclusive look at how young people of all identities are doing—from their own perspectives. It provides a path forward, grounded in data, for understanding what drives youth thriving in L.A. County and where action is most needed to improve youth thriving. The survey was distributed through 41 CBOs and eight community events. CBO's youth leaders also invited their friends to complete the survey. In total, 3,444 valid survey responses were collected.
 
-The survey included 62 questions over seven different components of youth thriving. Bold Vision identified youth thriving components based on reviewing prior research, engaging subject matter experts, and speaking with young people. Components included: strong mental health and minds, positive identity and hope, supportive social connections, vibrant communities, safety, cultural identity, and racial equity, opportunity, and inclusion. The survey also included 15 demographic questions to measure differences in youth thriving across and within youth subgroups. Some of these included race, immigration status, sexual orientation or gender identification, age, housing status, criminal legal system involvement, and employment/ education status. 
+The BVYTS included 62 questions across seven different components of youth thriving. Bold Vision identified these components based on prior research and engaging subject matter experts and young people. Components included: strong mental health and minds, positive identity and hope, supportive social connections, vibrant communities, safety, cultural identity, and racial equity, opportunity, and inclusion. The survey also included 15 demographic questions to measure differences in youth thriving across and within youth subgroups. Some of these included race, immigration status, sexual orientation or gender identification, age, housing status, criminal legal system involvement, and employment/ education status. 
 
-The questionnaire and sampling strategy were developed through a community-engaged process, drawing on existing youth thriving measures, findings from youth interviews and prior research, and guidance from Bold Vision’s former Community Council alongside the Survey Advisory Group—a collaborative of youth development and survey experts co-facilitated by Imoyase Community Support Services (ICSS) and Catalyst California. The survey was distributed through 41 CBOs and eight community events. CBO's youth leaders also invited their friends to complete the survey.
+The questionnaire and sampling strategy were developed through a community-engaged process, drawing on existing youth thriving measures, findings from youth interviews and prior research, and guidance from Bold Vision’s former Community Council alongside the Survey Advisory Group—a collaborative of youth development and survey experts co-facilitated by Imoyase Community Support Services (ICSS) and Catalyst California. 
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 # Acknowledgements
 
-We thank and acknowledge everyone who played a role in developing and implementing the BVYTS. [Catalyst California](https://www.catalystcalifornia.org/) has served as the lead research consultant for the initiative. The Social Justice Learning Institute (SJLI), under the guidance of the Youth Council and Steering Committee, serves as the anchor organization for Bold Vision. We would like to thank the former Bold Vision Community Council, Bold Vision Youth Council, Bold Vision Steering Committee, and members of Bold Vision’s Survey Advisory Group for their contributions. Feedback from these stakeholders was imperative to Catalyst California creating, conducting, and analyzing BVYTS responses. 
+This work would not have been possible without deep collaboration from our research partners and the community-based organizations that collected surveys. [Catalyst California](https://www.catalystcalifornia.org/) serves as the lead research consultant for the initiative. The [Social Justice Learning Institute](https://sjli.org/) (SJLI), under the guidance of the Youth Council and Steering Committee, serves as the anchor organization for Bold Vision. We would like to thank the former Bold Vision Community Council, Bold Vision Youth Council, Bold Vision Steering Committee, and members of the Bold Vision Survey Advisory Group (SAG) for their contributions. Feedback from these stakeholders was imperative to Catalyst California creating, conducting, and analyzing the BVYTS responses. 
 
-This work would not have been possible without deep collaboration from our research partners and the community-based organizations that collected surveys. We would like to thank Imoyase Community Support Services and the Community Health Equity Group for their contributions to designing and implementing the Bold Vision Youth Thriving Survey. Cheryl Grills, Ph.D., Sandra Villanueva, Ph.D., Elia De La Cruz Toledo He, Ph.D., Peter Rej, Ph.D., Diane Terry, Ph.D., and other staff at Imoyase Community Support Services conducted the literature review for the survey and led the design of the survey questionnaire and sampling plan. Jason Douglas, Ph.D. (University of California Irvine), Andy Subica, Ph.D. (UC Riverside), Aerika Loyd, Ph.D. (UC Riverside), and UC Irvine (UCI) graduate researchers led the data collection and received Institutional Review Board approval for the survey implementation from UCI. We would also like to thank the 40 youth-serving organizations who distributed the BVYTS and helped this survey represent a broad cross-section of L.A. County youth.  
+We would like to thank Imoyase Community Support Services and the Community Health Equity Group for their contributions to designing and implementing the Bold Vision Youth Thriving Survey. Cheryl Grills, Ph.D., Sandra Villanueva, Ph.D., Elia De La Cruz Toledo He, Ph.D., Peter Rej, Ph.D., Diane Terry, Ph.D., and other staff at Imoyase Community Support Services conducted the literature review for the survey and led the design of the survey questionnaire and sampling plan. Jason Douglas, Ph.D. (University of California Irvine), Andy Subica, Ph.D. (UC Riverside), Aerika Loyd, Ph.D. (UC Riverside), and UC Irvine (UCI) graduate researchers led the data collection and received Institutional Review Board approval for the survey implementation from UCI. We would also like to thank the 40 youth-serving organizations who distributed the BVYTS and helped this survey represent a broad cross-section of L.A. County youth.  
 
 Lastly, we would like to thank the Bold Vision Survey Advisory Group members who have helped shaped the survey and report since 2022. This includes: Dr. David Turner, Assistant Professor of Black Life & Racial Justice, University of California Los Angeles; Dr. Fiorella Carlos Chavez, Assistant Professor in Community Health, Arizona State University; Royce Park, Assistant Director of Survey Planning and Operations for the California Health Interview Survey, University of California Los Angeles; Sahar Moheize, Research, Policy, & Innovation Director, L.A. County Department of Youth Development; Dr. Veronica Terriquez, Associate Professor of Sociology, University of California Los Angeles; and Dr. Yan Cui, Supervising Epidemiologist, L.A. County Department of Public Health.
 
@@ -57,17 +56,17 @@ Lastly, we would like to thank the Bold Vision Survey Advisory Group members who
 
 # About the BVYTS Components 
 
-We originally identified ten components to youth thriving based on our literature review, input from the Survey Advisory Group (SAG), and feedback from youth engagement. We developed the BVYTS based on these 10 components, but prioritized specific items to keep the survey manageable for youth to complete. Seven components were selected to be measured in the BVYTS based on SAG feedback, youth group interviews, ICSS expertise, Bold Vision's priorities, and data gaps not covered in Bold Vision's Mid-term report. These components were further refined and split into subcomponents as needed based on our factor analysis. The final seven components, and their respective subcomponents, from our analysis included:
+We originally identified ten components to youth thriving based on a literature review, input from the SAG, and feedback from youth. We developed the BVYTS based on these 10 components, but prioritized specific items to shorten the length of the survey. Seven components were selected to be measured in the BVYTS based on SAG feedback, youth group interviews, ICSS expertise, Bold Vision's priorities, and data gaps not covered in Bold Vision's prior reports. These components were further refined and split into subcomponents as needed based on our data analysis. The final seven components, and their respective subcomponents, from our analysis included:
 
 
-| Components                         | Description |   
+| Component                         | Description |   
 | ----------------------------- | -------|
 | Strong Mental Health and Minds | A positive mental health, cognitive development, and emotions. <br>Including the subcomponent psychological distress. |
-| Positive Identity and Hope | A strong sense of self, self-efficacy, purpose, and hope for the future. <br>Including the subcomponent self-efficacy and hope for the future and sparks. In the Brighter Futures report, we treat sparks as a separate component given that it works as a predictor of self-efficacy/hope and psychological distress. |  
+| Positive Identity and Hope | A strong sense of self, self-efficacy, purpose, and hope for the future. <br>Including the subcomponent self-efficacy and hope for the future and sparks.<br>In the Brighter Futures report, we treat sparks as a separate component given that it works as a predictor of youth thriving. |  
 | Supportive Social Connections | Stable, caring relationships, and connections with one's community. <br>Including the subcomponents caring families and relationships and opportunities for community involvement. |
+| Racial Equity, Opportunity, and Inclusion | Feeling accepted in all spaces without the threat of being treated unfairly due to one's racial identity. <br>Including the subcomponents microaggressions and structural racism.<br>In the Brighter Futures report, we treat cultural identity as a subcomponent to Racial Equity, Opportunity, and Inclusion given their relationship. | 
+| Cultural Identity | Feeling connected to one's culture or traditions. <br>This component is also considered a subcomponent to Racial Equity, Opportunity, and Inclusion in the Brighter Futures report. |
 | Vibrant Communities | Safe access to local resources and public spaces in one's community.<br>This component is not discussed in detail in the Brighter Futures report. | 
-| Racial Equity, Opportunity, and Inclusion | Feeling accepted in all spaces without the threat of being treated unfairly due to one's racial identity. <br>Including the subcomponents microaggressions and structural racism. In the Brighter Futures report, we treat cultural identity as a subcomponent to Racial Equity, Opportunity, and Inclusion given their relationship. | 
-| Cultural Identity | Feeling connected to one's culture or traditions. <br>This component is also considered as a subcomponent to Racial Equity, Opportunity, and Inclusion in the Brighter Futures report. |
 | Safety | Feeling safe in one's neighborhoods. <br>This component is not discussed in detail in the Brighter Futures report. | 
 
 <p align="right">(<a href="#top">back to top</a>)</p>
@@ -128,6 +127,7 @@ We used several R packages to analyze data and perform different functions, incl
 * scales
 * kableExtra
 
+To install these in your R environment, you may use:
 
 ```
 list.of.packages <- c("dplyr","sf","tidyr","usethis","RPostgres","readxl","stringr","rpostgis","ggplot2","janitor","purrr","tidyverse","data.table","srvyr","survey","tidycensus","forcats","lavaan","psych","fastDummies","car","extrafont","showtext","ggtext","patchwork","scales","kableExtra)
@@ -187,10 +187,10 @@ library(kableExtra)
 
 # Citation
 
-To cite Brighter Futures: The Bold Vision Youth Thriving Survey report: 
+To cite Brighter Futures: The Bold Vision Youth Thriving Survey report: <br>
 Catalyst California. *Brighter Futures: The Bold Vision Youth Thriving Survey*. Los Angeles, CA: Bold Vision, 2025. https://www. boldvisionla.org/reports/.
 
-To cite the Bold Vision Youth Thriving Survey: 
+To cite the Bold Vision Youth Thriving Survey: <br>
 Catalyst California and the Social Justice Learning Institute, Bold Vision Youth Thriving Survey, 2024.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
