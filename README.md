@@ -188,7 +188,7 @@ library(kableExtra)
 # Citation
 
 To cite Brighter Futures: The Bold Vision Youth Thriving Survey report: <br>
-Catalyst California. *Brighter Futures: The Bold Vision Youth Thriving Survey*. Los Angeles, CA: Bold Vision, 2025. https://www. boldvisionla.org/reports/.
+Catalyst California. *Brighter Futures: The Bold Vision Youth Thriving Survey*. Los Angeles, CA: Bold Vision, 2025. https://www.boldvisionla.org/reports/.
 
 To cite the Bold Vision Youth Thriving Survey: <br>
 Catalyst California and the Social Justice Learning Institute, Bold Vision Youth Thriving Survey, 2024.
