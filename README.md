@@ -63,11 +63,11 @@ We originally identified ten components to youth thriving based on our literatur
 | Components                         | Description |   
 | ----------------------------- | -------|
 | Strong Mental Health and Minds | A positive mental health, cognitive development, and emotions. <br>Including the subcomponent psychological distress. |
-| Positive Identity and Hope | A strong sense of self, self-efficacy, purpose, and hope for the future. <br>Including the subcomponent self-efficacy and hope for the future and sparks. In the Brighter Futures report, we treat sparks as a separate component.|  
+| Positive Identity and Hope | A strong sense of self, self-efficacy, purpose, and hope for the future. <br>Including the subcomponent self-efficacy and hope for the future and sparks. In the Brighter Futures report, we treat sparks as a separate component given that it works as a predictor of self-efficacy/hope and psychological distress. |  
 | Supportive Social Connections | Stable, caring relationships, and connections with one's community. <br>Including the subcomponents caring families and relationships and opportunities for community involvement. |
-| Vibrant Communities | Safe access to local resources and public spaces in one's community. | 
+| Vibrant Communities | Safe access to local resources and public spaces in one's community.<br>This component is not discussed in detail in the Brighter Futures report. | 
 | Racial Equity, Opportunity, and Inclusion | Feeling accepted in all spaces without the threat of being treated unfairly due to one's racial identity. <br>Including the subcomponents microaggressions and structural racism. In the Brighter Futures report, we treat cultural identity as a subcomponent to Racial Equity, Opportunity, and Inclusion given their relationship. | 
-| Cultural Identity | Feeling connected to one's culture or traditions. <br>This component is also considered as a subcomponent to Racial Equity, Opportunity, and Inclusion in the Brighter Futures report. | 
+| Cultural Identity | Feeling connected to one's culture or traditions. <br>This component is also considered as a subcomponent to Racial Equity, Opportunity, and Inclusion in the Brighter Futures report. |
 | Safety | Feeling safe in one's neighborhoods. <br>This component is not discussed in detail in the Brighter Futures report. | 
 
 <p align="right">(<a href="#top">back to top</a>)</p>
