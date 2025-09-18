@@ -13,6 +13,21 @@ options(scipen=999)
 source("W:\\RDA Team\\R\\credentials_source.R")
 con <- connect_to_db("bold_vision")
 
+# START AV
+filipinx_data <- dbGetQuery(con, "SELECT * FROM youth_thriving.race_ethnicity_data
+                            WHERE detailed_asian LIKE '%Filipino%' OR detailed_nhpi LIKE '%Filipino%'")
+
+sum(filipinx_data$race_asian)
+sum(filipinx_data$race_nhpi)
+
+# 75 Filipinx respondents identified as Asian American
+sum(filipinx_data$av, na.rm=TRUE)
+# 8 Filipinx respondents identified as NHPI
+sum(filipinx_data$aw, na.rm=TRUE)
+
+sort(table(filipinx_data$detailed_race)
+)# END AV
+
 #raw survey data 
 svy_data_raw <- dbGetQuery(con, "SELECT * FROM youth_thriving.raw_survey_data")
 #data dictionary
