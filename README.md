@@ -5,6 +5,10 @@ September 2025
 
 <br>
 
+[Read the report](https://www.boldvisionla.org/reports/)
+
+[Read the methodology](https://github.com/catalystcalifornia/boldvision_youththriving/blob/main/Brighter%20Futures%20Bold%20Vision%20Youth%20Thriving%20Survey%20Report%20Methodology%20Sep%202025.pdf)
+
 <details>
   <summary>Table of Contents</summary>
   <ol>
@@ -24,9 +28,6 @@ September 2025
   </ol>
 </details>
 
-[Read the report](https://www.boldvisionla.org/reports/)
-
-[Read the methodology](add link)
 
 # About Bold Vision
 
@@ -46,11 +47,11 @@ The questionnaire and sampling strategy were developed through a community-engag
 
 # Acknowledgements
 
-This work would not have been possible without deep collaboration from our research partners and the community-based organizations that collected surveys. [Catalyst California](https://www.catalystcalifornia.org/) serves as the lead research consultant for the initiative. The [Social Justice Learning Institute](https://sjli.org/) (SJLI), under the guidance of the Youth Council and Steering Committee, serves as the anchor organization for Bold Vision. We would like to thank the former Bold Vision Community Council, Bold Vision Youth Council, Bold Vision Steering Committee, and members of the Bold Vision Survey Advisory Group (SAG) for their contributions. Feedback from these stakeholders was imperative to Catalyst California creating, conducting, and analyzing the BVYTS responses. 
+This work would not have been possible without deep collaboration from our research partners and the community-based organizations that collected surveys. [Catalyst California](https://www.catalystcalifornia.org/) serves as the lead research consultant for the initiative. The [Social Justice Learning Institute](https://sjli.org/) (SJLI), under the guidance of the Youth Council and Steering Committee, serves as the anchor organization for Bold Vision. We would like to thank the former Bold Vision Community Council, Bold Vision Youth Council, Bold Vision Steering Committee, and members of the Bold Vision Survey Advisory Group (SAG) for their contributions. Feedback from these stakeholders was imperative to Catalyst California designing and analyzing the BVYTS. 
 
 We would like to thank Imoyase Community Support Services and the Community Health Equity Group for their contributions to designing and implementing the Bold Vision Youth Thriving Survey. Cheryl Grills, Ph.D., Sandra Villanueva, Ph.D., Elia De La Cruz Toledo He, Ph.D., Peter Rej, Ph.D., Diane Terry, Ph.D., and other staff at Imoyase Community Support Services conducted the literature review for the survey and led the design of the survey questionnaire and sampling plan. Jason Douglas, Ph.D. (University of California Irvine), Andy Subica, Ph.D. (UC Riverside), Aerika Loyd, Ph.D. (UC Riverside), and UC Irvine (UCI) graduate researchers led the data collection and received Institutional Review Board approval for the survey implementation from UCI. We would also like to thank the 41 youth-serving organizations who distributed the BVYTS and helped this survey represent a broad cross-section of L.A. County youth.  
 
-Lastly, we would like to thank the Bold Vision Survey Advisory Group members who have helped shaped the survey and report since 2022. This includes: Dr. David Turner, Assistant Professor of Black Life & Racial Justice, University of California Los Angeles; Dr. Fiorella Carlos Chavez, Assistant Professor in Community Health, Arizona State University; Royce Park, Assistant Director of Survey Planning and Operations for the California Health Interview Survey, University of California Los Angeles; Sahar Moheize, Research, Policy, & Innovation Director, L.A. County Department of Youth Development; Dr. Veronica Terriquez, Associate Professor of Sociology, University of California Los Angeles; and Dr. Yan Cui, Supervising Epidemiologist, L.A. County Department of Public Health.
+Lastly, we would like to thank the Bold Vision Survey Advisory Group members who have helped shape the survey and report since 2022. This includes: Dr. David Turner, Assistant Professor of Black Life & Racial Justice, University of California Los Angeles; Dr. Fiorella Carlos Chavez, Assistant Professor in Community Health, Arizona State University; Royce Park, Assistant Director of Survey Planning and Operations for the California Health Interview Survey, University of California Los Angeles; Sahar Moheize, Research, Policy, & Innovation Director, L.A. County Department of Youth Development; Dr. Veronica Terriquez, Associate Professor of Sociology, University of California Los Angeles; and Dr. Yan Cui, Supervising Epidemiologist, L.A. County Department of Public Health.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -73,7 +74,7 @@ We originally identified ten components to youth thriving based on a literature 
 
 # Methodolody and Report
 
-To learn more about the detailed methodology behind the BVYTS data collection and analysis, please see the methodology documentation [here](INSERT LINK).
+To learn more about the detailed methodology behind the BVYTS data collection and analysis, please see the methodology documentation [here](https://github.com/catalystcalifornia/boldvision_youththriving/blob/main/Brighter%20Futures%20Bold%20Vision%20Youth%20Thriving%20Survey%20Report%20Methodology%20Sep%202025.pdf).
 
 To read the findings from the survey analysis, please see Bold Vision's Brighter Futures: The Bold Vision Youth Thriving Survey report [here](https://www.boldvisionla.org/reports/). 
 
