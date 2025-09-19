@@ -3,11 +3,12 @@ September 2025
 
 <img src="https://www.boldvisionla.org/wp-content/uploads/2022/09/Bold-Vision-Light-Logo.png" alt="Bold Vision Logo">
 
-<br>
 
 [Read the report](https://www.boldvisionla.org/reports/)
 
 [Read the methodology](https://github.com/catalystcalifornia/boldvision_youththriving/blob/main/Brighter%20Futures%20Bold%20Vision%20Youth%20Thriving%20Survey%20Report%20Methodology%20Sep%202025.pdf)
+
+<br>
 
 <details>
   <summary>Table of Contents</summary>
