@@ -239,13 +239,13 @@ final_plot <- title_block / p  / caption_block + plot_layout(heights=c(.06,.93,.
 
 showtext_opts(dpi=300)
 
-ggsave(plot=final_plot, 
-       file="./Visuals/Strong Minds/circular_plot_Psychological_Distress.png",
-       units = c("in"),  width = 7, height = 6)
-
-ggsave(plot=final_plot, 
-       file="./Visuals/Strong Minds/circular_plot_Psychological_Distress.pdf",
-       units = c("in"),  width = 7, height = 6)
+# ggsave(plot=final_plot, 
+#        file="./Visuals/Strong Minds/circular_plot_Psychological_Distress.png",
+#        units = c("in"),  width = 7, height = 6)
+# 
+# ggsave(plot=final_plot, 
+#        file="./Visuals/Strong Minds/circular_plot_Psychological_Distress.pdf",
+#        units = c("in"),  width = 7, height = 6)
 
 
 # Step 5: Make a function for circular bar plot -------
@@ -375,7 +375,7 @@ subtitle_text <- paste("All youth should live without experiencing structural ra
                        "unhoused, and LGBTQIA+ youth experience structural racism the most.",
                        sep = "\n")
 
-circular_plot(component_input,component_folder,color_low, color_high,title_text,subtitle_text)
+# circular_plot(component_input,component_folder,color_low, color_high,title_text,subtitle_text)
 # works
 
 ### Microaggressions -------
@@ -388,7 +388,7 @@ subtitle_text <- paste("L.A. County youth vary in how likely they are to experie
   "Black, unhoused, and SWANA youth are most likely to be subject to microaggressions.",
   sep = "\n")
 
-circular_plot(component_input,component_folder,color_low, color_high,title_text,subtitle_text)
+# circular_plot(component_input,component_folder,color_low, color_high,title_text,subtitle_text)
 
 
 ### Caring Families and Relationships -------
@@ -401,7 +401,7 @@ subtitle_text <- paste("All youth should have support from their families and ot
                         "systems-impacted, and immigrant youth are least likely to have these caring relationships.",
                         sep = "\n")
 
-circular_plot(component_input,component_folder,color_low, color_high,title_text,subtitle_text)
+# circular_plot(component_input,component_folder,color_low, color_high,title_text,subtitle_text)
 
 
 ### Self-Efficacy and Hope -------
@@ -415,7 +415,7 @@ subtitle_text <- paste("All youth should feel hopeful and confident. LGBTQIA+, A
                        sep = "\n"
 )
 
-circular_plot(component_input,component_folder,color_low, color_high,title_text,subtitle_text)
+# circular_plot(component_input,component_folder,color_low, color_high,title_text,subtitle_text)
 
 ### Cultural Identity -------
 component_input <- "Cultural Identity" # component being visualized for filtering and legend title
@@ -428,5 +428,120 @@ subtitle_text <- paste("All youth should be able to have a strong cultural ident
                        sep = "\n"
 )
 
-circular_plot(component_input,component_folder,color_low, color_high,title_text,subtitle_text)
+# circular_plot(component_input,component_folder,color_low, color_high,title_text,subtitle_text)
 
+# Individual chart for 1-pager -------
+# want a circular plot without title blocks
+# filter for the component
+df <- df_all %>% filter(component_label=='Psychological Distress')
+
+# factor labels for ordering subgroups
+df$youth_label_factor <- factor(df$youth_label, levels = subgroups)
+
+df <- df %>%
+  arrange(avg_adjusted)
+
+
+# ----- This section prepare a dataframe for labels ---- #
+# add id
+df$id<- seq(1, nrow(df))
+
+# Get the name and the y position of each label
+label_data <- df
+
+# calculate the ANGLE of the labels
+number_of_bar <- nrow(df)
+angle <-  90 - 360 * (label_data$id-0.5) /number_of_bar     # I substract 0.5 because the letter must have the angle of the center of the bars. Not extreme right(1) or extreme left (0)
+
+# calculate the alignment of labels: right or left
+# If I am on the left part of the plot, my labels have currently an angle < -90
+label_data$hjust<-ifelse( angle < -90, 1, 0)
+
+# flip angle BY to make them readable
+label_data$angle<-ifelse(angle < -90, angle+180, angle)
+# ----- ------------------------------------------- ---- #
+
+# # ----- #
+# # Title work separately to fix alignment
+# # Define the textual header using ggplot + ggtext::element_markdown
+# title_block <- ggplot() +
+#   theme_void() +
+#   labs(
+#     title = "Average Expected <span style ='color: #F75EC1;'>Psychological Distress</span>",
+#     subtitle = paste(
+#       "L.A. County youth are not all thriving equally. LGBTQIA+, unhoused, immigrant, and",
+#       "systems-impacted youth experience more psychological distress than other youth.",
+#       sep = "\n"
+#     )
+#   ) +
+#   theme(
+#     plot.title = element_markdown(hjust = 0, size = title_fs, family = font_title),
+#     plot.subtitle = element_text(hjust = 0, size = 14, family = font_subtitle),
+#     plot.margin = margin(t = 0, r = 0, b = -4, l = 0)
+#   )
+# 
+# caption_block <- ggplot() +
+#   theme_void() +
+#   labs(
+#     caption = paste(
+#       "\nCatalyst California's calculations of Bold Vision Youth Thriving Survey, 2024. Note: AIAN=American Indian",
+#       "& Alaska Native; NHPI=Native Hawaiian & Pacific Islander; SWANA=Southwest Asian & North African.",
+#       "For more information, see the 2025 Bold Vision Youth Thriving Report Methodology.",
+#       sep = "\n"
+#     )
+#   ) +
+#   theme(
+#     plot.caption = element_text(hjust = 0, size = caption_fs, family = font_caption),
+#     plot.margin = margin(t = -4, r = 0, b = 0, l = 0)
+#   )
+# 
+
+p <- ggplot(df, aes(x=as.factor(id), y=avg_adjusted, group=component_label)) +
+  geom_bar(aes(fill=avg_adjusted),stat = "identity", 
+           alpha=1, show.legend=FALSE) +  
+  scale_fill_gradient(
+    # "Psychological Distress",
+                      low="#FDE1F3", high="#F75EC1",
+                      breaks = c(min(df$avg_adjusted), max(df$avg_adjusted))
+                      # ,
+                      # labels=c("Lower","Higher"),
+                      # guide=guide_colorbar(title.position="top",title.hjust = .5,ticks=FALSE)
+  )+
+  scale_x_discrete(expand = c(0, 0)) +
+  ylim(-.25,1) +
+  ylab("")+
+  xlab("")+
+  theme_void() +
+  theme(aspect.ratio=1,
+        legend.title = element_text(hjust = 0.5,size = 9, family= font_axis_label),
+        legend.text = element_text(hjust = 0.5,size = 9, family= font_axis_label),
+        legend.position = "bottom", 
+        legend.margin=margin(-2,0,-5,0),
+        legend.box.margin=margin(-8,0,-8,0),
+        legend.key.height = unit(0.2, "cm"),
+        legend.key.width = unit(1, "cm"),
+        axis.text.y=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks=element_blank(),
+        axis.ticks.length = unit(0, "pt"),
+        axis.title.x=element_blank(),
+        # grid line style
+        panel.border=element_blank(),
+        panel.grid = element_blank(),
+        plot.margin = unit(c(0,-1.1,0,0),"cm")
+  ) + 
+  coord_polar(clip="off") +
+  # Add the labels, using the label_data dataframe that we have created before
+  geom_text(data=label_data, aes(x=id, y=avg_adjusted+.007, label=youth_label, hjust=hjust), color="black", family=font_axis_label,alpha=0.6, size=3.3, angle= label_data$angle, inherit.aes = FALSE ) 
+
+# final_plot <- title_block / p  / caption_block + plot_layout(heights=c(.06,.93,.01))
+
+showtext_opts(dpi=300)
+
+ggsave(plot=p, 
+       file="./Visuals/Strong Minds/circular_plot_Psychological_Distress_1pager.png",
+       units = c("in"),  width = 3, height = 3)
+
+ggsave(plot=p, 
+       file="./Visuals/Strong Minds/circular_plot_Psychological_Distress_1pager.pdf",
+       units = c("in"),  width = 3, height = 3)
