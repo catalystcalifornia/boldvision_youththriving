@@ -80,19 +80,31 @@ screened_sogi_data <- screened_sogi_data %>%
   select(-c(detailed_gender,detailed_sexuality))
 
 ### Race data screen -----
+race_vars <- dict %>% filter(variable_category=='race')
 
-## Race data - provided
+# drop race vars from the svy data as we'll send our cleaned variables in race_ethnicity_data
+omit_svy_race_vars <- race_vars$variable
+
+screened_svy_data <- screened_svy_data %>%
+  select(-all_of(omit_svy_race_vars))
+
+##### General race categories and nh_race first ----
 # Omit ba_clean, ba_original from provided data and from special request data
-# Omit bh_clean, bh_original from provided data and from special request data
-# Recode ba (from race_ethnicity_data) to just include 1/0 for Other in provided data
+# don't include "at" indigenous latinx or "ar"
+omit_race_vars <- c("ba_clean","ba_original","at","ar")
+
+screened_race_data <- screened_race_data %>%
+  select(-all_of(omit_race_vars))
+# Recode ba (other) (from race_ethnicity_data) to just include 1/0 for Other in provided data
+# don't include race_other (from race_ethnicity_data)
 # race_dwta (from race_ethnicity_data) do not include it
 # recode (az) to * in provided data do not include it
-# Recode bh (from race_ethnicity_data) to just include 1/0 for Other in provided data
-# Asian detailed_asian responses - but recode <=10 to Other in provided data
 # nh_race (from race_ethnicity_data) recode nh_other and do_not_wish to * in provided data
-# don't include "at" indigenous latinx or "ar"
 # only include race_aian_indigenous
-# don't include race_other (from race_ethnicity_data)
+
+# Asian detailed_asian responses - but recode <=10 to Other in provided data
+# Recode bh (from race_ethnicity_data) to just include 1/0 for Other in provided data
+# Omit bh_clean, bh_original from provided data and from special request data
 
 ## NHPI data - special request
 # Omit br_clean, br_original from provided data and from special request data
