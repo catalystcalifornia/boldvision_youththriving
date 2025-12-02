@@ -90,17 +90,35 @@ screened_svy_data <- screened_svy_data %>%
 
 ##### General race categories and nh_race first ----
 # Omit ba_clean, ba_original from provided data and from special request data
-# don't include "at" indigenous latinx or "ar"
+# don't include "at" indigenous latinx or "ar", we are only including the aggregate column race_aian_indigenous
 omit_race_vars <- c("ba_clean","ba_original","at","ar")
 
 screened_race_data <- screened_race_data %>%
-  select(-all_of(omit_race_vars))
-# Recode ba (other) (from race_ethnicity_data) to just include 1/0 for Other in provided data
+  select(-all_of(omit_race_vars)) %>%
+  mutate(ar_at=case_when(race_aian_indigenous==1 ~ 1,
+                         TRUE ~ NA))
+
+# check
+table(race$race_aian_indigenous,useNA='always')
+table(screened_race_data$ar_at,useNA='always') # using NA here to follow with the column formatting for the variable columns as opposed to the recoded columns
+
+# Recode ba (other) (from race_ethnicity_data) to just include 1/NA for Other in provided data
+# convert non na values to 1
+screened_race_data <- screened_race_data %>%
+  mutate(ba=case_when(
+    !is.na(ba) ~ 1,
+    TRUE ~ NA
+  ))
+
+# check
+table(race$ba,useNA='always')
+table(screened_race_data$ba,useNA='always')
+
+# nh_race (from race_ethnicity_data) recode nh_other and do_not_wish to * in provided data
+table(screened_race_data$nh_race,useNA='always')
 # don't include race_other (from race_ethnicity_data)
 # race_dwta (from race_ethnicity_data) do not include it
 # recode (az) to * in provided data do not include it
-# nh_race (from race_ethnicity_data) recode nh_other and do_not_wish to * in provided data
-# only include race_aian_indigenous
 
 # Asian detailed_asian responses - but recode <=10 to Other in provided data
 # Recode bh (from race_ethnicity_data) to just include 1/0 for Other in provided data
