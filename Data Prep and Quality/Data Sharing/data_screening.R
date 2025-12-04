@@ -91,7 +91,7 @@ screened_svy_data <- screened_svy_data %>%
 ##### General race categories and nh_race first ----
 # Omit ba_clean, ba_original from provided data and from special request data
 # don't include "at" indigenous latinx or "ar", we are only including the aggregate column race_aian_indigenous
-omit_race_vars <- c("ba_clean","ba_original","at","ar")
+omit_race_vars <- c("ba_clean","ba_original","at","ar","race_indigenous","race_aian")
 
 screened_race_data <- screened_race_data %>%
   select(-all_of(omit_race_vars)) %>%
@@ -100,31 +100,74 @@ screened_race_data <- screened_race_data %>%
 
 # check
 table(race$race_aian_indigenous,useNA='always')
-table(screened_race_data$ar_at,useNA='always') # using NA here to follow with the column formatting for the variable columns as opposed to the recoded columns
+table(screened_race_data$ar_at,useNA='always') # using NA here as opposed to 0 to follow with the column formatting for the variable columns as opposed to the recoded columns
 
-# Recode ba (other) (from race_ethnicity_data) to just include 1/NA for Other in provided data
-# convert non na values to 1
+# for nh_race (from race_ethnicity_data) recode nh_other and do_not_wish to -999 in provided data
+table(screened_race_data$nh_race,useNA='always')
+
 screened_race_data <- screened_race_data %>%
-  mutate(ba=case_when(
-    !is.na(ba) ~ 1,
-    TRUE ~ NA
+  mutate(nh_race=case_when(
+    nh_race=="do_not_wish" ~ "-999",
+    nh_race=="nh_other" ~ "-999",
+    TRUE ~ nh_race
   ))
 
 # check
-table(race$ba,useNA='always')
-table(screened_race_data$ba,useNA='always')
-
-# nh_race (from race_ethnicity_data) recode nh_other and do_not_wish to * in provided data
 table(screened_race_data$nh_race,useNA='always')
-# don't include race_other (from race_ethnicity_data)
-# race_dwta (from race_ethnicity_data) do not include it
-# recode (az) to * in provided data do not include it
+table(race$nh_race,useNA='always')
 
-# Asian detailed_asian responses - but recode <=10 to Other in provided data
-# Recode bh (from race_ethnicity_data) to just include 1/0 for Other in provided data
-# Omit bh_clean, bh_original from provided data and from special request data
+# don't include race_other (from race_ethnicity_data) and race_dwta in provided data, combine columns az and ba into one
+omit_race_vars_2<-c("race_other","race_dwta","az","ba")
 
-## NHPI data - special request
+screened_race_data <- screened_race_data %>%
+  mutate(az_ba=case_when(race_other==1 ~ 1,
+                         race_dwta==1 ~ 1,
+                         TRUE ~ NA)) %>%
+  mutate(race_other_dwta=ifelse(az_ba==1, 1, 0) ) %>%
+  select(-all_of(omit_race_vars_2))
+  
+table(screened_race_data$az_ba,useNA='always')
+table(screened_race_data$race_other_dwta,useNA='always')
+table(race$race_other,useNA='always')
+table(race$race_dwta,useNA='always')
+
+# recoded detailed race response below 10 to Another category
+# values below 10
+screen_race <- screened_race_data %>% count(detailed_race) %>% filter(n<=10)
+
+# convert values below 10 to -999
+screened_race_data <- screened_race_data %>%
+  mutate(detailed_race=case_when(
+    detailed_race %in% screen_race$detailed_race ~ "Another Race Alone or In Combination (suppressed)",
+    TRUE ~ detailed_race
+  ))
+
+# check
+sum(screen_race$n)
+screened_race_data %>% filter(detailed_race=="Another Race Alone or In Combination (suppressed)") %>% count(detailed_race)
+
+##### Asian race categories ----
+# Include Asian detailed_asian responses - but recode <=10 to Other in provided data
+screen_asian <- screened_race_data %>% count(detailed_asian) %>% filter(n<=10)
+
+# convert values below 10 to -999
+screened_race_data <- screened_race_data %>%
+  mutate(detailed_asian=case_when(
+    detailed_asian %in% screen_asian$detailed_asian ~ "Another Asian Subgroup Alone or In Combination (suppressed)",
+    TRUE ~ detailed_asian
+  ))
+
+# check
+sum(screen_race$n)
+screened_race_data %>% filter(detailed_asian=="Another Asian Subgroup Alone or In Combination (suppressed)") %>% count(detailed_asian)
+
+# Omit bh_clean, bh_original from provided data and from special request data, variable #bh includes just a 1/0 response, keep that column
+omit_asian <- c("bh_clean","bh_original")
+
+screened_race_data <- screened_race_data %>%
+  select(-all_of(omit_asian))
+
+##### NHPI race categories ----
 # Omit br_clean, br_original from provided data and from special request data
 # Recode br (from race_ethnicity_data) to just include 1/0 for Other in special request data
 # Recode bk (from race_ethnicity_data) to Other in special request data
