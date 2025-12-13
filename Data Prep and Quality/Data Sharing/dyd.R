@@ -17,6 +17,7 @@ con <- connect_to_db("bold_vision")
 
 dict <- dbGetQuery(con, "SELECT * FROM youth_thriving.bvys_datadictionary_2024")
 
+# Prep data for export -------
 # Pull in screened svy data and filter for the variables they want
 svy_data <- dbGetQuery(con, "SELECT * FROM bvyts_data_sharing.screened_svy_data")
 
@@ -39,5 +40,30 @@ race <- race %>%
 
 # export data
 # Export to different sheets in one Excel file
-write_xlsx(list(Sheet1 = svy_data, Sheet2 = race, Sheet3 = systems), path = "W:/Project/OSI/Bold Vision/Youth Thriving Survey/Data/Data Sharing/BVYTS_LACDYD_Data_Sharing_Request_120825.xlsx")
+# write_xlsx(list(Sheet1 = svy_data, Sheet2 = race, Sheet3 = systems), path = "W:/Project/OSI/Bold Vision/Youth Thriving Survey/Data/Data Sharing/BVYTS_LACDYD_Data_Sharing_Request_120825.xlsx")
 
+# Prep data dictionaries for export -------
+# Pull in screened svy data and filter for the variables they want
+svy_dict <- dbGetQuery(con, "SELECT * FROM bvyts_data_sharing.screened_svy_data_dictionary")
+
+svy_dict <- svy_dict %>%
+  filter(variable %in% colnames(svy_data)) # select only variable entries that are in the data requested
+
+systems_dict <- dbGetQuery(con, "SELECT * FROM bvyts_data_sharing.screened_systems_unhoused_imgrtion_data_dictionary")
+
+systems_dict <- systems_dict %>%
+  filter(column_name %in% colnames(systems)) # select only variable entries that are in the data requested
+
+# not requested
+# sogi_dict <-  dbGetQuery(con, "SELECT * FROM bvyts_data_sharing.screened_sogi_data_dictionary")
+
+race_dict <- dbGetQuery(con, "SELECT * FROM bvyts_data_sharing.screened_race_data_dictionary")
+
+race_dict <- race_dict %>%
+  filter(column_name %in% colnames(race)) %>% # select only variable entries that are in the data requested
+  rename(variable=column_name,
+         description=column_comment)
+
+race %>%
+  select(-any_of(race_dict$variable)) %>%
+  colnames()
